@@ -1,0 +1,37 @@
+:root {
+  --header-height: 3.5rem;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app-header {
+  flex: 0 0 var(--header-height);
+  display: flex;
+  align-items: center;
+  padding-inline: var(--space-4);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: relative;
+  z-index: var(--z-header);
+}
+
+.app-main {
+  flex: 1 1 auto;
+  /* Without an explicit min-height a flex item refuses to shrink below its content. */
+  min-height: 0;
+}
+
+.map {
+  height: 100%;
+  width: 100%;
+  background-color: var(--color-bg);
+}
