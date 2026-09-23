@@ -26,10 +26,39 @@ function definedEntriesOf(changes) {
 
 export function createMemoryStore({ storage, now, makeId }) {
   let memories = readEnvelope(storage, now).memories.map(cloneMemory);
+  const listeners = new Set();
 
+  function notify() {
+    const snapshot = list();
+    for (const listener of [...listeners]) {
+      try {
+        listener(snapshot);
+      } catch (error) {
+        /* One broken listener must not stop the others or unwind a mutation that has
+           already been written. Rethrow out of band so it still reaches the console. */
+        queueMicrotask(() => {
+          throw error;
+        });
+      }
+    }
+  }
+
+  function subscribe(listener) {
+    if (typeof listener !== 'function') {
+      throw new TypeError('subscribe expects a function');
+    }
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  }
+
+  /* Writes first: if storage rejects the change, in-memory state and listeners are
+     left exactly as they were. */
   function commit(nextMemories) {
     writeEnvelope(storage, nextMemories);
     memories = nextMemories;
+    notify();
   }
 
   function findIndex(id) {
@@ -100,5 +129,5 @@ export function createMemoryStore({ storage, now, makeId }) {
     return true;
   }
 
-  return { list, get, add, update, remove };
+  return { list, get, add, update, remove, subscribe };
 }
