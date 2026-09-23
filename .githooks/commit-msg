@@ -1,0 +1,16 @@
+#!/bin/sh
+# Strips AI attribution from commit messages. Commits are authored by humans here.
+# Runs on every commit via core.hooksPath=.githooks (see README).
+
+msg_file="$1"
+tmp_file="$msg_file.tmp"
+
+sed -e "/Co-Authored-By:/Id" \
+    -e "/Co-Authored by:/Id" \
+    -e "/Generated with \[Claude Code\]/Id" \
+    -e "/Generated with Claude Code/Id" \
+    "$msg_file" > "$tmp_file" || exit 1
+
+mv "$tmp_file" "$msg_file"
+
+exit 0
