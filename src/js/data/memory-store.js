@@ -24,7 +24,16 @@ function definedEntriesOf(changes) {
   return Object.fromEntries(Object.entries(source).filter(([, value]) => value !== undefined));
 }
 
-export function createMemoryStore({ storage, now, makeId }) {
+/* Rethrowing out of band keeps a broken listener visible in the browser console
+   without unwinding a mutation that has already been written. Callers that need to
+   observe the failure instead (tests, error reporting) pass their own handler. */
+function rethrowAsync(error) {
+  queueMicrotask(() => {
+    throw error;
+  });
+}
+
+export function createMemoryStore({ storage, now, makeId, onListenerError = rethrowAsync }) {
   let memories = readEnvelope(storage, now).memories.map(cloneMemory);
   const listeners = new Set();
 
@@ -34,11 +43,7 @@ export function createMemoryStore({ storage, now, makeId }) {
       try {
         listener(snapshot);
       } catch (error) {
-        /* One broken listener must not stop the others or unwind a mutation that has
-           already been written. Rethrow out of band so it still reaches the console. */
-        queueMicrotask(() => {
-          throw error;
-        });
+        onListenerError(error);
       }
     }
   }
