@@ -65,6 +65,62 @@ Added in a later phase, documented here so the shape is agreed up front:
 
 ---
 
+## Data Model
+
+One memory:
+
+| Field | Type | Rules |
+|-------|------|-------|
+| `id` | string | UUID, assigned by the store, never changes |
+| `title` | string | required, 1-120 chars after trimming |
+| `note` | string | optional, max 5000 chars |
+| `date` | string | `YYYY-MM-DD`, required, must be a real calendar day |
+| `lat` | number | -90 to 90, rounded to 6 decimal places |
+| `lng` | number | -180 to 180, rounded to 6 decimal places |
+| `placeName` | string | optional, max 200 chars |
+| `tags` | string[] | trimmed, lowercased, deduped, blanks dropped, max 10, each max 30 chars |
+| `photoIds` | string[] | defaults to `[]`, references IndexedDB blobs |
+| `createdAt` | string | ISO timestamp, set on add, never changes |
+| `updatedAt` | string | ISO timestamp, bumped on every update |
+
+Input passes through `normalize.js` (trimming, tag cleanup, coordinate rounding) and then
+`validate.js`. Invalid input throws a `ValidationError` carrying a per-field `errors`
+object - the store never writes a half-valid record.
+
+### Storage
+
+Everything lives under one localStorage key, `waypoints:v1`:
+
+```json
+{ "version": 1, "memories": [] }
+```
+
+The `version` field exists so the shape can be migrated later without guessing.
+
+- Corrupt JSON is copied to `waypoints:v1:corrupt-<ISO timestamp>` and the app starts with
+  an empty collection. User data is never silently destroyed.
+- A failed write from a full quota is rethrown as `StorageFullError` so the UI can say
+  something real.
+- Photos go to IndexedDB, keyed by the ids in `photoIds`. Added later.
+
+### Store
+
+`createMemoryStore({ storage, now, makeId, onListenerError })` takes its dependencies as
+arguments so tests can pass fakes. `main.js` passes `localStorage`, `() => new Date()` and
+`crypto.randomUUID`.
+
+- `list()` returns memories sorted by date ascending, ties broken by `createdAt`
+- `get(id)` returns a copy or `null`
+- `add(input)` returns the stored record
+- `update(id, changes)` merges a patch, bumps `updatedAt`, throws on an unknown id
+- `remove(id)` returns whether the memory existed
+- `subscribe(listener)` returns an unsubscribe function, fired after every successful
+  mutation and never after a failed one
+
+Every getter returns copies, so callers cannot mutate stored state by accident.
+
+---
+
 ## Commit Rules
 
 **Non-negotiable:**
