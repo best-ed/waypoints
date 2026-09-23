@@ -1,0 +1,11 @@
+{
+  "name": "waypoints",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Pin memories on an interactive map.",
+  "type": "module",
+  "scripts": {
+    "dev": "npx serve . -l 5173",
+    "test": "node --test tests/"
+  }
+}
