@@ -1,6 +1,7 @@
 import { MAP_CONTAINER_ID } from './config.js';
 import { createMap } from './map/create-map.js';
 import { createMemoryStore } from './data/memory-store.js';
+import { createIdFactory } from './data/make-id.js';
 
 const DEV_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]', '::1'];
 
@@ -14,7 +15,7 @@ function boot() {
   const store = createMemoryStore({
     storage: window.localStorage,
     now: () => new Date(),
-    makeId: () => crypto.randomUUID()
+    makeId: createIdFactory(window.crypto)
   });
 
   if (isDevHost()) {
