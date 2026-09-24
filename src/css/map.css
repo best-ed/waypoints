@@ -1,0 +1,6 @@
+/* Outranks Leaflet's own .leaflet-grab cursor without needing !important. */
+.map.is-placing,
+.map.is-placing .leaflet-grab,
+.map.is-placing .leaflet-interactive {
+  cursor: crosshair;
+}
