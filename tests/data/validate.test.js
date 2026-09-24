@@ -186,3 +186,24 @@ test('ValidationError carries the field errors', () => {
   assert.deepEqual(error.errors, errors);
   assert.equal(error.message, 'Memory failed validation');
 });
+
+test('rejects blank and missing coordinates', () => {
+  for (const value of ['', '   ', '\t\n', null, undefined]) {
+    const result = validateMemory(validMemory({ lat: value, lng: value }));
+
+    assert.equal(result.valid, false, 'expected ' + JSON.stringify(value) + ' to be rejected');
+    assert.equal(result.errors.lat, 'Latitude must be a number');
+    assert.equal(result.errors.lng, 'Longitude must be a number');
+  }
+});
+
+/* Number([]) is 0 and Number(false) is 0, so a naive coercion would turn both of these
+   into a valid coordinate at the equator. */
+test('does not coerce empty arrays or booleans into zero', () => {
+  for (const value of [[], false, true, {}]) {
+    const result = validateMemory(validMemory({ lat: value, lng: value }));
+
+    assert.equal(result.valid, false, 'expected ' + JSON.stringify(value) + ' to be rejected');
+    assert.equal(result.errors.lat, 'Latitude must be a number');
+  }
+});
