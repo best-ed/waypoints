@@ -4,8 +4,17 @@ export function createMarkersLayer(map) {
 
   function add(memory) {
     const marker = L.marker([memory.lat, memory.lng]);
+    marker.bindTooltip(memory.title);
     marker.addTo(group);
-    markersById.set(memory.id, { marker, lat: memory.lat, lng: memory.lng });
+    markersById.set(memory.id, { marker, lat: memory.lat, lng: memory.lng, title: memory.title });
+  }
+
+  function retitleIfNeeded(entry, memory) {
+    if (entry.title === memory.title) {
+      return;
+    }
+    entry.marker.setTooltipContent(memory.title);
+    entry.title = memory.title;
   }
 
   function moveIfNeeded(entry, memory) {
@@ -27,6 +36,7 @@ export function createMarkersLayer(map) {
       const entry = markersById.get(memory.id);
       if (entry) {
         moveIfNeeded(entry, memory);
+        retitleIfNeeded(entry, memory);
       } else {
         add(memory);
       }
