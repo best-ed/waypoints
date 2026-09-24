@@ -3,6 +3,14 @@ import { parseTagInput, todayLocalDate } from './form-values.js';
 const SAVED = 'saved';
 const CANCELLED = 'cancelled';
 
+const FIELDS = [
+  { name: 'title', inputId: 'memory-title', errorId: 'memory-title-error' },
+  { name: 'date', inputId: 'memory-date', errorId: 'memory-date-error' },
+  { name: 'note', inputId: 'memory-note', errorId: 'memory-note-error' },
+  { name: 'placeName', inputId: 'memory-place-name', errorId: 'memory-place-name-error' },
+  { name: 'tags', inputId: 'memory-tags', errorId: 'memory-tags-error', hintId: 'memory-tags-hint' }
+];
+
 function formatCoordinates({ lat, lng }) {
   return lat.toFixed(6) + ', ' + lng.toFixed(6);
 }
@@ -33,6 +41,58 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
   let returnFocusTo = null;
   let closeReason = CANCELLED;
 
+  const fields = FIELDS.map((field) => ({
+    ...field,
+    input: doc.getElementById(field.inputId),
+    error: doc.getElementById(field.errorId)
+  }));
+
+  function describedBy(field, hasError) {
+    return [field.hintId, hasError ? field.errorId : null].filter(Boolean).join(' ');
+  }
+
+  function applyFieldError(field, message) {
+    const hasError = Boolean(message);
+
+    field.error.textContent = message ?? '';
+    field.error.hidden = !hasError;
+    field.input.setAttribute('aria-invalid', String(hasError));
+
+    const describedByValue = describedBy(field, hasError);
+    if (describedByValue) {
+      field.input.setAttribute('aria-describedby', describedByValue);
+    } else {
+      field.input.removeAttribute('aria-describedby');
+    }
+  }
+
+  function clearErrors() {
+    for (const field of fields) {
+      applyFieldError(field, null);
+    }
+  }
+
+  /* Returns the error keys with no field of their own - lat and lng are read-only text,
+     so anything reported against them has to surface at form level instead. */
+  function showFieldErrors(errors = {}) {
+    const shown = new Set();
+
+    for (const field of fields) {
+      const message = errors[field.name];
+      applyFieldError(field, message ?? null);
+      if (message) {
+        shown.add(field.name);
+      }
+    }
+
+    const firstInvalid = fields.find((field) => errors[field.name]);
+    if (firstInvalid) {
+      firstInvalid.input.focus();
+    }
+
+    return Object.keys(errors).filter((key) => !shown.has(key));
+  }
+
   function readValues() {
     const data = new FormData(form);
     return {
@@ -52,6 +112,7 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     closeReason = CANCELLED;
 
     form.reset();
+    clearErrors();
     coordinatesOutput.textContent = formatCoordinates(nextCoordinates);
     form.elements.date.value = todayLocalDate(now());
 
@@ -92,6 +153,8 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     open,
     close: () => close(CANCELLED),
     closeAsSaved: () => close(SAVED),
+    showFieldErrors,
+    clearErrors,
     isOpen: () => dialog.open
   };
 }
