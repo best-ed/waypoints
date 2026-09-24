@@ -39,6 +39,53 @@
       <div id="map" class="map"></div>
     </main>
 
+    <dialog id="memory-dialog" class="dialog" aria-labelledby="memory-dialog-title">
+      <form id="memory-form" class="form" novalidate>
+        <h2 id="memory-dialog-title" class="dialog-title">New memory</h2>
+
+        <p class="coordinates">
+          <span class="coordinates-label">Pinned at</span>
+          <span id="memory-coordinates" class="coordinates-value"></span>
+        </p>
+
+        <div class="field">
+          <label class="field-label" for="memory-title">Title</label>
+          <input id="memory-title" name="title" class="field-input" type="text" autocomplete="off" />
+          <p id="memory-title-error" class="field-error" hidden></p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="memory-date">Date</label>
+          <input id="memory-date" name="date" class="field-input" type="date" />
+          <p id="memory-date-error" class="field-error" hidden></p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="memory-note">Note</label>
+          <textarea id="memory-note" name="note" class="field-input field-textarea" rows="3"></textarea>
+          <p id="memory-note-error" class="field-error" hidden></p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="memory-place-name">Place name</label>
+          <input id="memory-place-name" name="placeName" class="field-input" type="text" autocomplete="off" />
+          <p id="memory-place-name-error" class="field-error" hidden></p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="memory-tags">Tags</label>
+          <input id="memory-tags" name="tags" class="field-input" type="text" autocomplete="off" />
+          <p id="memory-tags-hint" class="field-hint">Separate tags with commas</p>
+          <p id="memory-tags-error" class="field-error" hidden></p>
+        </div>
+
+        <div class="dialog-actions">
+          <button id="memory-cancel" class="button" type="button">Cancel</button>
+          <button id="memory-save" class="button button-primary" type="submit">Save memory</button>
+        </div>
+      </form>
+    </dialog>
+
     <script type="module" src="src/js/main.js"></script>
   </body>
 </html>
