@@ -35,3 +35,7 @@ body {
   width: 100%;
   background-color: var(--color-bg);
 }
+
+.app-header .app-title {
+  margin-right: auto;
+}
