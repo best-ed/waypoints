@@ -36,6 +36,7 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
   const coordinatesOutput = doc.getElementById('memory-coordinates');
   const cancelButton = doc.getElementById('memory-cancel');
   const titleInput = doc.getElementById('memory-title');
+  const formError = doc.getElementById('memory-form-error');
 
   let coordinates = null;
   let returnFocusTo = null;
@@ -66,7 +67,18 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     }
   }
 
+  function showFormError(message) {
+    formError.textContent = message;
+    formError.hidden = false;
+  }
+
+  function clearFormError() {
+    formError.textContent = '';
+    formError.hidden = true;
+  }
+
   function clearErrors() {
+    clearFormError();
     for (const field of fields) {
       applyFieldError(field, null);
     }
@@ -75,6 +87,7 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
   /* Returns the error keys with no field of their own - lat and lng are read-only text,
      so anything reported against them has to surface at form level instead. */
   function showFieldErrors(errors = {}) {
+    clearFormError();
     const shown = new Set();
 
     for (const field of fields) {
@@ -154,6 +167,7 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     close: () => close(CANCELLED),
     closeAsSaved: () => close(SAVED),
     showFieldErrors,
+    showFormError,
     clearErrors,
     isOpen: () => dialog.open
   };
