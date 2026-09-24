@@ -21,12 +21,24 @@ A web app for pinning memories on an interactive map.
 index.html        entry point, lives at the repo root
 src/css/          stylesheets
 src/js/           ES modules
-tests/            node --test files
+src/js/data/      schema, normalization, validation, storage, the memory store
+src/js/map/       everything that touches Leaflet
+src/js/ui/        everything that touches the DOM
+tests/            node --test files, mirroring the src/js layout
 .githooks/        git hooks (commit-msg attribution stripper)
 ```
 
-Modules are grouped by feature inside `src/js/` (`src/js/map/`, `src/js/storage/`, …),
-not by type. A module that only the map uses lives under `map/`.
+Modules are grouped by feature inside `src/js/`, not by type. A module that only the map
+uses lives under `map/`.
+
+The boundaries matter for testing:
+
+- `data/` is pure. No DOM, no Leaflet. Fully tested.
+- `map/` may use the Leaflet global `L`. Not unit tested, verified in the browser.
+- `ui/` may touch the DOM. Pure helpers that need testing live in their own module with
+  no DOM access, like `ui/form-values.js`, so they can run under node.
+
+`main.js` is the only place the three are wired together.
 
 ---
 
