@@ -1,0 +1,92 @@
+.dialog {
+  width: min(32rem, calc(100vw - var(--space-6)));
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+.dialog::backdrop {
+  background-color: rgb(0 0 0 / 0.45);
+}
+
+.dialog-title {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-lg);
+  line-height: var(--line-tight);
+}
+
+.coordinates {
+  margin-bottom: var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.coordinates-value {
+  font-family: var(--font-mono);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+}
+
+.field {
+  margin-bottom: var(--space-4);
+}
+
+.field-label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.field-input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg);
+}
+
+.field-input:focus-visible {
+  border-color: var(--color-accent);
+}
+
+.field-input[aria-invalid='true'] {
+  border-color: var(--color-accent);
+}
+
+.field-textarea {
+  resize: vertical;
+}
+
+.field-hint,
+.field-error {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+}
+
+.field-hint {
+  color: var(--color-text-muted);
+}
+
+.field-error {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.button-primary {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
