@@ -1,11 +1,19 @@
 .sidebar {
-  flex: 0 0 var(--sidebar-width);
+  /* Width rather than flex-basis so a single property animates on collapse. */
+  flex: 0 0 auto;
   width: var(--sidebar-width);
+  transition: width 200ms ease;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   background-color: var(--color-surface);
   border-right: 1px solid var(--color-border);
+}
+
+.sidebar.is-collapsed {
+  width: 0;
+  border-right-width: 0;
+  overflow: hidden;
 }
 
 .sidebar-header {
@@ -106,4 +114,10 @@
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
+  }
 }

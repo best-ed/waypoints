@@ -9,6 +9,7 @@ import { createMoveMode } from './map/move-mode.js';
 import { focusMarker } from './map/focus-marker.js';
 import { createSelection } from './ui/selection.js';
 import { createMemoryList } from './ui/memory-list.js';
+import { createSidebarToggle } from './ui/sidebar-toggle.js';
 import { createMemoryForm } from './ui/memory-form.js';
 import { buildPopupContent } from './ui/popup-content.js';
 import { createToast } from './ui/toast.js';
@@ -68,6 +69,12 @@ function boot() {
 
   const moveMode = createMoveMode({
     onMoved: (id, coordinates) => applyMove(id, coordinates)
+  });
+
+  createSidebarToggle({
+    toggleButton: document.getElementById('sidebar-toggle'),
+    sidebar: document.getElementById('sidebar'),
+    onResize: () => map.invalidateSize()
   });
 
   selection.subscribe((id) => list.setSelected(id));
