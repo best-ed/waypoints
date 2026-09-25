@@ -44,7 +44,7 @@ function boot() {
     onPlace: (coordinates) => {
       draftMarker.show(coordinates);
       syncButton();
-      form.open(coordinates, { returnFocus: addButton });
+      form.openForAdd(coordinates, { returnFocus: addButton });
     },
     onCancel: () => syncButton()
   });

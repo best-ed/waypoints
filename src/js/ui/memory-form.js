@@ -3,6 +3,14 @@ import { parseTagInput, todayLocalDate } from './form-values.js';
 const SAVED = 'saved';
 const CANCELLED = 'cancelled';
 
+const ADD = 'add';
+const EDIT = 'edit';
+
+const COPY = {
+  [ADD]: { heading: 'New memory', submit: 'Save memory' },
+  [EDIT]: { heading: 'Edit memory', submit: 'Save changes' }
+};
+
 const FIELDS = [
   { name: 'title', inputId: 'memory-title', errorId: 'memory-title-error' },
   { name: 'date', inputId: 'memory-date', errorId: 'memory-date-error' },
@@ -35,10 +43,12 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
   const form = doc.getElementById('memory-form');
   const coordinatesOutput = doc.getElementById('memory-coordinates');
   const cancelButton = doc.getElementById('memory-cancel');
+  const saveButton = doc.getElementById('memory-save');
+  const heading = doc.getElementById('memory-dialog-title');
   const titleInput = doc.getElementById('memory-title');
   const formError = doc.getElementById('memory-form-error');
 
-  let coordinates = null;
+  let session = null;
   let returnFocusTo = null;
   let closeReason = CANCELLED;
 
@@ -114,23 +124,43 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
       note: data.get('note'),
       placeName: data.get('placeName'),
       tags: parseTagInput(data.get('tags')),
-      lat: coordinates.lat,
-      lng: coordinates.lng
+      lat: session.coordinates.lat,
+      lng: session.coordinates.lng
     };
   }
 
-  function open(nextCoordinates, { returnFocus = null } = {}) {
-    coordinates = nextCoordinates;
+  function open({ mode, coordinates, memory = null, returnFocus = null }) {
+    session = { mode, coordinates, memoryId: memory ? memory.id : null };
     returnFocusTo = returnFocus;
     closeReason = CANCELLED;
 
     form.reset();
     clearErrors();
-    coordinatesOutput.textContent = formatCoordinates(nextCoordinates);
-    form.elements.date.value = todayLocalDate(now());
+
+    heading.textContent = COPY[mode].heading;
+    saveButton.textContent = COPY[mode].submit;
+    coordinatesOutput.textContent = formatCoordinates(coordinates);
+
+    if (memory) {
+      form.elements.title.value = memory.title;
+      form.elements.date.value = memory.date;
+      form.elements.note.value = memory.note;
+      form.elements.placeName.value = memory.placeName;
+      form.elements.tags.value = memory.tags.join(', ');
+    } else {
+      form.elements.date.value = todayLocalDate(now());
+    }
 
     dialog.showModal();
     titleInput.focus();
+  }
+
+  function openForAdd(coordinates, { returnFocus = null } = {}) {
+    open({ mode: ADD, coordinates, returnFocus });
+  }
+
+  function openForEdit(memory, { returnFocus = null } = {}) {
+    open({ mode: EDIT, coordinates: { lat: memory.lat, lng: memory.lng }, memory, returnFocus });
   }
 
   function close(reason = CANCELLED) {
@@ -140,7 +170,7 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    onSubmit(readValues());
+    onSubmit(readValues(), { mode: session.mode, memoryId: session.memoryId });
   });
 
   cancelButton.addEventListener('click', () => close(CANCELLED));
@@ -155,7 +185,7 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
      draft marker is cleaned up on every path out of the dialog. */
   dialog.addEventListener('close', () => {
     if (closeReason !== SAVED) {
-      onCancel();
+      onCancel({ mode: session.mode });
     }
     if (returnFocusTo) {
       returnFocusTo.focus();
@@ -163,7 +193,8 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
   });
 
   return {
-    open,
+    openForAdd,
+    openForEdit,
     close: () => close(CANCELLED),
     closeAsSaved: () => close(SAVED),
     showFieldErrors,
