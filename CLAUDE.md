@@ -119,17 +119,53 @@ The `version` field exists so the shape can be migrated later without guessing.
 
 `createMemoryStore({ storage, now, makeId, onListenerError })` takes its dependencies as
 arguments so tests can pass fakes. `main.js` passes `localStorage`, `() => new Date()` and
-`crypto.randomUUID`.
+`createIdFactory(window.crypto)`, which uses `crypto.randomUUID` where it exists and falls
+back to a v4 uuid built from `getRandomValues` in insecure contexts such as a LAN address.
 
 - `list()` returns memories sorted by date ascending, ties broken by `createdAt`
 - `get(id)` returns a copy or `null`
 - `add(input)` returns the stored record
 - `update(id, changes)` merges a patch, bumps `updatedAt`, throws on an unknown id
 - `remove(id)` returns whether the memory existed
+- `restore(memory)` puts a whole record back, keeping its `id`, `createdAt` and
+  `updatedAt`. Validates, throws on an unknown shape or a duplicate id, and notifies
 - `subscribe(listener)` returns an unsubscribe function, fired after every successful
   mutation and never after a failed one
 
 Every getter returns copies, so callers cannot mutate stored state by accident.
+
+---
+
+## Rendering User Text
+
+**Non-negotiable. User-supplied text is never inserted as HTML.**
+
+- Build content with `document.createElement` and `textContent`
+- No `innerHTML`, no `insertAdjacentHTML`, no HTML string templates containing memory
+  fields
+- Leaflet popups are given an `HTMLElement`, never a string
+- Preserve a note's line breaks with `white-space: pre-wrap` in CSS, never by injecting
+  `<br>`
+- The one markup string in the codebase is the pin SVG in `map/pin-icon.js`, which
+  `L.divIcon` requires. It is a static literal with no user data in it.
+
+A memory titled `<img src=x onerror=alert(1)>` must render as those literal characters.
+
+---
+
+## Undo Deletion
+
+Deleting is immediate, not a confirmation dialog:
+
+1. Read the full record with `store.get(id)` **before** removing it
+2. `store.remove(id)`
+3. Show a toast naming the memory, with an Undo button, auto-dismissing after 6 seconds
+4. Undo calls `store.restore(record)`, which brings the memory back with the same id and
+   timestamps - not a copy
+
+The captured record is what makes undo honest. A new toast replaces the one before it and
+the earlier deletion simply stands; there is no undo stack. The toast region is
+`aria-live="polite"` so the deletion is announced.
 
 ---
 
