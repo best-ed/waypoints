@@ -4,3 +4,65 @@
 .map.is-placing .leaflet-interactive {
   cursor: crosshair;
 }
+
+.pin {
+  /* Leaflet gives divIcon a white background and border by default. */
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.pin-svg {
+  display: block;
+  overflow: visible;
+}
+
+.pin-body {
+  fill: var(--color-accent);
+  stroke: var(--color-accent-contrast);
+  stroke-width: 1.5;
+  transition: fill 120ms ease, transform 120ms ease;
+  transform-origin: 50% 100%;
+}
+
+.pin-centre {
+  fill: var(--color-accent-contrast);
+}
+
+.pin:hover .pin-body {
+  fill: var(--color-text);
+  transform: scale(1.12);
+}
+
+.pin:focus {
+  outline: none;
+}
+
+.pin:focus-visible .pin-body {
+  fill: var(--color-text);
+  stroke: var(--color-accent);
+  stroke-width: 3;
+}
+
+/* Leaflet adds this class to the marker whose popup is open. */
+.pin.leaflet-popup-open .pin-body,
+.pin.pin-active .pin-body {
+  fill: var(--color-text);
+  transform: scale(1.12);
+}
+
+.pin-draft .pin-body {
+  fill: var(--color-text-muted);
+  stroke-dasharray: 3 2;
+}
+
+.pin-moving .pin-body {
+  fill: var(--color-text);
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pin-body {
+    transition: none;
+  }
+}
