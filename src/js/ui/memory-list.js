@@ -13,7 +13,16 @@ function element(tag, className) {
   return node;
 }
 
-export function createMemoryList({ listElement, onSelect }) {
+const EMPTY_MESSAGE = 'No memories yet. Click Add memory, then click the map.';
+
+function countLabel(total) {
+  if (total === 0) {
+    return 'None yet';
+  }
+  return total === 1 ? '1 memory' : total + ' memories';
+}
+
+export function createMemoryList({ listElement, emptyElement, countElement, onSelect }) {
   const itemsById = new Map();
   let order = [];
 
@@ -101,6 +110,11 @@ export function createMemoryList({ listElement, onSelect }) {
     applyOrder(ordered);
     order = ordered.map((memory) => memory.id);
 
+    countElement.textContent = countLabel(ordered.length);
+    emptyElement.textContent = EMPTY_MESSAGE;
+    emptyElement.hidden = ordered.length > 0;
+    listElement.hidden = ordered.length === 0;
+
     if (previouslyFocused && itemsById.has(previouslyFocused) && document.activeElement !== itemsById.get(previouslyFocused).button) {
       itemsById.get(previouslyFocused).button.focus();
     }
@@ -115,9 +129,14 @@ export function createMemoryList({ listElement, onSelect }) {
     return false;
   }
 
+  function focusEmptyState() {
+    emptyElement.focus();
+  }
+
   return {
     render,
     focusItem,
+    focusEmptyState,
     getOrder: () => [...order],
     count: () => itemsById.size
   };
