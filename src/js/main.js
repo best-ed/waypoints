@@ -10,6 +10,7 @@ import { focusMarker } from './map/focus-marker.js';
 import { createSelection } from './ui/selection.js';
 import { createMemoryList } from './ui/memory-list.js';
 import { createSidebarToggle } from './ui/sidebar-toggle.js';
+import { prefersReducedMotion } from './ui/motion.js';
 import { createMemoryForm } from './ui/memory-form.js';
 import { buildPopupContent } from './ui/popup-content.js';
 import { createToast } from './ui/toast.js';
@@ -93,7 +94,7 @@ function boot() {
       return;
     }
     selection.select(id);
-    focusMarker(map, marker);
+    focusMarker(map, marker, { reducedMotion: prefersReducedMotion() });
   }
 
   const form = createMemoryForm({
