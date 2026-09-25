@@ -6,6 +6,7 @@ import { createPlacementMode } from './map/placement-mode.js';
 import { createDraftMarker } from './map/draft-marker.js';
 import { createMarkersLayer } from './map/markers-layer.js';
 import { createMemoryForm } from './ui/memory-form.js';
+import { buildPopupContent } from './ui/popup-content.js';
 import { ValidationError, StorageFullError } from './data/errors.js';
 
 const DEV_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]', '::1'];
@@ -28,15 +29,24 @@ function boot() {
   });
 
   const addButton = document.getElementById('add-memory');
-  const markers = createMarkersLayer(map);
+
+  const markers = createMarkersLayer(map, {
+    renderPopup: (memory) =>
+      buildPopupContent(memory, {
+        onEdit: () => startEdit(memory.id),
+        onMove: () => {},
+        onDelete: () => {}
+      })
+  });
+
   const draftMarker = createDraftMarker(map);
 
   markers.sync(store.list());
   store.subscribe((memories) => markers.sync(memories));
 
   const form = createMemoryForm({
-    onSubmit: (values) => handleSubmit(values),
-    onCancel: () => draftMarker.clear()
+    onSubmit: (values, context) => handleSubmit(values, context),
+    onCancel: (context) => handleCancel(context)
   });
 
   const placement = createPlacementMode({
@@ -53,11 +63,56 @@ function boot() {
     addButton.setAttribute('aria-pressed', String(placement.isActive()));
   }
 
-  function handleSubmit(values) {
+  function markerElement(id) {
+    const marker = markers.getMarker(id);
+    return marker ? marker.getElement() : null;
+  }
+
+  function openPopupFor(id) {
+    const marker = markers.getMarker(id);
+    if (marker) {
+      marker.openPopup();
+    }
+  }
+
+  function startEdit(id) {
+    const memory = store.get(id);
+    if (!memory) {
+      return;
+    }
+
+    /* Closed before the dialog opens so the popup that reopens afterwards is rebuilt
+       from the saved record rather than left showing the old values behind the modal. */
+    markers.getMarker(id).closePopup();
+    form.openForEdit(memory, { returnFocus: markerElement(id) });
+  }
+
+  function handleCancel({ mode, memoryId }) {
+    if (mode === 'edit') {
+      /* Edit closed this popup on the way in, so reopening it leaves the screen exactly
+         as the user found it. */
+      openPopupFor(memoryId);
+      return;
+    }
+    draftMarker.clear();
+  }
+
+  function save(values, { mode, memoryId }) {
+    if (mode === 'edit') {
+      store.update(memoryId, values);
+      return memoryId;
+    }
+    return store.add(values).id;
+  }
+
+  function handleSubmit(values, context) {
     try {
-      store.add(values);
+      const id = save(values, context);
       draftMarker.clear();
       form.closeAsSaved();
+      if (context.mode === 'edit') {
+        openPopupFor(id);
+      }
     } catch (error) {
       if (error instanceof ValidationError) {
         const unmapped = form.showFieldErrors(error.errors);

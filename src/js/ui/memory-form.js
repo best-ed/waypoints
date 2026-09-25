@@ -185,7 +185,7 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
      draft marker is cleaned up on every path out of the dialog. */
   dialog.addEventListener('close', () => {
     if (closeReason !== SAVED) {
-      onCancel({ mode: session.mode });
+      onCancel({ mode: session.mode, memoryId: session.memoryId });
     }
     if (returnFocusTo) {
       returnFocusTo.focus();
