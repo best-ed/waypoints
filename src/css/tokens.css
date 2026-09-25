@@ -29,6 +29,8 @@
   --line-base: 1.5;
 
   /* Leaflet's own panes and controls sit between 400 and 1000, so app chrome starts above that. */
+  --sidebar-width: 20rem;
+
   --z-map: 1;
   --z-header: 1100;
   --z-panel: 1200;

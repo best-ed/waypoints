@@ -26,11 +26,22 @@
     <link rel="stylesheet" href="src/css/layout.css" />
     <link rel="stylesheet" href="src/css/map.css" />
     <link rel="stylesheet" href="src/css/popup.css" />
+    <link rel="stylesheet" href="src/css/sidebar.css" />
     <link rel="stylesheet" href="src/css/toast.css" />
     <link rel="stylesheet" href="src/css/dialog.css" />
   </head>
   <body>
     <header class="app-header">
+      <button
+        id="sidebar-toggle"
+        class="button icon-button"
+        type="button"
+        aria-expanded="true"
+        aria-controls="sidebar"
+      >
+        Hide list
+      </button>
+
       <h1 class="app-title">waypoints</h1>
 
       <button id="add-memory" class="button" type="button" aria-pressed="false">
@@ -38,9 +49,22 @@
       </button>
     </header>
 
-    <main class="app-main">
-      <div id="map" class="map"></div>
-    </main>
+    <div class="app-body">
+      <aside id="sidebar" class="sidebar" aria-labelledby="sidebar-heading">
+        <div class="sidebar-header">
+          <h2 id="sidebar-heading" class="sidebar-heading">Memories</h2>
+          <p id="memory-count" class="sidebar-count"></p>
+        </div>
+
+        <p id="memory-empty" class="sidebar-empty" tabindex="-1" hidden></p>
+
+        <ul id="memory-list" class="memory-list"></ul>
+      </aside>
+
+      <main class="app-main">
+        <div id="map" class="map"></div>
+      </main>
+    </div>
 
     <div id="toast-region" class="toast-region" aria-live="polite"></div>
 

@@ -24,10 +24,18 @@ body {
   z-index: var(--z-header);
 }
 
-.app-main {
+.app-body {
   flex: 1 1 auto;
+  display: flex;
   /* Without an explicit min-height a flex item refuses to shrink below its content. */
   min-height: 0;
+}
+
+.app-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  /* Lets the map shrink past the width of its own tiles when the sidebar expands. */
+  min-width: 0;
 }
 
 .map {
