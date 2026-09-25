@@ -1,0 +1,73 @@
+.popup {
+  min-width: 14rem;
+  max-width: 18rem;
+}
+
+.popup-title {
+  margin-bottom: var(--space-1);
+  font-size: var(--text-base);
+  line-height: var(--line-tight);
+  /* User titles can be long single words; break rather than stretch the popup. */
+  overflow-wrap: anywhere;
+}
+
+.popup-date,
+.popup-place {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.popup-place {
+  overflow-wrap: anywhere;
+}
+
+.popup-note {
+  margin-top: var(--space-3);
+  /* Keeps the user's own line breaks without injecting <br> into the document. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.popup-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.popup-tag {
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.popup-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.popup-button {
+  flex: 1;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+}
+
+/* Leaflet sets its own font stack and sizing on popup content. */
+.leaflet-popup-content {
+  margin: var(--space-4);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--line-base);
+  color: var(--color-text);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: var(--radius-md);
+}
