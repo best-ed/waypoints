@@ -38,17 +38,26 @@ function boot() {
   const addButton = document.getElementById('add-memory');
   const toast = createToast({ container: document.getElementById('toast-region') });
 
+  const selection = createSelection();
+
   const markers = createMarkersLayer(map, {
     renderPopup: (memory) =>
       buildPopupContent(memory, {
         onEdit: () => startEdit(memory.id),
         onMove: () => startMove(memory.id),
         onDelete: () => deleteMemory(memory.id)
-      })
+      }),
+    onPopupOpen: (id) => selection.select(id),
+    /* Switching markers closes the old popup after the new id is already selected, so
+       only the popup that still owns the selection is allowed to clear it. */
+    onPopupClose: (id) => {
+      if (selection.getSelected() === id) {
+        selection.clear();
+      }
+    }
   });
 
   const draftMarker = createDraftMarker(map);
-  const selection = createSelection();
 
   const list = createMemoryList({
     listElement: document.getElementById('memory-list'),

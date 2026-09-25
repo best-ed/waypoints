@@ -16,7 +16,7 @@ function applyAccessibleName(marker, title) {
   }
 }
 
-export function createMarkersLayer(map, { renderPopup }) {
+export function createMarkersLayer(map, { renderPopup, onPopupOpen = () => {}, onPopupClose = () => {} }) {
   const group = L.layerGroup().addTo(map);
   const markersById = new Map();
 
@@ -27,6 +27,8 @@ export function createMarkersLayer(map, { renderPopup }) {
     });
     marker.bindTooltip(memory.title);
     marker.bindPopup(renderPopup(memory));
+    marker.on('popupopen', () => onPopupOpen(memory.id));
+    marker.on('popupclose', () => onPopupClose(memory.id));
     marker.addTo(group);
     applyAccessibleName(marker, memory.title);
 
