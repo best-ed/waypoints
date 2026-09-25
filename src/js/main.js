@@ -70,6 +70,8 @@ function boot() {
     onMoved: (id, coordinates) => applyMove(id, coordinates)
   });
 
+  selection.subscribe((id) => list.setSelected(id));
+
   function renderAll(memories) {
     markers.sync(memories);
     list.render(memories);

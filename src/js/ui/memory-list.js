@@ -25,6 +25,7 @@ function countLabel(total) {
 export function createMemoryList({ listElement, emptyElement, countElement, onSelect }) {
   const itemsById = new Map();
   let order = [];
+  let selectedId = null;
 
   function createItem(memory) {
     const listItem = element('li', 'memory-item');
@@ -110,6 +111,10 @@ export function createMemoryList({ listElement, emptyElement, countElement, onSe
     applyOrder(ordered);
     order = ordered.map((memory) => memory.id);
 
+    for (const [itemId, item] of itemsById) {
+      applySelectionTo(item, itemId === selectedId);
+    }
+
     countElement.textContent = countLabel(ordered.length);
     emptyElement.textContent = EMPTY_MESSAGE;
     emptyElement.hidden = ordered.length > 0;
@@ -117,6 +122,29 @@ export function createMemoryList({ listElement, emptyElement, countElement, onSe
 
     if (previouslyFocused && itemsById.has(previouslyFocused) && document.activeElement !== itemsById.get(previouslyFocused).button) {
       itemsById.get(previouslyFocused).button.focus();
+    }
+  }
+
+  function applySelectionTo(item, isSelected) {
+    if (isSelected) {
+      item.button.setAttribute('aria-current', 'true');
+    } else {
+      item.button.removeAttribute('aria-current');
+    }
+  }
+
+  /* block: nearest leaves the list alone when the item is already visible, so selecting
+     from the map does not yank the sidebar around. */
+  function setSelected(id) {
+    selectedId = id;
+
+    for (const [itemId, item] of itemsById) {
+      applySelectionTo(item, itemId === id);
+    }
+
+    const selected = id === null ? null : itemsById.get(id);
+    if (selected) {
+      selected.button.scrollIntoView({ block: 'nearest' });
     }
   }
 
@@ -135,6 +163,7 @@ export function createMemoryList({ listElement, emptyElement, countElement, onSe
 
   return {
     render,
+    setSelected,
     focusItem,
     focusEmptyState,
     getOrder: () => [...order],
