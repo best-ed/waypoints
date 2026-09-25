@@ -6,6 +6,9 @@ import { createPlacementMode } from './map/placement-mode.js';
 import { createDraftMarker } from './map/draft-marker.js';
 import { createMarkersLayer } from './map/markers-layer.js';
 import { createMoveMode } from './map/move-mode.js';
+import { focusMarker } from './map/focus-marker.js';
+import { createSelection } from './ui/selection.js';
+import { createMemoryList } from './ui/memory-list.js';
 import { createMemoryForm } from './ui/memory-form.js';
 import { buildPopupContent } from './ui/popup-content.js';
 import { createToast } from './ui/toast.js';
@@ -45,13 +48,35 @@ function boot() {
   });
 
   const draftMarker = createDraftMarker(map);
+  const selection = createSelection();
+
+  const list = createMemoryList({
+    listElement: document.getElementById('memory-list'),
+    emptyElement: document.getElementById('memory-empty'),
+    countElement: document.getElementById('memory-count'),
+    onSelect: (id) => selectFromList(id)
+  });
 
   const moveMode = createMoveMode({
     onMoved: (id, coordinates) => applyMove(id, coordinates)
   });
 
-  markers.sync(store.list());
-  store.subscribe((memories) => markers.sync(memories));
+  function renderAll(memories) {
+    markers.sync(memories);
+    list.render(memories);
+  }
+
+  renderAll(store.list());
+  store.subscribe(renderAll);
+
+  function selectFromList(id) {
+    const marker = markers.getMarker(id);
+    if (!marker) {
+      return;
+    }
+    selection.select(id);
+    focusMarker(map, marker);
+  }
 
   const form = createMemoryForm({
     onSubmit: (values, context) => handleSubmit(values, context),

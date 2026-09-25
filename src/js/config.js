@@ -14,3 +14,7 @@ export const TILE_LAYER = {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   maxZoom: MAX_ZOOM
 };
+
+/* Selecting a memory should get close enough to read the streets around it, but never
+   zoom back out if the user is already closer in. */
+export const SELECT_ZOOM = 14;
