@@ -1,0 +1,39 @@
+.toast-region {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-5);
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  /* Empty most of the time, so it must never block clicks on the map beneath it. */
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-text);
+  color: var(--color-bg);
+  font-size: var(--text-sm);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+  pointer-events: auto;
+}
+
+.toast-message {
+  overflow-wrap: anywhere;
+}
+
+.toast-action {
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-3);
+  background-color: transparent;
+  border-color: var(--color-bg);
+  color: var(--color-bg);
+}
+
+.toast-action:hover {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
