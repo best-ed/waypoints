@@ -6,15 +6,29 @@ function displaySignature(memory) {
   return JSON.stringify([memory.title, memory.date, memory.placeName, memory.note, memory.tags]);
 }
 
+/* Leaflet gives a keyboard-enabled marker tabindex="0" and role="button" and opens its
+   popup on Enter, but a divIcon has no alt text, so the title is attached by hand or the
+   button reaches a screen reader with no name at all. */
+function applyAccessibleName(marker, title) {
+  const element = marker.getElement();
+  if (element) {
+    element.setAttribute('aria-label', title);
+  }
+}
+
 export function createMarkersLayer(map, { renderPopup }) {
   const group = L.layerGroup().addTo(map);
   const markersById = new Map();
 
   function add(memory) {
-    const marker = L.marker([memory.lat, memory.lng], { icon: createPinIcon() });
+    const marker = L.marker([memory.lat, memory.lng], {
+      icon: createPinIcon(),
+      keyboard: true
+    });
     marker.bindTooltip(memory.title);
     marker.bindPopup(renderPopup(memory));
     marker.addTo(group);
+    applyAccessibleName(marker, memory.title);
 
     markersById.set(memory.id, {
       marker,
@@ -44,6 +58,7 @@ export function createMarkersLayer(map, { renderPopup }) {
 
     if (entry.title !== memory.title) {
       entry.marker.setTooltipContent(memory.title);
+      applyAccessibleName(entry.marker, memory.title);
       entry.title = memory.title;
     }
 
