@@ -33,3 +33,5 @@ export const MEMORY_FIELDS = [
   'createdAt',
   'updatedAt'
 ];
+
+export const TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/;

@@ -1,5 +1,5 @@
 import { normalizeMemoryInput } from './normalize.js';
-import { validateMemory } from './validate.js';
+import { validateMemory, validateStoredMemory } from './validate.js';
 import { ValidationError } from './errors.js';
 import { readEnvelope, writeEnvelope } from './storage.js';
 
@@ -124,6 +124,29 @@ export function createMemoryStore({ storage, now, makeId, onListenerError = reth
     return cloneMemory(updated);
   }
 
+  /* Takes a whole record rather than an input patch: an undone delete has to come back
+     with the same id and timestamps it had, or it is a different memory. */
+  function restore(memory) {
+    const { valid, errors } = validateStoredMemory(memory);
+    if (!valid) {
+      throw new ValidationError(errors);
+    }
+
+    if (findIndex(memory.id) !== -1) {
+      throw new Error('A memory with id ' + memory.id + ' already exists');
+    }
+
+    const restored = {
+      id: memory.id,
+      ...normalizeMemoryInput(memory),
+      createdAt: memory.createdAt,
+      updatedAt: memory.updatedAt
+    };
+
+    commit([...memories, restored]);
+    return cloneMemory(restored);
+  }
+
   function remove(id) {
     const index = findIndex(id);
     if (index === -1) {
@@ -134,5 +157,5 @@ export function createMemoryStore({ storage, now, makeId, onListenerError = reth
     return true;
   }
 
-  return { list, get, add, update, remove, subscribe };
+  return { list, get, add, update, remove, restore, subscribe };
 }

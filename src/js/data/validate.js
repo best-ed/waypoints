@@ -1,5 +1,6 @@
 import {
   DATE_PATTERN,
+  TIMESTAMP_PATTERN,
   LAT_MAX,
   LAT_MIN,
   LNG_MAX,
@@ -95,4 +96,25 @@ export function validateMemory(memory) {
   }
 
   return { valid: Object.keys(errors).length === 0, errors };
+}
+
+/* A stored record carries three fields the store owns and validateMemory never sees.
+   restore() accepts records from outside the store, so they get checked too. */
+export function validateStoredMemory(memory) {
+  const { valid, errors } = validateMemory(memory);
+  const value = memory && typeof memory === 'object' ? memory : {};
+
+  if (typeof value.id !== 'string' || value.id.trim() === '') {
+    errors.id = 'Id is required';
+  }
+
+  for (const field of ['createdAt', 'updatedAt']) {
+    if (typeof value[field] !== 'string' || !TIMESTAMP_PATTERN.test(value[field])) {
+      errors[field] = field + ' must be an ISO timestamp';
+    } else if (Number.isNaN(new Date(value[field]).getTime())) {
+      errors[field] = field + ' must be a real timestamp';
+    }
+  }
+
+  return { valid: valid && Object.keys(errors).length === 0, errors };
 }
