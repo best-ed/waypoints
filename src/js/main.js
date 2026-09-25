@@ -5,6 +5,7 @@ import { createIdFactory } from './data/make-id.js';
 import { createPlacementMode } from './map/placement-mode.js';
 import { createDraftMarker } from './map/draft-marker.js';
 import { createMarkersLayer } from './map/markers-layer.js';
+import { createMoveMode } from './map/move-mode.js';
 import { createMemoryForm } from './ui/memory-form.js';
 import { buildPopupContent } from './ui/popup-content.js';
 import { createToast } from './ui/toast.js';
@@ -16,6 +17,7 @@ const STORAGE_FULL_MESSAGE =
   'There is no room left in this browser to save another memory. Remove one and try again.';
 const UNEXPECTED_MESSAGE = 'Something went wrong saving this memory. Please try again.';
 const UNDO_FAILED_MESSAGE = 'That memory could not be brought back.';
+const MOVE_FAILED_MESSAGE = 'That pin could not be moved.';
 
 function isDevHost() {
   return DEV_HOSTNAMES.includes(window.location.hostname);
@@ -37,12 +39,16 @@ function boot() {
     renderPopup: (memory) =>
       buildPopupContent(memory, {
         onEdit: () => startEdit(memory.id),
-        onMove: () => {},
+        onMove: () => startMove(memory.id),
         onDelete: () => deleteMemory(memory.id)
       })
   });
 
   const draftMarker = createDraftMarker(map);
+
+  const moveMode = createMoveMode({
+    onMoved: (id, coordinates) => applyMove(id, coordinates)
+  });
 
   markers.sync(store.list());
   store.subscribe((memories) => markers.sync(memories));
@@ -88,6 +94,26 @@ function boot() {
        from the saved record rather than left showing the old values behind the modal. */
     markers.getMarker(id).closePopup();
     form.openForEdit(memory, { returnFocus: markerElement(id) });
+  }
+
+  function startMove(id) {
+    const marker = markers.getMarker(id);
+    if (marker) {
+      moveMode.start(id, marker);
+    }
+  }
+
+  /* The store rounds the coordinates, and the marker is then pulled onto the rounded
+     position by the sync that follows. */
+  function applyMove(id, coordinates) {
+    try {
+      store.update(id, coordinates);
+      openPopupFor(id);
+    } catch (error) {
+      toast.show({ message: MOVE_FAILED_MESSAGE });
+      console.error(error);
+      markers.sync(store.list());
+    }
   }
 
   /* The record is captured before the delete so Undo can put back the same memory,
