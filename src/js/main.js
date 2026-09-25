@@ -168,7 +168,15 @@ function boot() {
       return;
     }
 
+    /* Read before the delete: afterwards the memory is gone from the order. */
+    const position = list.getOrder().indexOf(id);
+
+    if (selection.getSelected() === id) {
+      selection.clear();
+    }
+
     store.remove(id);
+    list.focusAtPosition(position);
 
     toast.show({
       message: 'Deleted "' + memory.title + '"',
@@ -181,6 +189,8 @@ function boot() {
     try {
       store.restore(memory);
       openPopupFor(memory.id);
+      /* Last, so it wins over anything the reopened popup does with focus. */
+      list.focusItem(memory.id);
     } catch (error) {
       toast.show({ message: UNDO_FAILED_MESSAGE });
       console.error(error);

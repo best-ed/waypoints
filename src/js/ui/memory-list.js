@@ -161,11 +161,26 @@ export function createMemoryList({ listElement, emptyElement, countElement, onSe
     emptyElement.focus();
   }
 
+  /* Called after a delete has already re-rendered the list. The item that slid up into
+     the gap takes focus; if the deleted item was last, the new last one does; if nothing
+     is left, the empty state does. Without this, focus falls to <body> when the popup
+     holding the Delete button is torn down. */
+  function focusAtPosition(index) {
+    if (order.length === 0) {
+      focusEmptyState();
+      return;
+    }
+
+    const safeIndex = Math.max(0, Math.min(index, order.length - 1));
+    focusItem(order[safeIndex]);
+  }
+
   return {
     render,
     setSelected,
     focusItem,
     focusEmptyState,
+    focusAtPosition,
     getOrder: () => [...order],
     count: () => itemsById.size
   };
