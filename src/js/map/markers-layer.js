@@ -1,9 +1,11 @@
+import { createPinIcon } from './pin-icon.js';
+
 export function createMarkersLayer(map) {
   const group = L.layerGroup().addTo(map);
   const markersById = new Map();
 
   function add(memory) {
-    const marker = L.marker([memory.lat, memory.lng]);
+    const marker = L.marker([memory.lat, memory.lng], { icon: createPinIcon() });
     marker.bindTooltip(memory.title);
     marker.addTo(group);
     markersById.set(memory.id, { marker, lat: memory.lat, lng: memory.lng, title: memory.title });
