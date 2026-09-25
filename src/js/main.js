@@ -7,6 +7,7 @@ import { createDraftMarker } from './map/draft-marker.js';
 import { createMarkersLayer } from './map/markers-layer.js';
 import { createMemoryForm } from './ui/memory-form.js';
 import { buildPopupContent } from './ui/popup-content.js';
+import { createToast } from './ui/toast.js';
 import { ValidationError, StorageFullError } from './data/errors.js';
 
 const DEV_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]', '::1'];
@@ -14,6 +15,7 @@ const DEV_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]', '::1'];
 const STORAGE_FULL_MESSAGE =
   'There is no room left in this browser to save another memory. Remove one and try again.';
 const UNEXPECTED_MESSAGE = 'Something went wrong saving this memory. Please try again.';
+const UNDO_FAILED_MESSAGE = 'That memory could not be brought back.';
 
 function isDevHost() {
   return DEV_HOSTNAMES.includes(window.location.hostname);
@@ -29,13 +31,14 @@ function boot() {
   });
 
   const addButton = document.getElementById('add-memory');
+  const toast = createToast({ container: document.getElementById('toast-region') });
 
   const markers = createMarkersLayer(map, {
     renderPopup: (memory) =>
       buildPopupContent(memory, {
         onEdit: () => startEdit(memory.id),
         onMove: () => {},
-        onDelete: () => {}
+        onDelete: () => deleteMemory(memory.id)
       })
   });
 
@@ -85,6 +88,33 @@ function boot() {
        from the saved record rather than left showing the old values behind the modal. */
     markers.getMarker(id).closePopup();
     form.openForEdit(memory, { returnFocus: markerElement(id) });
+  }
+
+  /* The record is captured before the delete so Undo can put back the same memory,
+     id and timestamps included, rather than creating a lookalike. */
+  function deleteMemory(id) {
+    const memory = store.get(id);
+    if (!memory) {
+      return;
+    }
+
+    store.remove(id);
+
+    toast.show({
+      message: 'Deleted "' + memory.title + '"',
+      actionLabel: 'Undo',
+      onAction: () => undoDelete(memory)
+    });
+  }
+
+  function undoDelete(memory) {
+    try {
+      store.restore(memory);
+      openPopupFor(memory.id);
+    } catch (error) {
+      toast.show({ message: UNDO_FAILED_MESSAGE });
+      console.error(error);
+    }
   }
 
   function handleCancel({ mode, memoryId }) {
