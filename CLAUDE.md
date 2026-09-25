@@ -23,7 +23,7 @@ src/css/          stylesheets
 src/js/           ES modules
 src/js/data/      schema, normalization, validation, storage, the memory store
 src/js/map/       everything that touches Leaflet
-src/js/ui/        everything that touches the DOM
+src/js/ui/        everything that touches the DOM, plus selection state
 tests/            node --test files, mirroring the src/js layout
 .githooks/        git hooks (commit-msg attribution stripper)
 ```
@@ -133,6 +133,42 @@ back to a v4 uuid built from `getRandomValues` in insecure contexts such as a LA
   mutation and never after a failed one
 
 Every getter returns copies, so callers cannot mutate stored state by accident.
+
+---
+
+## Selection Flow
+
+The sidebar list and the map never call each other. Both talk to `ui/selection.js`, which
+holds one id and notifies subscribers:
+
+```
+list click  -> selection.select(id) -> list marks it, then main.js flies the map
+marker open -> selection.select(id) -> list marks it and scrolls it into view
+marker close -> selection.clear()   -> list unmarks it
+```
+
+Three details keep this from looping or fighting itself:
+
+- `select` on the already-selected id notifies nobody. A list click opens a popup, which
+  selects the same id again; that second call has to be silent.
+- `popupclose` only clears the selection if the closing popup still owns it. Switching
+  markers closes the old popup *after* the new id is selected, so an unguarded clear
+  would wipe the new selection.
+- The fly-to lives on the list-click path, not in the selection subscriber. Clicking a
+  marker directly should not move the map out from under the user.
+
+`map/` and `ui/` still do not import each other. `main.js` wires them, and passes
+`prefersReducedMotion()` into `focusMarker` rather than letting `map/` read the DOM.
+
+### Focus
+
+Focus is moved deliberately in three places, because the browser would otherwise drop it
+on `<body>`:
+
+- deleting: to the list item that slid into the deleted one's position, or the last item,
+  or the empty state
+- undoing: back to the restored item's list button
+- rendering: a keyed update restores focus to the same button if moving nodes dropped it
 
 ---
 
