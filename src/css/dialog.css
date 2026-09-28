@@ -151,8 +151,7 @@
   cursor: pointer;
 }
 
-.photo-input:disabled + .photo-add,
-.photo-input:disabled ~ .photo-add {
+.photo-input:disabled + .photo-add {
   opacity: 0.5;
   pointer-events: none;
 }
