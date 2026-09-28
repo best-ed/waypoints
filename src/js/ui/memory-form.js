@@ -38,7 +38,7 @@ function isBackdropClick(event, dialog) {
   );
 }
 
-export function createMemoryForm({ document: doc = document, onSubmit, onCancel, now = () => new Date() }) {
+export function createMemoryForm({ document: doc = document, onSubmit, onCancel, photoPicker, now = () => new Date() }) {
   const dialog = doc.getElementById('memory-dialog');
   const form = doc.getElementById('memory-form');
   const coordinatesOutput = doc.getElementById('memory-coordinates');
@@ -129,13 +129,20 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     };
   }
 
-  function open({ mode, coordinates, memory = null, returnFocus = null }) {
+  function setBusy(busy) {
+    saveButton.disabled = busy;
+    cancelButton.disabled = busy;
+  }
+
+  function open({ mode, coordinates, memory = null, returnFocus = null, photos = [] }) {
     session = { mode, coordinates, memoryId: memory ? memory.id : null };
     returnFocusTo = returnFocus;
     closeReason = CANCELLED;
 
     form.reset();
     clearErrors();
+    setBusy(false);
+    photoPicker.reset(photos);
 
     heading.textContent = COPY[mode].heading;
     saveButton.textContent = COPY[mode].submit;
@@ -159,8 +166,22 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     open({ mode: ADD, coordinates, returnFocus });
   }
 
-  function openForEdit(memory, { returnFocus = null } = {}) {
-    open({ mode: EDIT, coordinates: { lat: memory.lat, lng: memory.lng }, memory, returnFocus });
+  function readPhotos() {
+    return {
+      photoIds: photoPicker.getPhotoIds(),
+      pendingRecords: photoPicker.getPendingRecords(),
+      removedExistingIds: photoPicker.getRemovedExistingIds()
+    };
+  }
+
+  function openForEdit(memory, { returnFocus = null, photos = [] } = {}) {
+    open({
+      mode: EDIT,
+      coordinates: { lat: memory.lat, lng: memory.lng },
+      memory,
+      returnFocus,
+      photos
+    });
   }
 
   function close(reason = CANCELLED) {
@@ -170,7 +191,11 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    onSubmit(readValues(), { mode: session.mode, memoryId: session.memoryId });
+    onSubmit(readValues(), {
+      mode: session.mode,
+      memoryId: session.memoryId,
+      photos: readPhotos()
+    });
   });
 
   cancelButton.addEventListener('click', () => close(CANCELLED));
@@ -184,6 +209,10 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
   /* Fires for the close button, Esc, the backdrop and a successful save alike, so the
      draft marker is cleaned up on every path out of the dialog. */
   dialog.addEventListener('close', () => {
+    /* Every path out of the dialog lands here, so the picker's object URLs are released
+       in one place rather than on each of cancel, Esc, backdrop and save. */
+    photoPicker.dispose();
+
     if (closeReason !== SAVED) {
       onCancel({ mode: session.mode, memoryId: session.memoryId });
     }
@@ -199,6 +228,7 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     closeAsSaved: () => close(SAVED),
     showFieldErrors,
     showFormError,
+    setBusy,
     clearErrors,
     isOpen: () => dialog.open
   };

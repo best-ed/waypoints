@@ -15,6 +15,11 @@ import { createMemoryForm } from './ui/memory-form.js';
 import { buildPopupContent } from './ui/popup-content.js';
 import { createToast } from './ui/toast.js';
 import { ValidationError, StorageFullError } from './data/errors.js';
+import { createPhotoRepository } from './photos/photo-repository.js';
+import { createIndexedDbBackend } from './photos/indexeddb-backend.js';
+import { processImage } from './photos/process-image.js';
+import { checkFile } from './photos/photo-rules.js';
+import { createPhotoPicker } from './ui/photo-picker.js';
 
 const DEV_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]', '::1'];
 
@@ -23,6 +28,7 @@ const STORAGE_FULL_MESSAGE =
 const UNEXPECTED_MESSAGE = 'Something went wrong saving this memory. Please try again.';
 const UNDO_FAILED_MESSAGE = 'That memory could not be brought back.';
 const MOVE_FAILED_MESSAGE = 'That pin could not be moved.';
+const PHOTO_LOAD_FAILED_MESSAGE = 'The photos for that memory could not be opened.';
 
 function isDevHost() {
   return DEV_HOSTNAMES.includes(window.location.hostname);
@@ -31,10 +37,43 @@ function isDevHost() {
 function boot() {
   const map = createMap(MAP_CONTAINER_ID);
 
-  const store = createMemoryStore({
-    storage: window.localStorage,
-    now: () => new Date(),
-    makeId: createIdFactory(window.crypto)
+  const makeId = createIdFactory(window.crypto);
+  const now = () => new Date();
+
+  const store = createMemoryStore({ storage: window.localStorage, now, makeId });
+
+  const photos = createPhotoRepository({ backend: createIndexedDbBackend() });
+
+  /* One file failing must not take the rest of the selection down with it, so each is
+     checked and decoded on its own and reported by name. */
+  async function processFiles(files) {
+    const records = [];
+    const errors = [];
+
+    for (const file of files) {
+      const check = checkFile(file);
+      if (!check.ok) {
+        errors.push(file.name + ': ' + check.reason);
+        continue;
+      }
+
+      try {
+        records.push(await processImage(file, { makeId, now }));
+      } catch (error) {
+        errors.push(file.name + ': could not be read');
+        console.error(error);
+      }
+    }
+
+    return { records, errors };
+  }
+
+  const photoPicker = createPhotoPicker({
+    gridElement: document.getElementById('memory-photos'),
+    inputElement: document.getElementById('memory-photo-input'),
+    countElement: document.getElementById('memory-photos-count'),
+    errorElement: document.getElementById('memory-photos-errors'),
+    processFiles
   });
 
   const addButton = document.getElementById('add-memory');
@@ -45,7 +84,12 @@ function boot() {
   const markers = createMarkersLayer(map, {
     renderPopup: (memory) =>
       buildPopupContent(memory, {
-        onEdit: () => startEdit(memory.id),
+        onEdit: () => {
+          startEdit(memory.id).catch((error) => {
+            toast.show({ message: PHOTO_LOAD_FAILED_MESSAGE });
+            console.error(error);
+          });
+        },
         onMove: () => startMove(memory.id),
         onDelete: () => deleteMemory(memory.id)
       }),
@@ -98,6 +142,7 @@ function boot() {
   }
 
   const form = createMemoryForm({
+    photoPicker,
     onSubmit: (values, context) => handleSubmit(values, context),
     onCancel: (context) => handleCancel(context)
   });
@@ -128,7 +173,18 @@ function boot() {
     }
   }
 
-  function startEdit(id) {
+  async function loadPhotos(photoIds) {
+    const loaded = [];
+    for (const photoId of photoIds) {
+      const record = await photos.get(photoId);
+      if (record) {
+        loaded.push(record);
+      }
+    }
+    return loaded;
+  }
+
+  async function startEdit(id) {
     const memory = store.get(id);
     if (!memory) {
       return;
@@ -137,7 +193,9 @@ function boot() {
     /* Closed before the dialog opens so the popup that reopens afterwards is rebuilt
        from the saved record rather than left showing the old values behind the modal. */
     markers.getMarker(id).closePopup();
-    form.openForEdit(memory, { returnFocus: markerElement(id) });
+
+    const existingPhotos = await loadPhotos(memory.photoIds);
+    form.openForEdit(memory, { returnFocus: markerElement(id), photos: existingPhotos });
   }
 
   function startMove(id) {
@@ -215,9 +273,33 @@ function boot() {
     return store.add(values).id;
   }
 
-  function handleSubmit(values, context) {
+  /* Photos are written first because the memory record has to reference ids that already
+     exist. If the memory then fails to save, those blobs are deleted again so a rejected
+     save leaves nothing behind. */
+  async function saveWithPhotos(values, context) {
+    const { photoIds, pendingRecords, removedExistingIds } = context.photos;
+    const written = [];
+
     try {
-      const id = save(values, context);
+      for (const record of pendingRecords) {
+        await photos.put(record);
+        written.push(record.id);
+      }
+
+      const id = save({ ...values, photoIds }, context);
+      await photos.removeMany(removedExistingIds);
+      return id;
+    } catch (error) {
+      await photos.removeMany(written);
+      throw error;
+    }
+  }
+
+  async function handleSubmit(values, context) {
+    form.setBusy(true);
+
+    try {
+      const id = await saveWithPhotos(values, context);
       draftMarker.clear();
       form.closeAsSaved();
       if (context.mode === 'edit') {
@@ -239,6 +321,8 @@ function boot() {
 
       form.showFormError(UNEXPECTED_MESSAGE);
       console.error(error);
+    } finally {
+      form.setBusy(false);
     }
   }
 
