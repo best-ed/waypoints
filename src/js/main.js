@@ -267,7 +267,12 @@ function boot() {
     toast.show({
       message: 'Deleted "' + memory.title + '"',
       actionLabel: 'Undo',
-      onAction: () => undoDelete(memory)
+      onAction: () => undoDelete(memory),
+      /* The blobs outlive the memory record for exactly as long as undo is on offer.
+         Once the toast goes without being used, the delete is final and they go too. */
+      onExpire: () => {
+        photos.removeMany(memory.photoIds).catch((error) => console.error(error));
+      }
     });
   }
 
