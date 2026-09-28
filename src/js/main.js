@@ -21,6 +21,7 @@ import { createPhotoRepository } from './photos/photo-repository.js';
 import { createIndexedDbBackend } from './photos/indexeddb-backend.js';
 import { processImage } from './photos/process-image.js';
 import { checkFile } from './photos/photo-rules.js';
+import { computeOrphans } from './photos/orphans.js';
 import { createPhotoPicker } from './ui/photo-picker.js';
 
 const DEV_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]', '::1'];
@@ -358,6 +359,20 @@ function boot() {
       form.setBusy(false);
     }
   }
+
+  /* Catches blobs whose memory never made it: a tab closed inside the undo window, or a
+     write interrupted between the photo and the memory. Runs once, after boot, so a
+     slow database read never delays the map appearing. */
+  async function sweepOrphanedPhotos() {
+    const storedIds = await photos.listIds();
+    const orphans = computeOrphans(storedIds, store.list());
+
+    if (orphans.length > 0) {
+      await photos.removeMany(orphans);
+    }
+  }
+
+  sweepOrphanedPhotos().catch((error) => console.error(error));
 
   addButton.addEventListener('click', () => {
     placement.toggle();
