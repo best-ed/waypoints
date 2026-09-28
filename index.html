@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="src/css/sidebar.css" />
     <link rel="stylesheet" href="src/css/toast.css" />
     <link rel="stylesheet" href="src/css/dialog.css" />
+    <link rel="stylesheet" href="src/css/lightbox.css" />
   </head>
   <body>
     <header class="app-header">
@@ -133,6 +134,18 @@
           <button id="memory-save" class="button button-primary" type="submit">Save memory</button>
         </div>
       </form>
+    </dialog>
+
+    <dialog id="lightbox" class="lightbox" aria-label="Photo viewer">
+      <img id="lightbox-image" class="lightbox-image" alt="" />
+
+      <p id="lightbox-position" class="lightbox-position" aria-live="polite"></p>
+
+      <div class="lightbox-controls">
+        <button id="lightbox-previous" class="button" type="button">Previous</button>
+        <button id="lightbox-next" class="button" type="button">Next</button>
+        <button id="lightbox-close" class="button" type="button">Close</button>
+      </div>
     </dialog>
 
     <script type="module" src="src/js/main.js"></script>
