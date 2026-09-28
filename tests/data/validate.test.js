@@ -5,6 +5,7 @@ import { isRealCalendarDate, validateMemory } from '../../src/js/data/validate.j
 import { ValidationError } from '../../src/js/data/errors.js';
 import { normalizeMemoryInput } from '../../src/js/data/normalize.js';
 import {
+  MAX_PHOTOS,
   MAX_TAGS,
   NOTE_MAX_LENGTH,
   PLACE_NAME_MAX_LENGTH,
@@ -205,5 +206,50 @@ test('does not coerce empty arrays or booleans into zero', () => {
 
     assert.equal(result.valid, false, 'expected ' + JSON.stringify(value) + ' to be rejected');
     assert.equal(result.errors.lat, 'Latitude must be a number');
+  }
+});
+
+test('accepts photo ids up to the cap', () => {
+  const atLimit = Array.from({ length: MAX_PHOTOS }, (_, index) => 'photo-' + index);
+  assert.equal(validateMemory(validMemory({ photoIds: atLimit })).valid, true);
+});
+
+test('rejects more photo ids than the cap', () => {
+  const overLimit = Array.from({ length: MAX_PHOTOS + 1 }, (_, index) => 'photo-' + index);
+
+  const result = validateMemory(validMemory({ photoIds: overLimit }));
+
+  assert.equal(result.valid, false);
+  assert.match(result.errors.photoIds, /6 photos or fewer/);
+});
+
+test('accepts a memory with no photos', () => {
+  assert.equal(validateMemory(validMemory({ photoIds: [] })).valid, true);
+  assert.equal(validateMemory(validMemory({ photoIds: undefined })).valid, true);
+});
+
+/* Built without going through normalizeMemoryInput, which drops non-string ids on its
+   own. This is the shape restore() validates: a raw record from outside the store. */
+test('rejects photo ids that are not text', () => {
+  const result = validateMemory({ ...validMemory(), photoIds: ['ok', 42] });
+
+  assert.equal(result.valid, false);
+  assert.equal(result.errors.photoIds, 'Photo ids must be text');
+});
+
+test('normalization drops non-string photo ids before validation sees them', () => {
+  const normalized = validMemory({ photoIds: ['keep', 42, null] });
+
+  assert.deepEqual(normalized.photoIds, ['keep']);
+  assert.equal(validateMemory(normalized).valid, true);
+});
+
+test('rejects photo ids that are not a list', () => {
+  for (const value of ['photo-1', 42, {}]) {
+    const memory = { ...validMemory(), photoIds: value };
+    const result = validateMemory(memory);
+
+    assert.equal(result.valid, false);
+    assert.equal(result.errors.photoIds, 'Photo ids must be a list');
   }
 });
