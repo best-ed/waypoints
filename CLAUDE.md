@@ -23,6 +23,7 @@ src/css/          stylesheets
 src/js/           ES modules
 src/js/data/      schema, normalization, validation, storage, the memory store
 src/js/map/       everything that touches Leaflet
+src/js/photos/    photo processing, the repository and its IndexedDB backend
 src/js/ui/        everything that touches the DOM, plus selection state
 tests/            node --test files, mirroring the src/js layout
 .githooks/        git hooks (commit-msg attribution stripper)
@@ -113,7 +114,7 @@ The `version` field exists so the shape can be migrated later without guessing.
   an empty collection. User data is never silently destroyed.
 - A failed write from a full quota is rethrown as `StorageFullError` so the UI can say
   something real.
-- Photos go to IndexedDB, keyed by the ids in `photoIds`. Added later.
+- Photos go to IndexedDB, keyed by the ids in `photoIds`. See **Photos** below.
 
 ### Store
 
@@ -133,6 +134,57 @@ back to a v4 uuid built from `getRandomValues` in insecure contexts such as a LA
   mutation and never after a failed one
 
 Every getter returns copies, so callers cannot mutate stored state by accident.
+
+---
+
+## Photos
+
+Blobs live in IndexedDB; the memory record in `localStorage` only holds their ids.
+
+- Database `waypoints`, version 1, object store `photos`, keyPath `id`
+- Record: `{ id, blob, thumb, width, height, createdAt }` - real Blobs, never base64
+- Max 6 per memory, enforced in `data/schema.js`, in validation, and in the picker
+- Files over 25MB are rejected before decoding; anything that fails to decode (HEIC off
+  Safari, a text file renamed to .jpg) reports per file and leaves the rest attached
+
+Processing: `createImageBitmap` with `imageOrientation: 'from-image'` so EXIF rotation is
+applied, longest edge down to 1600px and never up, JPEG at 0.82, plus a 320px thumbnail
+at 0.7. `OffscreenCanvas` where available, a plain canvas otherwise. The canvas is filled
+white first, because JPEG has no alpha and a transparent PNG would otherwise go black.
+
+`photos/photo-repository.js` takes an injected backend. `indexeddb-backend.js` is the real
+one and maps a `QuotaExceededError` to `StorageFullError`; tests use an in-memory fake.
+`navigator.storage.persist()` is requested once, after the first successful write, and
+only when `navigator.storage` exists - it is missing in insecure contexts.
+
+### Lifecycle
+
+Photos are processed on selection and held in memory. **Nothing is written until save.**
+
+- **Add**: write the blobs, then `store.add` with their ids. If the memory fails to save,
+  delete the blobs just written and report the error as usual.
+- **Edit**: removals and additions apply only on save. Cancel writes nothing, so there is
+  nothing to clean up.
+- **Delete**: the blobs outlive the record for exactly as long as undo is on offer. The
+  toast's `onExpire` fires when it times out or is replaced by a newer delete, and only
+  then are they purged. Undo keeps them.
+- **Startup**: `computeOrphans` compares stored ids against every memory's `photoIds` and
+  deletes what nothing references. This is the backstop for a tab closed inside the undo
+  window or a write interrupted between the blob and the memory.
+
+### Object URLs
+
+Every `URL.createObjectURL` belongs to a pool from `ui/object-urls.js`, and each pool has
+exactly one place that revokes it:
+
+| Pool | Revoked when |
+|------|--------------|
+| form picker | the dialog's `close` event, on every path out |
+| popup strip | `popupclose`, and when the next popup opens |
+| lightbox | the lightbox's `close` event |
+
+Do not revoke an individual URL anywhere else. If a new surface shows blobs, give it its
+own pool and one teardown.
 
 ---
 
