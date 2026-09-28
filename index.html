@@ -110,6 +110,24 @@
           <p id="memory-tags-error" class="field-error" hidden></p>
         </div>
 
+        <div class="field">
+          <span class="field-label" id="memory-photos-label">Photos</span>
+          <p id="memory-photos-count" class="field-hint"></p>
+
+          <ul id="memory-photos" class="photo-grid" aria-labelledby="memory-photos-label"></ul>
+
+          <div id="memory-photos-errors" class="field-error" hidden></div>
+
+          <label class="button photo-add" for="memory-photo-input">Add photos</label>
+          <input
+            id="memory-photo-input"
+            class="photo-input"
+            type="file"
+            accept="image/*"
+            multiple
+          />
+        </div>
+
         <div class="dialog-actions">
           <button id="memory-cancel" class="button" type="button">Cancel</button>
           <button id="memory-save" class="button button-primary" type="submit">Save memory</button>
