@@ -12,7 +12,9 @@ import { createMemoryList } from './ui/memory-list.js';
 import { createSidebarToggle } from './ui/sidebar-toggle.js';
 import { prefersReducedMotion } from './ui/motion.js';
 import { createMemoryForm } from './ui/memory-form.js';
-import { buildPopupContent } from './ui/popup-content.js';
+import { buildPopupContent, findPhotoStrip } from './ui/popup-content.js';
+import { createPopupPhotos } from './ui/popup-photos.js';
+import { createLightbox } from './ui/lightbox.js';
 import { createToast } from './ui/toast.js';
 import { ValidationError, StorageFullError } from './data/errors.js';
 import { createPhotoRepository } from './photos/photo-repository.js';
@@ -80,6 +82,13 @@ function boot() {
   const toast = createToast({ container: document.getElementById('toast-region') });
 
   const selection = createSelection();
+  const lightbox = createLightbox({});
+
+  const popupPhotos = createPopupPhotos({
+    loadPhotos: (ids) => loadPhotos(ids),
+    onOpenLightbox: (records, index, memory, trigger) =>
+      lightbox.open(records, index, memory, trigger)
+  });
 
   const markers = createMarkersLayer(map, {
     renderPopup: (memory) =>
@@ -93,10 +102,14 @@ function boot() {
         onMove: () => startMove(memory.id),
         onDelete: () => deleteMemory(memory.id)
       }),
-    onPopupOpen: (id) => selection.select(id),
+    onPopupOpen: (id) => {
+      selection.select(id);
+      fillPopupPhotos(id);
+    },
     /* Switching markers closes the old popup after the new id is already selected, so
        only the popup that still owns the selection is allowed to clear it. */
     onPopupClose: (id) => {
+      popupPhotos.release();
       if (selection.getSelected() === id) {
         selection.clear();
       }
@@ -171,6 +184,21 @@ function boot() {
     if (marker) {
       marker.openPopup();
     }
+  }
+
+  function fillPopupPhotos(id) {
+    const memory = store.get(id);
+    const marker = markers.getMarker(id);
+    if (!memory || !marker || memory.photoIds.length === 0) {
+      return;
+    }
+
+    const strip = findPhotoStrip(marker.getPopup().getContent());
+    if (!strip) {
+      return;
+    }
+
+    popupPhotos.fill(strip, memory).catch((error) => console.error(error));
   }
 
   async function loadPhotos(photoIds) {
