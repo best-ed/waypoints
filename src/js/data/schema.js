@@ -7,6 +7,8 @@ export const TITLE_MAX_LENGTH = 120;
 export const NOTE_MAX_LENGTH = 5000;
 export const PLACE_NAME_MAX_LENGTH = 200;
 
+export const MAX_PHOTOS = 6;
+
 export const MAX_TAGS = 10;
 export const TAG_MAX_LENGTH = 30;
 

@@ -5,6 +5,7 @@ import {
   LAT_MIN,
   LNG_MAX,
   LNG_MIN,
+  MAX_PHOTOS,
   MAX_TAGS,
   NOTE_MAX_LENGTH,
   PLACE_NAME_MAX_LENGTH,
@@ -93,6 +94,8 @@ export function validateMemory(memory) {
     errors.photoIds = 'Photo ids must be a list';
   } else if (value.photoIds.some((id) => typeof id !== 'string')) {
     errors.photoIds = 'Photo ids must be text';
+  } else if (value.photoIds.length > MAX_PHOTOS) {
+    errors.photoIds = `Use ${MAX_PHOTOS} photos or fewer`;
   }
 
   return { valid: Object.keys(errors).length === 0, errors };
