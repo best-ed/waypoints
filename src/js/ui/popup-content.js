@@ -39,6 +39,16 @@ function buildActions({ onEdit, onMove, onDelete }) {
   return actions;
 }
 
+/* Filled in asynchronously by the caller once the blobs are read, because popup content
+   has to be handed to Leaflet synchronously. */
+function buildPhotoStrip() {
+  return element('ul', 'popup-photos');
+}
+
+export function findPhotoStrip(root) {
+  return root.querySelector('.popup-photos');
+}
+
 export function buildPopupContent(memory, handlers) {
   const root = element('div', 'popup');
 
@@ -52,6 +62,10 @@ export function buildPopupContent(memory, handlers) {
   if (memory.note) {
     /* Line breaks are preserved by white-space in CSS rather than by injecting <br>. */
     root.append(element('p', 'popup-note', memory.note));
+  }
+
+  if (memory.photoIds.length > 0) {
+    root.append(buildPhotoStrip());
   }
 
   if (memory.tags.length > 0) {
