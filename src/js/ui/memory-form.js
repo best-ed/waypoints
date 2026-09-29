@@ -45,6 +45,7 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
   const cancelButton = doc.getElementById('memory-cancel');
   const saveButton = doc.getElementById('memory-save');
   const heading = doc.getElementById('memory-dialog-title');
+  const placeHint = doc.getElementById('memory-place-hint');
   const titleInput = doc.getElementById('memory-title');
   const formError = doc.getElementById('memory-form-error');
 
@@ -129,6 +130,23 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     };
   }
 
+  function showPlaceHint(visible) {
+    placeHint.hidden = !visible;
+  }
+
+  /* Only fills an untouched field. Anything the user has typed wins, even if the
+     lookup finishes afterwards. */
+  function suggestPlaceName(name) {
+    showPlaceHint(false);
+
+    if (!name || form.elements.placeName.value.trim() !== '') {
+      return false;
+    }
+
+    form.elements.placeName.value = name;
+    return true;
+  }
+
   function setBusy(busy) {
     saveButton.disabled = busy;
     cancelButton.disabled = busy;
@@ -141,6 +159,7 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
 
     form.reset();
     clearErrors();
+    showPlaceHint(false);
     setBusy(false);
     photoPicker.reset(photos);
 
@@ -215,6 +234,7 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     /* Every path out of the dialog lands here, so the picker's object URLs are released
        in one place rather than on each of cancel, Esc, backdrop and save. */
     photoPicker.dispose();
+    showPlaceHint(false);
 
     if (closeReason !== SAVED) {
       onCancel({ mode: session.mode, memoryId: session.memoryId });
@@ -232,6 +252,8 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     showFieldErrors,
     showFormError,
     setBusy,
+    showPlaceHint,
+    suggestPlaceName,
     clearErrors,
     isOpen: () => dialog.open
   };

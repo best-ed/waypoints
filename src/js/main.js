@@ -202,12 +202,49 @@ function boot() {
     onCancel: (context) => handleCancel(context)
   });
 
+  let placeLookup = null;
+
+  /* Aborted when the dialog closes, so a lookup for a pin the user has walked away from
+     never lands in the next form. */
+  function cancelPlaceLookup() {
+    if (placeLookup) {
+      placeLookup.abort();
+      placeLookup = null;
+    }
+  }
+
+  async function suggestPlaceName(coordinates) {
+    cancelPlaceLookup();
+
+    const controller = new AbortController();
+    placeLookup = controller;
+    form.showPlaceHint(true);
+
+    try {
+      const name = await places.reverse(coordinates.lat, coordinates.lng, {
+        signal: controller.signal
+      });
+
+      if (!controller.signal.aborted) {
+        form.suggestPlaceName(name);
+      }
+    } catch {
+      /* Silent by design: a suggestion that did not arrive is not worth a message. */
+      form.showPlaceHint(false);
+    } finally {
+      if (placeLookup === controller) {
+        placeLookup = null;
+      }
+    }
+  }
+
   const placement = createPlacementMode({
     map,
     onPlace: (coordinates) => {
       draftMarker.show(coordinates);
       syncButton();
       form.openForAdd(coordinates, { returnFocus: addButton });
+      suggestPlaceName(coordinates);
     },
     onCancel: () => syncButton()
   });
@@ -331,6 +368,8 @@ function boot() {
   }
 
   function handleCancel({ mode, memoryId }) {
+    cancelPlaceLookup();
+
     if (mode === 'edit') {
       /* Edit closed this popup on the way in, so reopening it leaves the screen exactly
          as the user found it. */
@@ -375,6 +414,7 @@ function boot() {
 
     try {
       const id = await saveWithPhotos(values, context);
+      cancelPlaceLookup();
       draftMarker.clear();
       resultMarker.clear();
       form.closeAsSaved();
