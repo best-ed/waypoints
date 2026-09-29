@@ -41,6 +41,37 @@ export function createSearchInput({ inputElement, clearElement, onQueryChange, d
 
   clearElement.addEventListener('click', () => clear());
 
+  inputElement.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && inputElement.value !== '') {
+      /* Stops Escape from also reaching anything else listening for it. */
+      event.stopPropagation();
+      clear();
+    }
+  });
+
+  /* Focuses search from anywhere, unless the user is already typing somewhere or a
+     modal is open, where "/" is just a character. */
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) {
+      return;
+    }
+
+    const target = event.target;
+    const typing =
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement ||
+      (target && target.isContentEditable);
+
+    if (typing || document.querySelector('dialog[open]')) {
+      return;
+    }
+
+    event.preventDefault();
+    inputElement.focus();
+    inputElement.select();
+  });
+
   syncClearButton();
 
   return {

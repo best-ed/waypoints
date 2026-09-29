@@ -25,7 +25,7 @@ function countLabel(shown, total) {
   return total === 1 ? '1 memory' : total + ' memories';
 }
 
-export function createMemoryList({ listElement, emptyElement, countElement, onSelect }) {
+export function createMemoryList({ listElement, emptyElement, countElement, onSelect, onClearSearch }) {
   const itemsById = new Map();
   let order = [];
   let selectedId = null;
@@ -92,7 +92,34 @@ export function createMemoryList({ listElement, emptyElement, countElement, onSe
     }
   }
 
-  function render(memories, { total = memories.length } = {}) {
+  /* Two different empty states: nothing saved yet, and nothing matching the search.
+     The query is user text, so it goes in through textContent like everything else. */
+  function updateEmptyState(shown, total, query) {
+    emptyElement.replaceChildren();
+    emptyElement.hidden = shown > 0;
+
+    if (shown > 0) {
+      return;
+    }
+
+    if (total === 0) {
+      emptyElement.append(element('span', 'empty-message'));
+      emptyElement.firstChild.textContent = EMPTY_MESSAGE;
+      return;
+    }
+
+    const message = element('span', 'empty-message');
+    message.textContent = 'No memories match "' + query + '"';
+    emptyElement.append(message);
+
+    const clear = element('button', 'button empty-clear');
+    clear.type = 'button';
+    clear.textContent = 'Clear search';
+    clear.addEventListener('click', () => onClearSearch());
+    emptyElement.append(clear);
+  }
+
+  function render(memories, { total = memories.length, query = '' } = {}) {
     const ordered = sortForList(memories);
     const liveIds = new Set(ordered.map((memory) => memory.id));
 
@@ -119,6 +146,7 @@ export function createMemoryList({ listElement, emptyElement, countElement, onSe
     }
 
     countElement.textContent = countLabel(ordered.length, total);
+    updateEmptyState(ordered.length, total, query);
     listElement.hidden = ordered.length === 0;
 
     if (previouslyFocused && itemsById.has(previouslyFocused) && document.activeElement !== itemsById.get(previouslyFocused).button) {

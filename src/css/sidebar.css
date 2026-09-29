@@ -150,3 +150,8 @@
   font-size: var(--text-sm);
   cursor: pointer;
 }
+
+.empty-clear {
+  display: block;
+  margin-top: var(--space-3);
+}

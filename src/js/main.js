@@ -127,7 +127,8 @@ function boot() {
     listElement: document.getElementById('memory-list'),
     emptyElement: document.getElementById('memory-empty'),
     countElement: document.getElementById('memory-count'),
-    onSelect: (id) => selectFromList(id)
+    onSelect: (id) => selectFromList(id),
+    onClearSearch: () => search.clear()
   });
 
   const moveMode = createMoveMode({
@@ -163,7 +164,7 @@ function boot() {
     dropSelectionIfHidden(new Set(visible.map((memory) => memory.id)));
 
     markers.sync(visible);
-    list.render(visible, { total: memories.length });
+    list.render(visible, { total: memories.length, query: filters.getFilters().query });
   }
 
   function rerender() {
