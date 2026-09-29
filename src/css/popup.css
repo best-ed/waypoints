@@ -102,3 +102,21 @@
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
+
+.result-popup-title {
+  font-size: var(--text-base);
+  line-height: var(--line-tight);
+  overflow-wrap: anywhere;
+}
+
+.result-popup-detail {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.result-popup-add {
+  margin-top: var(--space-3);
+  width: 100%;
+}

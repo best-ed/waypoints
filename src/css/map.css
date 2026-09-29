@@ -66,3 +66,20 @@
     transition: none;
   }
 }
+
+/* A search result, not a saved memory: hollow and in the muted tone so the difference
+   is obvious at a glance. */
+.pin-result .pin-body {
+  fill: var(--color-surface);
+  stroke: var(--color-text);
+  stroke-width: 2.5;
+}
+
+.pin-result .pin-centre {
+  fill: var(--color-text);
+}
+
+.pin-result:hover .pin-body {
+  fill: var(--color-bg);
+  transform: none;
+}

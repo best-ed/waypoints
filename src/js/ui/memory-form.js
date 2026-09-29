@@ -162,8 +162,11 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     titleInput.focus();
   }
 
-  function openForAdd(coordinates, { returnFocus = null } = {}) {
+  function openForAdd(coordinates, { returnFocus = null, placeName = '' } = {}) {
     open({ mode: ADD, coordinates, returnFocus });
+    if (placeName) {
+      form.elements.placeName.value = placeName;
+    }
   }
 
   function readPhotos() {

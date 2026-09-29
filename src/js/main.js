@@ -7,6 +7,11 @@ import { createDraftMarker } from './map/draft-marker.js';
 import { createMarkersLayer } from './map/markers-layer.js';
 import { createMoveMode } from './map/move-mode.js';
 import { focusMarker } from './map/focus-marker.js';
+import { createPlaceSearchControl } from './map/place-search-control.js';
+import { createResultMarker } from './map/result-marker.js';
+import { createRequestScheduler } from './geo/request-scheduler.js';
+import { createNominatimClient, PlaceSearchError } from './geo/nominatim-client.js';
+import { RequestSupersededError } from './geo/request-scheduler.js';
 import { createSelection } from './ui/selection.js';
 import { createFilterState } from './filters/filter-state.js';
 import { applyFilters } from './filters/apply-filters.js';
@@ -371,6 +376,7 @@ function boot() {
     try {
       const id = await saveWithPhotos(values, context);
       draftMarker.clear();
+      resultMarker.clear();
       form.closeAsSaved();
       if (context.mode === 'edit') {
         openPopupFor(id);
@@ -406,6 +412,56 @@ function boot() {
     if (orphans.length > 0) {
       await photos.removeMany(orphans);
     }
+  }
+
+  const places = createNominatimClient({
+    scheduler: createRequestScheduler({ fetch: (...args) => window.fetch(...args) }),
+    language: navigator.language || 'en'
+  });
+
+  const resultMarker = createResultMarker({
+    map,
+    reducedMotion: prefersReducedMotion,
+    onAddHere: (result) => addMemoryAtResult(result)
+  });
+
+  const placeSearch = createPlaceSearchControl({
+    map,
+    onSearch: (query) => runPlaceSearch(query),
+    onChoose: (result) => resultMarker.show(result),
+    onClear: () => resultMarker.clear()
+  });
+
+  async function runPlaceSearch(query) {
+    resultMarker.clear();
+
+    try {
+      const results = await places.search(query);
+      placeSearch.showResults(results);
+    } catch (error) {
+      /* A superseded request was replaced by a newer one, so its result is no longer
+         wanted and saying anything about it would be noise. */
+      if (error instanceof RequestSupersededError) {
+        return;
+      }
+
+      if (error instanceof PlaceSearchError) {
+        placeSearch.showError(error.message);
+        return;
+      }
+
+      placeSearch.showError('Place search failed. Try again.');
+      console.error(error);
+    }
+  }
+
+  function addMemoryAtResult(result) {
+    placement.disable();
+    syncButton();
+
+    const coordinates = { lat: result.lat, lng: result.lng };
+    draftMarker.show(coordinates);
+    form.openForAdd(coordinates, { returnFocus: addButton, placeName: result.name });
   }
 
   sweepOrphanedPhotos().catch((error) => console.error(error));
