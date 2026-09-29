@@ -15,9 +15,12 @@ function element(tag, className) {
 
 const EMPTY_MESSAGE = 'No memories yet. Click Add memory, then click the map.';
 
-function countLabel(total) {
+function countLabel(shown, total) {
   if (total === 0) {
     return 'None yet';
+  }
+  if (shown < total) {
+    return shown + ' of ' + total;
   }
   return total === 1 ? '1 memory' : total + ' memories';
 }
@@ -89,7 +92,7 @@ export function createMemoryList({ listElement, emptyElement, countElement, onSe
     }
   }
 
-  function render(memories) {
+  function render(memories, { total = memories.length } = {}) {
     const ordered = sortForList(memories);
     const liveIds = new Set(ordered.map((memory) => memory.id));
 
@@ -115,9 +118,7 @@ export function createMemoryList({ listElement, emptyElement, countElement, onSe
       applySelectionTo(item, itemId === selectedId);
     }
 
-    countElement.textContent = countLabel(ordered.length);
-    emptyElement.textContent = EMPTY_MESSAGE;
-    emptyElement.hidden = ordered.length > 0;
+    countElement.textContent = countLabel(ordered.length, total);
     listElement.hidden = ordered.length === 0;
 
     if (previouslyFocused && itemsById.has(previouslyFocused) && document.activeElement !== itemsById.get(previouslyFocused).button) {

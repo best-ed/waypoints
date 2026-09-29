@@ -8,6 +8,9 @@ import { createMarkersLayer } from './map/markers-layer.js';
 import { createMoveMode } from './map/move-mode.js';
 import { focusMarker } from './map/focus-marker.js';
 import { createSelection } from './ui/selection.js';
+import { createFilterState } from './filters/filter-state.js';
+import { applyFilters } from './filters/apply-filters.js';
+import { createSearchInput } from './ui/search-input.js';
 import { createMemoryList } from './ui/memory-list.js';
 import { createSidebarToggle } from './ui/sidebar-toggle.js';
 import { prefersReducedMotion } from './ui/motion.js';
@@ -83,6 +86,7 @@ function boot() {
   const toast = createToast({ container: document.getElementById('toast-region') });
 
   const selection = createSelection();
+  const filters = createFilterState();
   const lightbox = createLightbox({});
 
   const popupPhotos = createPopupPhotos({
@@ -138,12 +142,43 @@ function boot() {
 
   selection.subscribe((id) => list.setSelected(id));
 
-  function renderAll(memories) {
-    markers.sync(memories);
-    list.render(memories);
+  /* A memory hidden by a filter must not stay selected with its popup open on a marker
+     that is about to be removed. */
+  function dropSelectionIfHidden(visibleIds) {
+    const id = selection.getSelected();
+    if (!id || visibleIds.has(id)) {
+      return;
+    }
+
+    const marker = markers.getMarker(id);
+    if (marker) {
+      marker.closePopup();
+    }
+    selection.clear();
   }
 
-  renderAll(store.list());
+  function renderAll(memories) {
+    const visible = applyFilters(memories, filters.getFilters());
+
+    dropSelectionIfHidden(new Set(visible.map((memory) => memory.id)));
+
+    markers.sync(visible);
+    list.render(visible, { total: memories.length });
+  }
+
+  function rerender() {
+    renderAll(store.list());
+  }
+
+  const search = createSearchInput({
+    inputElement: document.getElementById('memory-search'),
+    clearElement: document.getElementById('memory-search-clear'),
+    onQueryChange: (query) => filters.setQuery(query)
+  });
+
+  filters.subscribe(rerender);
+
+  rerender();
   store.subscribe(renderAll);
 
   function selectFromList(id) {
