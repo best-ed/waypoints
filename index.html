@@ -54,6 +54,21 @@
       <aside id="sidebar" class="sidebar" aria-labelledby="sidebar-heading">
         <div class="sidebar-header">
           <h2 id="sidebar-heading" class="sidebar-heading">Memories</h2>
+
+          <div class="search">
+            <label class="visually-hidden" for="memory-search">Search memories</label>
+            <input
+              id="memory-search"
+              class="search-input"
+              type="search"
+              autocomplete="off"
+              placeholder="Search memories"
+            />
+            <button id="memory-search-clear" class="search-clear" type="button" hidden>
+              Clear
+            </button>
+          </div>
+
           <p id="memory-count" class="sidebar-count"></p>
         </div>
 
