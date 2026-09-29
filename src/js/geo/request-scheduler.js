@@ -53,7 +53,9 @@ export function createRequestScheduler({
     }
   }
 
-  async function run(url, { signal } = {}) {
+  /* init carries anything fetch understands - headers above all, since Nominatim wants
+     an Accept-Language. The signal is this scheduler's own and always wins. */
+  async function run(url, { signal, ...init } = {}) {
     supersede();
 
     const controller = new AbortController();
@@ -84,7 +86,7 @@ export function createRequestScheduler({
       }, timeoutMs);
 
       try {
-        return await fetchImpl(url, { signal: controller.signal });
+        return await fetchImpl(url, { ...init, signal: controller.signal });
       } catch (error) {
         throw timedOut ? new RequestTimeoutError() : error;
       } finally {

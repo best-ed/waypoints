@@ -235,3 +235,25 @@ test('reports when the last request started', async () => {
 
   assert.equal(scheduler.lastStartedAt(), clock.now());
 });
+
+test('forwards fetch options such as headers', async () => {
+  const clock = createFakeClock();
+  const seen = [];
+
+  const scheduler = createRequestScheduler({
+    fetch: async (url, options) => {
+      seen.push(options);
+      return { ok: true };
+    },
+    now: clock.now,
+    setTimeout: clock.setTimeout,
+    clearTimeout: clock.clearTimeout
+  });
+
+  const request = scheduler.run('/a', { headers: { 'Accept-Language': 'sw-KE' } });
+  await clock.flush();
+  await request;
+
+  assert.equal(seen[0].headers['Accept-Language'], 'sw-KE');
+  assert.ok(seen[0].signal, 'the scheduler still supplies its own signal');
+});
