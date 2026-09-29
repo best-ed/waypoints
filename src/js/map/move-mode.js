@@ -14,8 +14,12 @@ export function createMoveMode({ onMoved }) {
       return;
     }
 
-    active.marker.dragging.disable();
+    /* Order matters. Disabling a marker mid-drag makes Leaflet finish the drag, which
+       fires dragend. Leaflet happens to detach its own listener first so ours never
+       runs, but that is its internal ordering, not a guarantee. Detaching ours first
+       means an Esc revert wins regardless of what Leaflet does here. */
     active.marker.off('dragend', active.handleDragEnd);
+    active.marker.dragging.disable();
     active.marker.getElement().classList.remove(MOVING_CLASS);
     document.removeEventListener('keydown', handleKeyDown);
     active = null;
