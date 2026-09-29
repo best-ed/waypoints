@@ -23,6 +23,8 @@ src/css/          stylesheets
 src/js/           ES modules
 src/js/data/      schema, normalization, validation, storage, the memory store
 src/js/map/       everything that touches Leaflet
+src/js/filters/   search matching and filter state, pure
+src/js/geo/       Nominatim client, request scheduler and place parsers, pure
 src/js/photos/    photo processing, the repository and its IndexedDB backend
 src/js/ui/        everything that touches the DOM, plus selection state
 tests/            node --test files, mirroring the src/js layout
@@ -221,6 +223,62 @@ on `<body>`:
   or the empty state
 - undoing: back to the restored item's list button
 - rendering: a keyed update restores focus to the same button if moving nodes dropped it
+
+---
+
+## Place Search and Nominatim
+
+We use the public Nominatim instance. It is free and run on donated capacity, and its
+usage policy is a condition of access, not a guideline.
+
+**Non-negotiable:**
+
+- **No autocomplete and no search-as-you-type.** Requests fire on explicit submit only.
+  There is deliberately no `input` listener in `map/place-search-control.js` that starts
+  a request.
+- **At least one second between requests.** Every call, search and reverse alike, goes
+  through the single `geo/request-scheduler.js`. There is one queue and one clock, so a
+  new call site cannot bypass the spacing by accident.
+- **Cache for the session.** Searches by normalized query, reverse lookups by coordinates
+  rounded to 4 decimals. A repeat costs no request.
+- Superseded requests are aborted; anything still running is dropped when a newer one
+  starts. 8 second timeout.
+- `format=jsonv2`, search limit 5, `Accept-Language` from `navigator.language`.
+
+Failures map to messages a person can act on: offline, timeout, rate limited (429),
+server trouble (5xx), or a generic fallback. `PlaceSearchError.kind` carries which.
+
+If this ever needs to scale beyond personal use, the answer is a different provider or a
+self-hosted instance, not a shorter interval.
+
+---
+
+## Untrusted Remote Data
+
+Everything Nominatim returns is untrusted, exactly like text the user typed.
+
+- Place names, display names and addresses go into the DOM through `textContent` only
+- Coordinates are parsed with `Number` and checked with `Number.isFinite` before use;
+  `lat` and `lon` arrive as strings
+- A result missing coordinates or a name is dropped rather than rendered half-formed
+- `shortPlaceName` never returns the whole `display_name`, which is a long chain ending
+  in the country
+
+The parsers in `geo/parse-place.js` are pure and fixture-tested, so a response shape that
+changes is caught there rather than in the UI.
+
+---
+
+## Filters
+
+`filters/` is pure and has no DOM. `filter-state.js` holds what is being filtered on and
+notifies on change; `apply-filters.js` turns that into a list.
+
+Adding a dimension means adding one entry to `PREDICATES` with `isActive` and `matches`.
+`applyFilters` and `isFilterActive` both read from that list, so nothing else changes.
+
+Matching folds diacritics through NFD before comparing, so "Nairobi" and "Nairóbi" find
+each other. Query terms are ANDed and each may match any field.
 
 ---
 
