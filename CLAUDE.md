@@ -277,8 +277,47 @@ notifies on change; `apply-filters.js` turns that into a list.
 Adding a dimension means adding one entry to `PREDICATES` with `isActive` and `matches`.
 `applyFilters` and `isFilterActive` both read from that list, so nothing else changes.
 
-Matching folds diacritics through NFD before comparing, so "Nairobi" and "Nairóbi" find
-each other. Query terms are ANDed and each may match any field.
+### Semantics
+
+| Dimension | Within | Notes |
+|-----------|--------|-------|
+| `query` | AND across terms | each term may match any field |
+| `tags` | **ANY** | one selected tag on the memory is enough |
+| `from` / `to` | inclusive both ends | either end optional |
+
+Across dimensions it is always AND. Tags being ANY is what makes the chips read as a
+union: selecting `trail` and `food` widens the result, it does not narrow it.
+
+Matching folds diacritics through NFD, so "Nairobi" and "Nairóbi" find each other.
+
+Dates are compared as `YYYY-MM-DD` strings. **Never build a `Date` to compare them** -
+`new Date("2025-03-04")` is midnight UTC, which is the previous day for anyone behind UTC.
+Where a number is genuinely needed, `toDayNumber` builds it from the parts through
+`Date.UTC` and `fromDayNumber` reads it back in UTC.
+
+### Faceted counts
+
+`tagCounts(memories, filters)` counts over the memories matching every filter **except
+the tag filter itself**, via `applyFilters(..., { except: 'tags' })`. A chip's number
+therefore means "this many if you select me", not "this many of what is already showing".
+
+`timelineBuckets` does the same with `{ except: 'dates' }`, so dragging a range handle
+inwards does not shrink the histogram underneath it.
+
+Selected tags are pruned in `renderAll` whenever the memories change: a tag nobody carries
+has no chip, so it could never be switched off by hand.
+
+### URL
+
+Filters live in the query string: `q`, `tags` (comma-joined), `from`, `to`. Empty values
+are omitted, so an unfiltered view has no query string at all.
+
+- Written with `history.replaceState`. Filtering is not navigation, and a history entry
+  per keystroke would bury the page the user arrived from.
+- Restored **before the first render**, so the unfiltered set never flashes on screen.
+- `parseFilters` sanitizes: a date that is not a real calendar day is dropped, and an
+  inverted range is swapped rather than silently matching nothing. A URL can be edited,
+  shared or half-remembered, so nothing in it is trusted.
 
 ---
 
