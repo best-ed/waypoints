@@ -244,3 +244,98 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+.timeline {
+  margin-top: var(--space-3);
+}
+
+.timeline-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline-bar {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.timeline-bar-fill {
+  width: 100%;
+  background-color: var(--color-border);
+  border-radius: 1px 1px 0 0;
+}
+
+.timeline-bar.is-in-range .timeline-bar-fill {
+  background-color: var(--color-accent);
+}
+
+/* The two handles sit on the same track, so the second is lifted onto the first and
+   only its thumb takes pointer events. */
+.timeline-handles {
+  position: relative;
+  height: 1.5rem;
+}
+
+.timeline-handle {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  margin: 0;
+  background: none;
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.timeline-handle::-webkit-slider-thumb {
+  pointer-events: auto;
+  -webkit-appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--color-surface);
+  border-radius: 50%;
+  background-color: var(--color-accent);
+  cursor: grab;
+}
+
+.timeline-handle::-moz-range-thumb {
+  pointer-events: auto;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--color-surface);
+  border-radius: 50%;
+  background-color: var(--color-accent);
+  cursor: grab;
+}
+
+.timeline-handle::-webkit-slider-runnable-track {
+  height: 2px;
+  background-color: var(--color-border);
+}
+
+.timeline-handle::-moz-range-track {
+  height: 2px;
+  background-color: var(--color-border);
+}
+
+.timeline-handle:focus-visible {
+  outline: none;
+}
+
+.timeline-handle:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.timeline-handle:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
