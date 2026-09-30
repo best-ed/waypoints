@@ -74,8 +74,17 @@ export function createSearchInput({ inputElement, clearElement, onQueryChange, d
 
   syncClearButton();
 
+  /* Used when filters arrive from the URL: the box has to show them without firing a
+     change back at the state that just set them. */
+  function setValue(value) {
+    inputElement.value = value ?? '';
+    cancelPending();
+    syncClearButton();
+  }
+
   return {
     clear,
+    setValue,
     focus: () => inputElement.focus(),
     getValue: () => inputElement.value,
     isFocused: () => document.activeElement === inputElement

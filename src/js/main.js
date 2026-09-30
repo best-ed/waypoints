@@ -15,6 +15,7 @@ import { RequestSupersededError } from './geo/request-scheduler.js';
 import { createSelection } from './ui/selection.js';
 import { createFilterState } from './filters/filter-state.js';
 import { applyFilters } from './filters/apply-filters.js';
+import { serializeFilters, parseFilters } from './filters/filter-url.js';
 import { createSearchInput } from './ui/search-input.js';
 import { createTagBar } from './ui/tag-bar.js';
 import { createDateRange } from './ui/date-range.js';
@@ -234,7 +235,27 @@ function boot() {
     }
   });
 
-  filters.subscribe(rerender);
+  /* replaceState, not pushState: filtering is not navigation, and a history entry per
+     keystroke would bury whatever page the user arrived from. */
+  function writeFiltersToUrl(current) {
+    const params = serializeFilters(current).toString();
+    const url = window.location.pathname + (params === '' ? '' : '?' + params);
+
+    window.history.replaceState(null, '', url);
+  }
+
+  filters.subscribe((current) => {
+    writeFiltersToUrl(current);
+    rerender();
+  });
+
+  /* Restored before the first render, so the map and list never flash the unfiltered
+     set on the way to the filtered one. */
+  const fromUrl = parseFilters(window.location.search);
+  filters.setQuery(fromUrl.query);
+  filters.setTags(fromUrl.tags);
+  filters.setDateRange({ from: fromUrl.from, to: fromUrl.to });
+  search.setValue(fromUrl.query);
 
   rerender();
   store.subscribe(renderAll);
