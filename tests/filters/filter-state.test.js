@@ -23,7 +23,7 @@ function memory(id, overrides = {}) {
 
 test('starts with an empty query', () => {
   const { filters } = setup();
-  assert.deepEqual(filters.getFilters(), { query: '' });
+  assert.deepEqual(filters.getFilters(), { query: '', tags: [], from: null, to: null });
   assert.equal(filters.isActive(), false);
 });
 
@@ -47,7 +47,7 @@ test('clears back to empty', () => {
   filters.setQuery('sunset');
   filters.clear();
 
-  assert.deepEqual(filters.getFilters(), { query: '' });
+  assert.deepEqual(filters.getFilters(), { query: '', tags: [], from: null, to: null });
   assert.equal(filters.isActive(), false);
 });
 
