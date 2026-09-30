@@ -70,7 +70,35 @@
             </button>
           </div>
 
+          <div id="tag-bar" class="tag-bar" hidden>
+            <ul id="tag-list" class="tag-list" aria-label="Filter by tag"></ul>
+            <button id="tag-toggle" class="tag-toggle" type="button" hidden></button>
+          </div>
+
+          <div id="date-range" class="date-range" hidden>
+            <div class="date-field">
+              <label class="date-label" for="filter-from">From</label>
+              <input id="filter-from" class="date-input" type="date" />
+            </div>
+            <div class="date-field">
+              <label class="date-label" for="filter-to">To</label>
+              <input id="filter-to" class="date-input" type="date" />
+            </div>
+          </div>
+
+          <div id="timeline" class="timeline" hidden>
+            <ul id="timeline-bars" class="timeline-bars" aria-hidden="true"></ul>
+            <div class="timeline-handles">
+              <input id="timeline-start" class="timeline-handle" type="range" aria-label="Start date" />
+              <input id="timeline-end" class="timeline-handle" type="range" aria-label="End date" />
+            </div>
+          </div>
+
           <p id="memory-count" class="sidebar-count"></p>
+
+          <button id="filter-reset" class="filter-reset" type="button" hidden>
+            Reset filters
+          </button>
         </div>
 
         <p id="memory-empty" class="sidebar-empty" tabindex="-1" hidden></p>

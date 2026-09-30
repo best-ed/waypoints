@@ -155,3 +155,92 @@
   display: block;
   margin-top: var(--space-3);
 }
+
+.tag-bar {
+  margin-top: var(--space-3);
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background-color: var(--color-bg);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.tag-chip:hover {
+  border-color: var(--color-text-muted);
+}
+
+.tag-chip[aria-pressed='true'] {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.tag-chip-count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+.tag-toggle {
+  margin-top: var(--space-2);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.date-range {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.date-field {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.date-label {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.date-input {
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg);
+  font-size: var(--text-sm);
+}
+
+.filter-reset {
+  margin-top: var(--space-2);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  text-decoration: underline;
+  cursor: pointer;
+}
