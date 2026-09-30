@@ -1,6 +1,6 @@
 import { matchesQuery } from './match-memory.js';
 
-export const EMPTY_FILTERS = Object.freeze({ query: '' });
+export const EMPTY_FILTERS = Object.freeze({ query: '', tags: [], from: null, to: null });
 
 /* One predicate per filter dimension. Day 8's tags and date range become two more
    entries here and nothing else has to change: applyFilters already requires all of
