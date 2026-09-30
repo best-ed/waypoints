@@ -14,11 +14,19 @@ function element(tag, className, text) {
   return node;
 }
 
-function buildTagList(tags) {
+function buildTagList(tags, onToggleTag) {
   const list = element('ul', 'popup-tags');
+
   for (const tag of tags) {
-    list.append(element('li', 'popup-tag', tag));
+    const item = element('li');
+    const button = element('button', 'popup-tag', tag);
+    button.type = 'button';
+    button.setAttribute('aria-label', 'Filter by tag ' + tag);
+    button.addEventListener('click', () => onToggleTag(tag));
+    item.append(button);
+    list.append(item);
   }
+
   return list;
 }
 
@@ -69,7 +77,7 @@ export function buildPopupContent(memory, handlers) {
   }
 
   if (memory.tags.length > 0) {
-    root.append(buildTagList(memory.tags));
+    root.append(buildTagList(memory.tags, handlers.onToggleTag));
   }
 
   root.append(buildActions(handlers));

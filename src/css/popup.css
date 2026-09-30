@@ -45,6 +45,12 @@
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.popup-tag:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .popup-actions {
