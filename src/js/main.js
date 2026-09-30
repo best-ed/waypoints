@@ -16,6 +16,12 @@ import { createSelection } from './ui/selection.js';
 import { createFilterState } from './filters/filter-state.js';
 import { applyFilters } from './filters/apply-filters.js';
 import { createSearchInput } from './ui/search-input.js';
+import { createTagBar } from './ui/tag-bar.js';
+import { createDateRange } from './ui/date-range.js';
+import { createTimelineView } from './ui/timeline-view.js';
+import { createFilterSummary } from './ui/filter-summary.js';
+import { tagCounts, allTags } from './filters/tag-counts.js';
+import { timelineBuckets, distinctDateCount } from './filters/timeline.js';
 import { createMemoryList } from './ui/memory-list.js';
 import { createSidebarToggle } from './ui/sidebar-toggle.js';
 import { prefersReducedMotion } from './ui/motion.js';
@@ -110,7 +116,8 @@ function boot() {
           });
         },
         onMove: () => startMove(memory.id),
-        onDelete: () => deleteMemory(memory.id)
+        onDelete: () => deleteMemory(memory.id),
+        onToggleTag: (tag) => filters.toggleTag(tag)
       }),
     onPopupOpen: (id) => {
       selection.select(id);
@@ -133,7 +140,10 @@ function boot() {
     emptyElement: document.getElementById('memory-empty'),
     countElement: document.getElementById('memory-count'),
     onSelect: (id) => selectFromList(id),
-    onClearSearch: () => search.clear()
+    onClearSearch: () => {
+      search.clear({ focus: false });
+      filters.clear();
+    }
   });
 
   const moveMode = createMoveMode({
@@ -164,12 +174,22 @@ function boot() {
   }
 
   function renderAll(memories) {
-    const visible = applyFilters(memories, filters.getFilters());
+    /* Pruned before anything reads the filters, so a tag whose last memory just went
+       does not keep narrowing the list from a chip that no longer exists. */
+    filters.pruneTags(allTags(memories));
+
+    const current = filters.getFilters();
+    const visible = applyFilters(memories, current);
 
     dropSelectionIfHidden(new Set(visible.map((memory) => memory.id)));
 
     markers.sync(visible);
-    list.render(visible, { total: memories.length, query: filters.getFilters().query });
+    list.render(visible, { total: memories.length, query: current.query, filters: current });
+
+    tagBar.render(tagCounts(memories, current), current.tags);
+    dateRange.render(current, { visible: memories.length > 0 });
+    timeline.render(timelineBuckets(memories, current), current, distinctDateCount(memories));
+    summary.render(visible.length, memories.length, current);
   }
 
   function rerender() {
@@ -180,6 +200,38 @@ function boot() {
     inputElement: document.getElementById('memory-search'),
     clearElement: document.getElementById('memory-search-clear'),
     onQueryChange: (query) => filters.setQuery(query)
+  });
+
+  const tagBar = createTagBar({
+    container: document.getElementById('tag-bar'),
+    listElement: document.getElementById('tag-list'),
+    toggleElement: document.getElementById('tag-toggle'),
+    onToggleTag: (tag) => filters.toggleTag(tag),
+    onRequestRender: () => rerender()
+  });
+
+  const dateRange = createDateRange({
+    container: document.getElementById('date-range'),
+    fromElement: document.getElementById('filter-from'),
+    toElement: document.getElementById('filter-to'),
+    onChange: (range) => filters.setDateRange(range)
+  });
+
+  const timeline = createTimelineView({
+    container: document.getElementById('timeline'),
+    barsElement: document.getElementById('timeline-bars'),
+    startElement: document.getElementById('timeline-start'),
+    endElement: document.getElementById('timeline-end'),
+    onChange: (range) => filters.setDateRange(range)
+  });
+
+  const summary = createFilterSummary({
+    summaryElement: document.getElementById('memory-count'),
+    resetElement: document.getElementById('filter-reset'),
+    onReset: () => {
+      search.clear({ focus: false });
+      filters.clear();
+    }
   });
 
   filters.subscribe(rerender);

@@ -15,6 +15,23 @@ function element(tag, className) {
 
 const EMPTY_MESSAGE = 'No memories yet. Click Add memory, then click the map.';
 
+function describeNoMatch(filters) {
+  const reasons = [];
+
+  if (filters?.tags?.length > 0) {
+    reasons.push(filters.tags.length === 1 ? 'that tag' : 'those tags');
+  }
+  if (filters?.from || filters?.to) {
+    reasons.push('that date range');
+  }
+
+  if (reasons.length === 0) {
+    return 'No memories match the current filters';
+  }
+
+  return 'No memories match ' + reasons.join(' and ');
+}
+
 function countLabel(shown, total) {
   if (total === 0) {
     return 'None yet';
@@ -94,7 +111,7 @@ export function createMemoryList({ listElement, emptyElement, countElement, onSe
 
   /* Two different empty states: nothing saved yet, and nothing matching the search.
      The query is user text, so it goes in through textContent like everything else. */
-  function updateEmptyState(shown, total, query) {
+  function updateEmptyState(shown, total, query, filters) {
     emptyElement.replaceChildren();
     emptyElement.hidden = shown > 0;
 
@@ -109,17 +126,22 @@ export function createMemoryList({ listElement, emptyElement, countElement, onSe
     }
 
     const message = element('span', 'empty-message');
-    message.textContent = 'No memories match "' + query + '"';
+    /* The cause is not always the text box, so the message says which filters are in
+       play rather than quoting an empty query back at the user. */
+    message.textContent =
+      query.trim() === ''
+        ? describeNoMatch(filters)
+        : 'No memories match "' + query + '"';
     emptyElement.append(message);
 
     const clear = element('button', 'button empty-clear');
     clear.type = 'button';
-    clear.textContent = 'Clear search';
+    clear.textContent = 'Clear filters';
     clear.addEventListener('click', () => onClearSearch());
     emptyElement.append(clear);
   }
 
-  function render(memories, { total = memories.length, query = '' } = {}) {
+  function render(memories, { total = memories.length, query = '', filters = null } = {}) {
     const ordered = sortForList(memories);
     const liveIds = new Set(ordered.map((memory) => memory.id));
 
@@ -146,7 +168,7 @@ export function createMemoryList({ listElement, emptyElement, countElement, onSe
     }
 
     countElement.textContent = countLabel(ordered.length, total);
-    updateEmptyState(ordered.length, total, query);
+    updateEmptyState(ordered.length, total, query, filters);
     listElement.hidden = ordered.length === 0;
 
     if (previouslyFocused && itemsById.has(previouslyFocused) && document.activeElement !== itemsById.get(previouslyFocused).button) {
