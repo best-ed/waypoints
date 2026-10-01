@@ -1,0 +1,17 @@
+/* The polyline's stroke lives here rather than in the Leaflet options so the colours stay
+   with the rest of the tokens. CSS beats the presentation attributes Leaflet writes. */
+.journey-segment {
+  fill: none;
+  stroke: var(--color-journey);
+  stroke-width: var(--journey-line-width);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Ahead of the playback position: thinner, paler and dashed, so the stretch already
+   travelled reads as solid progress. */
+.journey-segment.is-pending {
+  stroke: var(--color-journey-muted);
+  stroke-width: var(--journey-line-width-pending);
+  stroke-dasharray: 6 5;
+}

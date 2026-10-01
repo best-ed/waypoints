@@ -7,6 +7,12 @@
   --color-accent: #c2410c;
   --color-accent-contrast: #ffffff;
 
+  /* A journey line has to read against both the orange pins and the OSM tiles, so it
+     takes a hue neither of them uses. */
+  --color-journey: #0f766e;
+  --color-journey-muted: #9ebfbb;
+  --color-journey-contrast: #ffffff;
+
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -30,6 +36,9 @@
 
   /* Leaflet's own panes and controls sit between 400 and 1000, so app chrome starts above that. */
   --sidebar-width: 20rem;
+
+  --journey-line-width: 3px;
+  --journey-line-width-pending: 2px;
 
   --z-map: 1;
   --z-header: 1100;
