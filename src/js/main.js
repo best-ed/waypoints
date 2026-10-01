@@ -23,6 +23,13 @@ import { createTimelineView } from './ui/timeline-view.js';
 import { createFilterSummary } from './ui/filter-summary.js';
 import { tagCounts, allTags } from './filters/tag-counts.js';
 import { timelineBuckets, distinctDateCount } from './filters/timeline.js';
+import { journeyOrder } from './journey/journey-order.js';
+import { journeySummary } from './journey/journey-summary.js';
+import { createPlayback, IDLE } from './journey/playback.js';
+import { createJourneyPath } from './map/journey-path.js';
+import { createJourneyChevrons } from './map/journey-chevrons.js';
+import { createJourneyPanel } from './ui/journey-panel.js';
+import { createJourneyControls } from './ui/journey-controls.js';
 import { createMemoryList } from './ui/memory-list.js';
 import { createSidebarToggle } from './ui/sidebar-toggle.js';
 import { prefersReducedMotion } from './ui/motion.js';
@@ -191,6 +198,9 @@ function boot() {
     dateRange.render(current, { visible: memories.length > 0 });
     timeline.render(timelineBuckets(memories, current), current, distinctDateCount(memories));
     summary.render(visible.length, memories.length, current);
+
+    /* After markers.sync, so every stop already has a marker to number and fly to. */
+    renderJourney(visible);
   }
 
   function rerender() {
@@ -234,6 +244,126 @@ function boot() {
       filters.clear();
     }
   });
+
+  const journeyPath = createJourneyPath(map);
+  const journeyChevrons = createJourneyChevrons(map);
+
+  const playback = createPlayback({
+    setTimeout: (callback, delay) => window.setTimeout(callback, delay),
+    clearTimeout: (handle) => window.clearTimeout(handle)
+  });
+
+  let journeyActive = false;
+  let journeyStops = [];
+
+  const journeyPanel = createJourneyPanel({
+    toggleElement: document.getElementById('journey-toggle'),
+    hintElement: document.getElementById('journey-hint'),
+    summaryElement: document.getElementById('journey-summary'),
+    onToggle: () => toggleJourney()
+  });
+
+  const journeyControls = createJourneyControls({
+    container: document.getElementById('journey-controls'),
+    playElement: document.getElementById('journey-play'),
+    previousElement: document.getElementById('journey-previous'),
+    nextElement: document.getElementById('journey-next'),
+    progressElement: document.getElementById('journey-progress'),
+    onToggle: () => playback.toggle(),
+    onPrevious: () => playback.prev(),
+    onNext: () => playback.next()
+  });
+
+  function visibleNow() {
+    return applyFilters(store.list(), filters.getFilters());
+  }
+
+  function currentStopId() {
+    const stop = journeyStops[playback.getState().index];
+    return stop ? stop.id : null;
+  }
+
+  /* Idle means there is no position in the journey yet, so nothing is behind the playhead and
+     the whole path stays at full strength. */
+  function highlightProgress({ status, index }) {
+    const activeIndex = status === IDLE ? null : index;
+    journeyPath.setProgress(activeIndex);
+    journeyChevrons.setProgress(activeIndex);
+  }
+
+  function renderJourney(visible) {
+    journeyStops = journeyActive ? journeyOrder(visible) : [];
+
+    if (journeyActive) {
+      journeyPath.render(journeyStops);
+      journeyChevrons.render(journeyStops);
+      markers.setJourney(journeyStops.map((memory) => memory.id));
+      playback.setCount(journeyStops.length);
+      highlightProgress(playback.getState());
+    }
+
+    journeyPanel.render({ summary: journeySummary(visible), isActive: journeyActive });
+    journeyControls.render(playback.getState(), { isActive: journeyActive });
+  }
+
+  /* One step of playback: select it so the sidebar follows, then focusMarker moves the map
+     and opens the popup. Selecting first is what stops the outgoing popup's close from
+     clearing the incoming selection. */
+  function showStop(index) {
+    const stop = journeyStops[index];
+    if (!stop) {
+      return;
+    }
+
+    const marker = markers.getMarker(stop.id);
+    if (!marker) {
+      return;
+    }
+
+    selection.select(stop.id);
+    focusMarker(map, marker, { reducedMotion: prefersReducedMotion() });
+  }
+
+  playback.subscribe((state) => {
+    journeyControls.render(state, { isActive: journeyActive });
+    highlightProgress(state);
+
+    /* Idle is a reset rather than a position, so it must not drag the map anywhere. */
+    if (!journeyActive || state.status === IDLE || state.count === 0) {
+      return;
+    }
+
+    showStop(state.index);
+  });
+
+  function enterJourney() {
+    journeyActive = true;
+    renderJourney(visibleNow());
+    playback.reset();
+    journeyPath.fit(journeyStops, { reducedMotion: prefersReducedMotion() });
+  }
+
+  /* Everything journey mode added comes back off, and reset clears the dwell timer through
+     the playback machine's single clear site. */
+  function exitJourney() {
+    journeyActive = false;
+    playback.reset();
+    playback.setCount(0);
+    journeyPath.clear();
+    journeyChevrons.clear();
+    markers.setJourney(null);
+    journeyStops = [];
+    renderJourney(visibleNow());
+    journeyPanel.focus();
+  }
+
+  function toggleJourney() {
+    if (journeyActive) {
+      exitJourney();
+      return;
+    }
+    enterJourney();
+  }
 
   /* replaceState, not pushState: filtering is not navigation, and a history entry per
      keystroke would bury whatever page the user arrived from. */
