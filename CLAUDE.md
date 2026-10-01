@@ -24,6 +24,7 @@ src/js/           ES modules
 src/js/data/      schema, normalization, validation, storage, the memory store
 src/js/map/       everything that touches Leaflet
 src/js/filters/   search matching and filter state, pure
+src/js/journey/   chronological ordering, geometry and the playback machine, pure
 src/js/geo/       Nominatim client, request scheduler and place parsers, pure
 src/js/photos/    photo processing, the repository and its IndexedDB backend
 src/js/ui/        everything that touches the DOM, plus selection state
@@ -307,6 +308,15 @@ inwards does not shrink the histogram underneath it.
 Selected tags are pruned in `renderAll` whenever the memories change: a tag nobody carries
 has no chip, so it could never be switched off by hand.
 
+### Announcing the timeline
+
+Both range handles carry `aria-valuetext` with the formatted date, which is correct and which
+Firefox honours. **Chromium ignores it on a native `<input type="range">`** and announces the raw
+day number regardless - a bare input with `aria-valuetext="forty two"` still reads as "42", so
+this is not something our markup can fix. The dates therefore also go into a visually hidden
+`aria-live` region that both handles point at with `aria-describedby`, which does reach the
+accessibility tree on every engine and re-announces as the handles move.
+
 ### URL
 
 Filters live in the query string: `q`, `tags` (comma-joined), `from`, `to`. Empty values
@@ -321,6 +331,77 @@ are omitted, so an unfiltered view has no query string at all.
 
 ---
 
+## Journey Mode
+
+Connects the visible memories chronologically and plays them back. `journey/` is pure - no DOM,
+no Leaflet - so the ordering, the geometry and the state machine are all unit tested.
+
+- `journeyOrder` sorts by date then `createdAt`, ascending: the opposite of the sidebar, which
+  reads newest first. Memories without usable coordinates are dropped.
+- `journeySegments` pairs consecutive stops and **drops a pair pinned at the same spot**. A
+  zero-length polyline renders as a stray dot and would still collect a chevron. Segment indices
+  stay those of the ordered list, so a dropped segment never renumbers the steps.
+- Distance is haversine against the mean Earth radius, within about 0.3% of the geodesic, which
+  is well inside what a summary line needs.
+
+### Drawing
+
+Anything over 300km is interpolated along the great circle, one point per 200km up to a cap of
+64. Interpolating lat and lng separately would draw a straight line in the projection, which over
+thousands of kilometres is visibly not the path anything takes.
+
+Longitudes are then **unwrapped**: each point is shifted by whole turns until it is within 180
+degrees of the one before. Leaflet draws exactly the longitudes it is given, so a path crossing
+the antimeridian continues past it - Honolulu to Nairobi ends at -323, not -157. Without this it
+is drawn the long way back across Asia and Africa.
+
+One polyline per segment, so playback can restyle the part already travelled without redrawing
+the rest. Colours and widths are tokens; Leaflet writes stroke as a presentation attribute, which
+CSS overrides.
+
+Direction chevrons sit at the midpoint of each drawn path, rotated by the angle between
+**projected screen points** rather than a geographic bearing - Mercator stretches north-south as
+latitude rises, so a true bearing would sit visibly off the line. `latLngToLayerPoint` rounds to
+whole pixels, so a short bracket can collapse onto one pixel when zoomed out; the fallback widens
+to the segment's own endpoints, and the angles are recomputed on `zoomend`. Chevrons are
+`aria-hidden`, non-interactive and out of the tab order: the order is already carried by the
+numbered pins and the progress readout.
+
+Note when verifying by hand that Leaflet simplifies a polyline at low zoom and clips it to the
+padded viewport, so a drawn path is not always the full point list it was given.
+
+### Playback
+
+A state machine over `idle`, `playing`, `paused` and `finished`, holding an index, with
+`setTimeout` and `clearTimeout` injected so tests drive the 3500ms dwell with a fake clock.
+
+`prev` at the first stop and `next` at the last are **silent** no-ops - no state change and no
+notification, so a held arrow key cannot spam the live region. Reaching the last stop while
+playing ends in `finished`, and playing again from there restarts at 0.
+
+**No timer outlives the state that started it**, and this is structural rather than remembered:
+every transition goes through one `moveTo`, which clears any pending dwell before doing anything
+else, and the single `setTimeout` call site is reached only when the new status is `playing`. A
+test fuzzes 400 orderings of the controls and asserts at most one timer is ever outstanding.
+Exiting journey mode calls `reset`, which is one such transition.
+
+Each step selects the memory - so the sidebar follows - then flies to it and opens its popup.
+Selecting *before* opening is what stops the outgoing popup's close from clearing the incoming
+selection, the same ordering the selection flow above depends on.
+
+Playback yields to the user: a map `dragstart`, a click on a different marker or list item, or
+opening the edit dialog all pause it. A filter change rebuilds the journey and resets to idle,
+since the old index may not even be in the new one. Escape exits, from a **capture-phase**
+listener: placement and move mode attach their own Escape handlers to `document` while active, and
+this one needs the first look so it can stand aside, rather than also exiting after one of them
+has already cancelled itself.
+
+The toggle and the step buttons use `aria-disabled`, not the `disabled` attribute. A disabled
+button leaves the tab order, which would put the explanation of why it is unavailable out of
+reach, and would drop focus when stepping to the last stop disables the button just pressed.
+
+---
+
 ## Rendering User Text
 
 **Non-negotiable. User-supplied text is never inserted as HTML.**
@@ -331,10 +412,23 @@ are omitted, so an unfiltered view has no query string at all.
 - Leaflet popups are given an `HTMLElement`, never a string
 - Preserve a note's line breaks with `white-space: pre-wrap` in CSS, never by injecting
   `<br>`
-- The one markup string in the codebase is the pin SVG in `map/pin-icon.js`, which
-  `L.divIcon` requires. It is a static literal with no user data in it.
+- There are no markup strings left in `src/`. `map/pin-icon.js` builds its pin with
+  `createElementNS` and hands `L.divIcon` an `Element`, which Leaflet 1.9 accepts, so even
+  a journey step number goes in through `textContent`.
 
 A memory titled `<img src=x onerror=alert(1)>` must render as those literal characters.
+
+---
+
+## Hiding Things
+
+`[hidden]` is set to `display: none !important` in `base.css`. The user agent's own `[hidden]`
+rule has the same specificity as a class, so any component rule setting `display` beats it and
+the element stays on screen while marked hidden. `.date-range` and `.journey-controls` are both
+flex containers toggled by the attribute, and both were visible until this was added.
+
+Use `hidden` for something that comes and goes, and `.visually-hidden` for something that should
+reach a screen reader but not the screen.
 
 ---
 
@@ -365,5 +459,14 @@ the earlier deletion simply stands; there is no undo stack. The toast region is
 - Stage only the files belonging to that change. Commit as you go, don't batch at the end.
 - Do not push until I say so.
 
-The `commit-msg` hook in `.githooks/` enforces the attribution rule mechanically, but the
-rule stands on its own. Run `git config core.hooksPath .githooks` after cloning.
+Two hooks in `.githooks/` enforce this mechanically, though the rules stand on their own. Run
+`git config core.hooksPath .githooks` after cloning, or neither of them runs.
+
+- `commit-msg` strips any attribution trailer.
+- `pre-commit` runs the full suite and blocks the commit if anything fails. It calls `node`
+  directly rather than going through npm, which mangles the quoted glob under Git for Windows
+  sh. It tests the **working tree, not the staged snapshot**: catching a red suite is worth far
+  more than the stash dance an exact staged test would need, and a stash interrupted mid-commit
+  loses work.
+
+Do not reach for `--no-verify`.
