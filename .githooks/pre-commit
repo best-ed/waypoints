@@ -1,0 +1,16 @@
+#!/bin/sh
+# Blocks a commit whose test suite does not pass. Day 8 landed a02e4d2 red because the
+# suite was only run afterwards; this makes that impossible rather than discouraged.
+#
+# node is called directly instead of through npm: npm adds a shell layer that mangles the
+# quoted glob under Git for Windows sh, and its own exit code is less predictable.
+# The glob stays quoted so node expands it, not the shell.
+
+if ! node --test --test-timeout=10000 "tests/**/*.test.js"; then
+    echo ""
+    echo "pre-commit: the test suite failed, so nothing was committed."
+    echo "Fix the tests, or re-stage once they pass."
+    exit 1
+fi
+
+exit 0
