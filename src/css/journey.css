@@ -91,3 +91,30 @@
   color: var(--color-journey);
   font-weight: 600;
 }
+
+.journey-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.journey-play {
+  background: var(--color-journey);
+  border-color: var(--color-journey);
+  color: var(--color-journey-contrast);
+  min-width: 4.5rem;
+}
+
+.journey-step.is-disabled,
+.journey-play.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.journey-progress {
+  margin: 0 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
