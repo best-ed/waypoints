@@ -238,6 +238,7 @@ function boot() {
     barsElement: document.getElementById('timeline-bars'),
     startElement: document.getElementById('timeline-start'),
     endElement: document.getElementById('timeline-end'),
+    rangeElement: document.getElementById('timeline-range'),
     onChange: (range) => filters.setDateRange(range)
   });
 

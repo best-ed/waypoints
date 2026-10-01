@@ -26,9 +26,11 @@ export function createTimelineView({
   barsElement,
   startElement,
   endElement,
+  rangeElement,
   onChange
 }) {
   let span = { first: null, last: null };
+  let announced = '';
 
   function dayBounds() {
     return {
@@ -41,6 +43,24 @@ export function createTimelineView({
     const date = fromDayNumber(dayNumber);
     /* Screen readers would otherwise announce a raw day number, which means nothing. */
     input.setAttribute('aria-valuetext', date ? formatMemoryDate(date) : '');
+  }
+
+  /* aria-valuetext above is correct and Firefox honours it, but Chromium ignores it on a
+     native range input and announces the raw number regardless - a plain input with
+     aria-valuetext="forty two" still reads as "42". A described-by region does get through,
+     and being aria-live it also re-announces as the handles move. */
+  function announceRange(startDay, endDay) {
+    const from = fromDayNumber(startDay);
+    const to = fromDayNumber(endDay);
+    const text = from && to ? formatMemoryDate(from) + ' to ' + formatMemoryDate(to) : '';
+
+    /* Only on a real change, or every unrelated re-render would announce itself. */
+    if (text === announced) {
+      return;
+    }
+
+    announced = text;
+    rangeElement.textContent = text;
   }
 
   function readRange() {
@@ -70,6 +90,7 @@ export function createTimelineView({
     clamp(moved, other, isStart);
     describe(startElement, Number(startElement.value));
     describe(endElement, Number(endElement.value));
+    announceRange(Number(startElement.value), Number(endElement.value));
     onChange(readRange());
   }
 
@@ -81,6 +102,8 @@ export function createTimelineView({
 
     if (!enoughDates) {
       barsElement.replaceChildren();
+      announced = '';
+      rangeElement.textContent = '';
       return;
     }
 
@@ -88,9 +111,12 @@ export function createTimelineView({
     const startDay = toDayNumber(from) ?? min;
     const endDay = toDayNumber(to) ?? max;
 
+    const clampedStart = Math.max(min, Math.min(startDay, max));
+    const clampedEnd = Math.max(min, Math.min(endDay, max));
+
     for (const [input, value] of [
-      [startElement, Math.max(min, Math.min(startDay, max))],
-      [endElement, Math.max(min, Math.min(endDay, max))]
+      [startElement, clampedStart],
+      [endElement, clampedEnd]
     ]) {
       input.min = String(min);
       input.max = String(max);
@@ -100,6 +126,8 @@ export function createTimelineView({
       }
       describe(input, value);
     }
+
+    announceRange(clampedStart, clampedEnd);
 
     const selectedStart = Number(startElement.value);
     const selectedEnd = Number(endElement.value);

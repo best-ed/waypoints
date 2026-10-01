@@ -90,9 +90,23 @@
           <div id="timeline" class="timeline" hidden>
             <ul id="timeline-bars" class="timeline-bars" aria-hidden="true"></ul>
             <div class="timeline-handles">
-              <input id="timeline-start" class="timeline-handle" type="range" aria-label="Start date" />
-              <input id="timeline-end" class="timeline-handle" type="range" aria-label="End date" />
+              <input
+                id="timeline-start"
+                class="timeline-handle"
+                type="range"
+                aria-label="Start date"
+                aria-describedby="timeline-range"
+              />
+              <input
+                id="timeline-end"
+                class="timeline-handle"
+                type="range"
+                aria-label="End date"
+                aria-describedby="timeline-range"
+              />
             </div>
+
+            <p id="timeline-range" class="visually-hidden" aria-live="polite"></p>
           </div>
 
           <p id="memory-count" class="sidebar-count"></p>
