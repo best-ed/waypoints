@@ -130,6 +130,11 @@ function boot() {
     onPopupOpen: (id) => {
       selection.select(id);
       fillPopupPhotos(id);
+      /* Playback opens the current stop's popup itself, so only a different marker counts
+         as the user taking over. */
+      if (journeyActive && id !== currentStopId()) {
+        pauseForInteraction();
+      }
     },
     /* Switching markers closes the old popup after the new id is already selected, so
        only the popup that still owns the selection is allowed to clear it. */
@@ -365,6 +370,15 @@ function boot() {
     enterJourney();
   }
 
+  /* Anything the user does deliberately takes the map back from playback. Without this the
+     dwell timer keeps running underneath them and yanks the view away mid-look. pause is a
+     no-op unless something is actually playing, so this needs no guard of its own. */
+  function pauseForInteraction() {
+    playback.pause();
+  }
+
+  map.on('dragstart', pauseForInteraction);
+
   /* replaceState, not pushState: filtering is not navigation, and a history entry per
      keystroke would bury whatever page the user arrived from. */
   function writeFiltersToUrl(current) {
@@ -376,6 +390,9 @@ function boot() {
 
   filters.subscribe((current) => {
     writeFiltersToUrl(current);
+    /* A filter change rebuilds the journey, so the position in the old one means nothing.
+       Back to idle rather than resuming at a stop that may not even be in it any more. */
+    playback.reset();
     rerender();
   });
 
@@ -394,6 +411,9 @@ function boot() {
     const marker = markers.getMarker(id);
     if (!marker) {
       return;
+    }
+    if (journeyActive && id !== currentStopId()) {
+      pauseForInteraction();
     }
     selection.select(id);
     focusMarker(map, marker, { reducedMotion: prefersReducedMotion() });
@@ -499,6 +519,8 @@ function boot() {
     if (!memory) {
       return;
     }
+
+    pauseForInteraction();
 
     /* Closed before the dialog opens so the popup that reopens afterwards is rebuilt
        from the saved record rather than left showing the old values behind the modal. */
@@ -713,6 +735,40 @@ function boot() {
     placement.toggle();
     syncButton();
   });
+
+  /* Capture phase deliberately. Placement and move mode attach their own Escape handlers to
+     document while they are active, and this one needs the first look so it can stand aside:
+     by the bubble phase those modes may already have cancelled themselves, and a single
+     Escape would then both cancel the placement and drop out of journey mode. */
+  document.addEventListener(
+    'keydown',
+    (event) => {
+      if (event.key !== 'Escape' || !journeyActive) {
+        return;
+      }
+
+      const target = event.target;
+      const typing =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        (target && target.isContentEditable);
+
+      /* Escape belongs to whatever is already using it: a field being cleared, an open
+         dialog, a pin mid-placement or mid-move. */
+      if (
+        typing ||
+        document.querySelector('dialog[open]') ||
+        placement.isActive() ||
+        moveMode.isMoving()
+      ) {
+        return;
+      }
+
+      exitJourney();
+    },
+    true
+  );
 
   if (isDevHost()) {
     window.waypoints = store;
