@@ -58,3 +58,36 @@
 .pin-number.is-wide {
   font-size: 9px;
 }
+
+.journey {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.journey-toggle[aria-pressed='true'] {
+  background: var(--color-journey);
+  border-color: var(--color-journey);
+  color: var(--color-journey-contrast);
+}
+
+/* aria-disabled, not the disabled attribute, so the button keeps its place in the tab order
+   and the hint explaining why can still be reached. */
+.journey-toggle.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.journey-hint,
+.journey-summary {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--line-base);
+  color: var(--color-text-muted);
+}
+
+.journey-summary {
+  color: var(--color-journey);
+  font-weight: 600;
+}

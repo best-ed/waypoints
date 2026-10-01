@@ -100,6 +100,24 @@
           <button id="filter-reset" class="filter-reset" type="button" hidden>
             Reset filters
           </button>
+
+          <div class="journey">
+            <button
+              id="journey-toggle"
+              class="button journey-toggle"
+              type="button"
+              aria-pressed="false"
+              aria-describedby="journey-hint"
+            >
+              Journey
+            </button>
+
+            <p id="journey-hint" class="journey-hint" hidden>
+              A journey needs at least two memories in view.
+            </p>
+
+            <p id="journey-summary" class="journey-summary" hidden></p>
+          </div>
         </div>
 
         <p id="memory-empty" class="sidebar-empty" tabindex="-1" hidden></p>
