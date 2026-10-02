@@ -15,13 +15,6 @@ function reveal(map, marker, clusterGroup) {
     return false;
   }
 
-  /* zoomToShowLayer reads the marker's parent cluster, which a marker still queued inside a
-     chunked addLayers pass does not have yet. getVisibleParent walks the same chain and
-     returns null instead of throwing, so it is the safe way to ask. */
-  if (!clusterGroup.getVisibleParent(marker)) {
-    return false;
-  }
-
   clusterGroup.zoomToShowLayer(marker, () => marker.openPopup());
   return true;
 }
