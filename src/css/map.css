@@ -83,3 +83,9 @@
   fill: var(--color-bg);
   transform: none;
 }
+
+/* Wraps the pin SVG and the hidden span carrying the marker's accessible name. */
+.pin-content {
+  display: block;
+  position: relative;
+}

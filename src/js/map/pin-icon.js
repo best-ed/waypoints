@@ -36,6 +36,29 @@ function buildPin() {
   return svg;
 }
 
+/* The name lives inside the icon rather than being set on the marker element afterwards.
+   A clustered marker has no element at all until the cluster opens, so anything applied by
+   hand at creation time would be lost - and nothing would put it back when the marker finally
+   rendered. Carried in the icon, the name is correct whenever the marker exists.
+
+   Leaflet gives a keyboard marker role="button" and tabindex="0", and a button with no
+   attribute name takes it from its contents, which is this hidden span. The SVG is
+   aria-hidden so it contributes nothing. */
+function iconContent(svg, name) {
+  const wrapper = document.createElement('span');
+  wrapper.className = 'pin-content';
+  wrapper.append(svg);
+
+  if (typeof name === 'string' && name !== '') {
+    const label = document.createElement('span');
+    label.className = 'visually-hidden';
+    label.textContent = name;
+    wrapper.append(label);
+  }
+
+  return wrapper;
+}
+
 const SHARED_OPTIONS = {
   iconSize: [PIN_WIDTH, PIN_HEIGHT],
   iconAnchor: [PIN_WIDTH / 2, PIN_HEIGHT],
@@ -43,17 +66,19 @@ const SHARED_OPTIONS = {
   tooltipAnchor: [0, -PIN_HEIGHT + 10]
 };
 
-export function createPinIcon() {
+/* A fresh element every call: one Element cannot be shared between markers, since divIcon
+   appends the very node it is given. */
+export function createPinIcon(name) {
   const svg = buildPin();
   svg.append(svgElement('circle', { class: 'pin-centre', cx: '13', cy: '12', r: '4.2' }));
 
-  return L.divIcon({ html: svg, className: 'pin', ...SHARED_OPTIONS });
+  return L.divIcon({ html: iconContent(svg, name), className: 'pin', ...SHARED_OPTIONS });
 }
 
 /* The number replaces the dot rather than sitting over it, so it scales with the pin and
-   needs no separate positioning. A fresh element every call: one Element cannot be shared
-   between markers, since divIcon appends the very node it is given. */
-export function createNumberedPinIcon(step) {
+   needs no separate positioning. It is inside the aria-hidden SVG, so the step reaches a
+   screen reader through the name instead. */
+export function createNumberedPinIcon(step, name) {
   const svg = buildPin();
 
   const text = svgElement('text', {
@@ -67,5 +92,9 @@ export function createNumberedPinIcon(step) {
 
   svg.append(text);
 
-  return L.divIcon({ html: svg, className: 'pin pin-journey', ...SHARED_OPTIONS });
+  return L.divIcon({
+    html: iconContent(svg, name),
+    className: 'pin pin-journey',
+    ...SHARED_OPTIONS
+  });
 }
