@@ -5,6 +5,7 @@ import { createIdFactory } from './data/make-id.js';
 import { createPlacementMode } from './map/placement-mode.js';
 import { createDraftMarker } from './map/draft-marker.js';
 import { createMarkersLayer } from './map/markers-layer.js';
+import { createClusterIcon, enableClusterKeyboard } from './map/cluster-icon.js';
 import { createMoveMode } from './map/move-mode.js';
 import { focusMarker, openMarkerPopup } from './map/focus-marker.js';
 import { createPlaceSearchControl } from './map/place-search-control.js';
@@ -126,6 +127,7 @@ function boot() {
   const markers = createMarkersLayer(map, {
     /* The plugin reads animate once, when the group is built. */
     animate: !prefersReducedMotion(),
+    iconCreateFunction: createClusterIcon,
     renderPopup: (memory) =>
       buildPopupContent(memory, {
         onEdit: () => {
@@ -156,6 +158,8 @@ function boot() {
       }
     }
   });
+
+  enableClusterKeyboard(map);
 
   const draftMarker = createDraftMarker(map);
 

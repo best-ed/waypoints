@@ -1,0 +1,66 @@
+/* The plugin's own skin (MarkerCluster.Default.css) is deliberately not loaded; these are the
+   only cluster styles, and they come from the tokens. */
+.memory-cluster {
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+  border: 2px solid var(--color-accent-contrast);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+  cursor: pointer;
+  transition: transform 120ms ease, background-color 120ms ease;
+}
+
+.memory-cluster-content {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.memory-cluster-count {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.memory-cluster.is-small .memory-cluster-count {
+  font-size: 0.8125rem;
+}
+
+.memory-cluster.is-medium .memory-cluster-count {
+  font-size: 0.875rem;
+}
+
+.memory-cluster.is-large .memory-cluster-count {
+  font-size: var(--text-base);
+}
+
+.memory-cluster:hover {
+  background-color: var(--color-text);
+  transform: scale(1.08);
+}
+
+/* Leaflet removes the outline on markers it considers decorative, so the focus ring is drawn
+   here instead: this one is a button and has to show focus. */
+.memory-cluster:focus {
+  outline: none;
+}
+
+.memory-cluster:focus-visible {
+  background-color: var(--color-text);
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .memory-cluster {
+    transition: none;
+  }
+
+  .memory-cluster:hover {
+    transform: none;
+  }
+}
