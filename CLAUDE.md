@@ -8,6 +8,9 @@ A web app for pinning memories on an interactive map.
 
 - Vanilla HTML, CSS, and JavaScript ES modules
 - Leaflet 1.9.4 for mapping, loaded from CDN with SRI integrity hashes
+- Leaflet.markercluster 1.5.3, same arrangement. Only its structural stylesheet
+  (`MarkerCluster.css`) is loaded: `MarkerCluster.Default.css` skins the `.marker-cluster`
+  classes the plugin's own icon function emits, and ours emits none of them
 - **No framework. No bundler. No runtime npm dependencies.**
 - npm is used for dev tooling only (static server, test runner). `package.json` has no
   `dependencies` block and should not grow one.
@@ -25,6 +28,7 @@ src/js/data/      schema, normalization, validation, storage, the memory store
 src/js/map/       everything that touches Leaflet
 src/js/filters/   search matching and filter state, pure
 src/js/journey/   chronological ordering, geometry and the playback machine, pure
+src/js/dev/       sandbox mode and the seed generator, pure
 src/js/geo/       Nominatim client, request scheduler and place parsers, pure
 src/js/photos/    photo processing, the repository and its IndexedDB backend
 src/js/ui/        everything that touches the DOM, plus selection state
@@ -137,6 +141,37 @@ back to a v4 uuid built from `getRandomValues` in insecure contexts such as a LA
   mutation and never after a failed one
 
 Every getter returns copies, so callers cannot mutate stored state by accident.
+
+---
+
+## Sandbox Mode
+
+`?sandbox` in the URL points every piece of storage somewhere else, so a thousand seeded
+memories can never land on top of real ones.
+
+| | real | sandbox |
+|---|---|---|
+| memories | `waypoints:v1` | `waypoints:sandbox:v1` |
+| corrupt backups | `waypoints:v1:corrupt-<ISO>` | `waypoints:sandbox:v1:corrupt-<ISO>` |
+| photos | database `waypoints` | database `waypoints-sandbox` |
+
+`dev/sandbox.js` resolves all three names **once, at boot, before anything is read**. There is
+deliberately no code path that can read one mode's memories while writing the other's photos.
+A visible banner says which mode is on, and the filter URL sync puts `?sandbox` back on every
+rewrite, since otherwise one keystroke would drop the session onto the real data.
+
+### Seeding
+
+`window.waypoints` gains `seed(n)` and `clearSandbox()` **only** on a development host **and
+only** in sandbox mode. Off a dev host there is no console API at all; on one without
+`?sandbox` there is the store and nothing else, so `seed` cannot be aimed at real memories by
+leaving a flag off the URL. `dev/dev-api.js` holds that guard on its own so it can be tested.
+
+`seed(n)` writes the envelope and reloads rather than calling `store.add` n times: a thousand
+validations, writes and notifications cost far more than the reload. The generator takes its
+randomness as an argument, so the tests are reproducible. It produces about 70% around one
+city and the rest scattered, because a uniform world scatter would make clustering look like it
+works while hiding the dense case that is actually hard.
 
 ---
 
@@ -331,6 +366,89 @@ are omitted, so an unfiltered view has no query string at all.
 
 ---
 
+## Clustering
+
+Memory markers live in a `MarkerClusterGroup`: `maxClusterRadius` 50, `chunkedLoading` on, and
+`disableClusteringAtZoom` 17, past which a cluster would hide the very pin someone zoomed in to
+find. The id diffing in `markers-layer.js` is unchanged; it adds to and removes from the group.
+
+**Always through the group, never `marker.remove()`** - the latter takes a marker off the map
+without telling the group, which keeps counting it in a cluster.
+
+**Batch.** Each separate `addLayer` re-evaluates the cluster hierarchy, and `chunkedLoading`
+only ever applies to the bulk path. Over 1000 markers, measured: 45ms of `addLayer` calls
+against 11ms for one `addLayers`, and 20ms against 6ms for the removals. `sync` collects both
+batches and makes one call each.
+
+A clustered marker **has no element**, so two things follow. The accessible name lives inside
+the icon as a hidden span rather than being set on the marker afterwards, or it would be lost
+at creation and nothing would put it back when the marker finally rendered. And `openPopup`
+would silently do nothing, so both popup-opening paths go through `reveal` in
+`focus-marker.js`, which hands over to `zoomToShowLayer`.
+
+`zoomToShowLayer` also covers a marker pruned by `removeOutsideVisibleBounds` by panning to it.
+Do not gate it on `getVisibleParent`: that returns null whenever nothing in the chain is
+currently rendered, which is exactly the case it exists to handle.
+
+### Cluster icons
+
+`iconCreateFunction` has to return an `L.Icon`, and the only one taking arbitrary content is
+`DivIcon`, whose `html` option is documented as a string. Leaflet 1.9 also accepts an `Element`
+and appends it as-is, which is what `cluster-icon.js` relies on: the count goes in through
+`textContent`, exactly like a journey step number. A fresh element per call, since divIcon
+appends the node it is handed.
+
+Leaflet gives a keyboard marker `role="button"` and `tabindex="0"` but sets no name, and a
+button with no name attribute takes one from its contents - so a hidden span carries
+"12 memories, press Enter to zoom in" while the numeral itself is `aria-hidden`.
+
+Leaflet forwards key events to a focused marker, but **nothing in the plugin listens**: its
+`_onKeyPress` belongs to `bindPopup`, and a cluster has no popup bound. Out of the box neither
+Enter nor Space does anything. `enableClusterKeyboard` handles both, delegated from the map
+container because cluster elements are thrown away on every zoom, and dispatches a synthetic
+click so a cluster that cannot split any further spiderfies instead, exactly as a mouse would.
+
+### Reduced motion
+
+What the plugin allows: the `animate` option, read once when the group is built, which stops
+the split and merge and spiderfy animations. Its CSS transitions live in its own stylesheet
+with no reduced-motion guard, so `map.css` turns them off.
+
+What it does not allow: `zoomToShowLayer` calls `panTo` and `fitBounds` with no options of its
+own. `fitBounds` is covered by setting `zoomAnimation` and `fadeAnimation` on the map itself,
+which is why `createMap` takes `reducedMotion`. The `panTo` **is not controllable** - pan
+animation is a per-call option in Leaflet and the plugin passes none. That one still animates.
+
+Journey and move modes move the markers onto a plain layer group and back, because a step
+cannot be numbered or dragged while it is folded into a cluster. `move-mode` reports `onEnd` so
+an Escape revert restores clustering too, and journey mode owns the unclustered state while it
+is on, so a move ending inside it must not switch clustering back on underneath it.
+
+When verifying by hand: Leaflet simplifies a polyline at low zoom and clips it to the padded
+viewport, so a drawn path is not always the point list it was given, and an off-screen chevron
+can look detached from a line that is no longer drawn there.
+
+---
+
+## Basemaps
+
+CARTO Voyager by default, OpenStreetMap standard as the alternative, both configured in
+`config.js`. Each carries its own attribution, and keeping it visible is a condition of use,
+not decoration. Leaflet substitutes `{r}` with `@2x` on a retina screen by itself; CARTO serves
+subdomains a through d where Leaflet defaults to a through c.
+
+`create-map.js` deliberately adds **no** tile layer. The basemap control owns it, so exactly
+one place adds and removes one, and Leaflet's attribution control takes each credit on and off
+with its layer - there is no attribution to manage by hand and no way to leave a stale one
+stacked behind the new one. Both layers are built once and kept, so switching back does not
+throw away a warm tile cache.
+
+The choice persists under `waypoints:basemap`, its own key. A display preference is not user
+data, should not travel with an export, and must not go down with a corrupt memories envelope.
+An unknown or hand-edited value falls back to the default rather than leaving a blank map.
+
+---
+
 ## Journey Mode
 
 Connects the visible memories chronologically and plays them back. `journey/` is pure - no DOM,
@@ -399,6 +517,40 @@ has already cancelled itself.
 The toggle and the step buttons use `aria-disabled`, not the `disabled` attribute. A disabled
 button leaves the tab order, which would put the explanation of why it is unavailable out of
 reach, and would drop focus when stepping to the last stop disables the button just pressed.
+
+---
+
+## Performance
+
+Budgets, with a thousand memories seeded into the sandbox: under 50ms for a keystroke or a
+chip toggle, under 300ms for the initial render and for entering journey mode, tiles excluded.
+
+Measure before changing anything, and measure the **worst** case, not a comfortable one.
+Typing another character into an existing query barely changes the result set; clearing a query
+that matched nothing brings every row and every marker back, and that is the keystroke that
+decides whether typing feels instant. The first is 25ms, the second was 121ms.
+
+Two things mattered, both in the map layer, and both found by measuring rather than guessing:
+
+- **Batch the cluster group's additions and removals.** See **Clustering** above.
+- **Build popup content lazily.** `bindPopup` takes a function, which Leaflet calls on open. At
+  most one popup is ever open, so building a thousand of them up front was pure waste: 14.5ms
+  of the 28.8ms spent building 1000 markers, and more again in allocation. The function reads
+  `entry.memory`, so an edit needs no rebinding; an already-open popup is told to `update()`.
+
+Together the worst keystroke went from 121ms to 45ms.
+
+**What was not worth doing:** computing the filtered view once in a derived-view module. The
+whole filter computation over 1000 memories - `applyFilters`, `tagCounts`, `allTags`,
+`timelineBuckets`, `distinctDateCount` - measures **0.37ms**. Sharing it would have saved a
+third of a millisecond out of 121, while adding a layer of indirection between the filters and
+everything that reads them. The cost was never in the filtering; it was in the DOM and in the
+cluster plugin.
+
+Entering journey mode is the heaviest thing here, at around 155ms for 1000 stops, because it
+draws 999 polylines with up to 64 interpolated points each plus 999 chevrons. It is inside
+budget at a thousand and over it by about 2000, which is the next thing to look at if the
+numbers ever matter again.
 
 ---
 
