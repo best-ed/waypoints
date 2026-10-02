@@ -6,7 +6,7 @@ import { createPlacementMode } from './map/placement-mode.js';
 import { createDraftMarker } from './map/draft-marker.js';
 import { createMarkersLayer } from './map/markers-layer.js';
 import { createMoveMode } from './map/move-mode.js';
-import { focusMarker } from './map/focus-marker.js';
+import { focusMarker, openMarkerPopup } from './map/focus-marker.js';
 import { createPlaceSearchControl } from './map/place-search-control.js';
 import { createResultMarker } from './map/result-marker.js';
 import { createRequestScheduler } from './geo/request-scheduler.js';
@@ -171,7 +171,9 @@ function boot() {
   });
 
   const moveMode = createMoveMode({
-    onMoved: (id, coordinates) => applyMove(id, coordinates)
+    onMoved: (id, coordinates) => applyMove(id, coordinates),
+    /* Clustering comes back whichever way the move ended, including an Escape revert. */
+    onEnd: () => restoreClustering()
   });
 
   createSidebarToggle({
@@ -358,6 +360,8 @@ function boot() {
 
   function enterJourney() {
     journeyActive = true;
+    /* First, so the numbering and the fit both see individual pins rather than clusters. */
+    markers.setClustering(false);
     renderJourney(visibleNow());
     playback.reset();
     journeyPath.fit(journeyStops, { reducedMotion: prefersReducedMotion() });
@@ -372,6 +376,7 @@ function boot() {
     journeyPath.clear();
     journeyChevrons.clear();
     markers.setJourney(null);
+    markers.setClustering(true);
     journeyStops = [];
     renderJourney(visibleNow());
     journeyPanel.focus();
@@ -501,7 +506,7 @@ function boot() {
   function openPopupFor(id) {
     const marker = markers.getMarker(id);
     if (marker) {
-      marker.openPopup();
+      openMarkerPopup(map, marker, { clusterGroup: markers.clusterGroup() });
     }
   }
 
@@ -547,11 +552,22 @@ function boot() {
     form.openForEdit(memory, { returnFocus: markerElement(id), photos: existingPhotos });
   }
 
+  /* Journey mode owns the unclustered state while it is on, so a move ending inside it must
+     not switch clustering back on underneath it. */
+  function restoreClustering() {
+    markers.setClustering(!journeyActive);
+  }
+
   function startMove(id) {
     const marker = markers.getMarker(id);
-    if (marker) {
-      moveMode.start(id, marker);
+    if (!marker) {
+      return;
     }
+
+    /* Before move-mode starts, not after: a clustered marker has no element to add the
+       dragging class to, and unclustering replaces the element it would have grabbed. */
+    markers.setClustering(false);
+    moveMode.start(id, marker);
   }
 
   /* The store rounds the coordinates, and the marker is then pulled onto the rounded

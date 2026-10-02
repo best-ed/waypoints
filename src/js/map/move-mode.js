@@ -1,6 +1,6 @@
 const MOVING_CLASS = 'pin-moving';
 
-export function createMoveMode({ onMoved }) {
+export function createMoveMode({ onMoved, onEnd = () => {} }) {
   let active = null;
 
   function handleKeyDown(event) {
@@ -23,6 +23,10 @@ export function createMoveMode({ onMoved }) {
     active.marker.getElement().classList.remove(MOVING_CLASS);
     document.removeEventListener('keydown', handleKeyDown);
     active = null;
+
+    /* Fired from teardown so it covers every way out: a finished drag, an Escape revert, or
+       another move starting on top of this one. */
+    onEnd();
   }
 
   function revert() {

@@ -32,7 +32,7 @@ export function createMarkersLayer(
   map,
   { renderPopup, onPopupOpen = () => {}, onPopupClose = () => {}, iconCreateFunction, animate = true }
 ) {
-  const group = L.markerClusterGroup({
+  const clustered = L.markerClusterGroup({
     ...CLUSTER_OPTIONS,
     /* Read once at construction: the plugin reads it on every cluster transition, but there
        is no supported way to swap it afterwards, and reduced motion does not change
@@ -41,6 +41,12 @@ export function createMarkersLayer(
     ...(iconCreateFunction ? { iconCreateFunction } : {})
   });
 
+  /* Journey and move modes need every pin individually addressable: a step cannot be numbered
+     or dragged while it is folded into a cluster. Both groups stay built and the markers move
+     between them, so switching is one pass over the markers rather than a rebuild. */
+  const plain = L.layerGroup();
+
+  let group = clustered;
   group.addTo(map);
 
   const markersById = new Map();
@@ -155,6 +161,26 @@ export function createMarkersLayer(
     }
   }
 
+  function setClustering(enabled) {
+    const next = enabled ? clustered : plain;
+
+    if (next === group) {
+      return;
+    }
+
+    for (const entry of markersById.values()) {
+      group.removeLayer(entry.marker);
+    }
+    group.remove();
+
+    group = next;
+    group.addTo(map);
+
+    for (const entry of markersById.values()) {
+      group.addLayer(entry.marker);
+    }
+  }
+
   function getMarker(id) {
     const entry = markersById.get(id);
     return entry ? entry.marker : null;
@@ -163,8 +189,12 @@ export function createMarkersLayer(
   return {
     sync,
     setJourney,
+    setClustering,
     getMarker,
-    clusterGroup: () => group,
+    /* null while unclustered, so callers do not try to reveal a marker through a group that
+       is not on the map. */
+    clusterGroup: () => (group === clustered ? clustered : null),
+    isClustered: () => group === clustered,
     count: () => markersById.size
   };
 }
