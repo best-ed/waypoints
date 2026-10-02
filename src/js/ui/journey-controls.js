@@ -54,16 +54,11 @@ export function createJourneyControls({
   previousElement.addEventListener('click', () => step(onPrevious, previousElement));
   nextElement.addEventListener('click', () => step(onNext, nextElement));
 
-  /* Space is taken over for the whole group, so it reads like any other player: whatever has
-     focus, Space starts and stops. Enter still activates the focused button, and the arrows
-     step, so every control keeps a keyboard path. */
+  /* Space and Enter are left to the browser, so each button does what it says it does.
+     Overriding Space across the group meant pressing it on Previous started playback instead,
+     which is not what a button announcing itself as "Previous" should do. The arrows are the
+     group-wide shortcut, and they have no native behaviour on a button to displace. */
   container.addEventListener('keydown', (event) => {
-    if (event.key === ' ' || event.key === 'Spacebar') {
-      event.preventDefault();
-      onToggle();
-      return;
-    }
-
     if (event.key === 'ArrowLeft') {
       event.preventDefault();
       step(onPrevious, previousElement);
