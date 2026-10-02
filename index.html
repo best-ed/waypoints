@@ -21,6 +21,28 @@
       defer
     ></script>
 
+    <!--
+      Leaflet.markercluster. Only the structural stylesheet is loaded: the plugin's second
+      sheet, MarkerCluster.Default.css, skins the .marker-cluster classes its default
+      iconCreateFunction emits, and ours emits none of them, so every rule in it would be
+      dead. Both hashes were computed from the bytes jsDelivr actually serves.
+      Deferred after leaflet.js, which keeps the order, since the plugin extends the global L.
+    -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"
+      integrity="sha384-pmjIAcz2bAn0xukfxADbZIb3t8oRT9Sv0rvO+BR5Csr6Dhqq+nZs59P0pPKQJkEV"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <script
+      src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"
+      integrity="sha384-eXVCORTRlv4FUUgS/xmOyr66XBVraen8ATNLMESp92FKXLAMiKkerixTiBvXriZr"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+      defer
+    ></script>
+
     <link rel="stylesheet" href="src/css/tokens.css" />
     <link rel="stylesheet" href="src/css/base.css" />
     <link rel="stylesheet" href="src/css/layout.css" />
