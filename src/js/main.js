@@ -528,7 +528,10 @@ function boot() {
       return;
     }
 
-    const strip = findPhotoStrip(marker.getPopup().getContent());
+    /* The popup content is a function now, so getContent would hand back the function
+       itself. The rendered element is what has the photo strip in it. */
+    const popupElement = marker.getPopup().getElement();
+    const strip = popupElement ? findPhotoStrip(popupElement) : null;
     if (!strip) {
       return;
     }
