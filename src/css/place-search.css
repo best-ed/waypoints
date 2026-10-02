@@ -86,3 +86,12 @@
   color: var(--color-text-muted);
   text-align: right;
 }
+
+/* Sits under the no-results message, so it reads as advice about that message rather than
+   as a second status of its own. */
+.place-search-hint {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  line-height: var(--line-base);
+  color: var(--color-text-muted);
+}

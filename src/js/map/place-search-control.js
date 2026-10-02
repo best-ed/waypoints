@@ -1,4 +1,7 @@
 const CREDIT_TEXT = 'Search by OpenStreetMap Nominatim';
+const NO_RESULTS_TEXT = 'No places found';
+const NO_RESULTS_HINT =
+  'Check the spelling or try a broader name, like a neighbourhood or city.';
 
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -19,6 +22,7 @@ export function createPlaceSearchControl({ map, onSearch, onChoose, onClear }) {
   const input = element('input', 'place-search-input');
   const submit = element('button', 'button place-search-submit', 'Search');
   const status = element('p', 'place-search-status');
+  const hint = element('p', 'place-search-hint', NO_RESULTS_HINT);
   const list = element('ul', 'place-search-results');
   const credit = element('p', 'place-search-credit', CREDIT_TEXT);
 
@@ -31,19 +35,28 @@ export function createPlaceSearchControl({ map, onSearch, onChoose, onClear }) {
   input.autocomplete = 'off';
   submit.type = 'submit';
   status.hidden = true;
+  hint.hidden = true;
   list.hidden = true;
   credit.hidden = true;
 
   form.append(input, submit);
-  container.append(form, status, list, credit);
+  container.append(form, status, hint, list, credit);
 
   /* Without this the map pans under a drag on the control and zooms on a scroll over it. */
   L.DomEvent.disableClickPropagation(container);
   L.DomEvent.disableScrollPropagation(container);
 
+  /* The hint belongs to the no-results case only, so it is cleared here rather than at each
+     call site: an error message must not inherit advice about spelling. */
   function setStatus(message) {
     status.textContent = message;
     status.hidden = message === '';
+    hint.hidden = true;
+  }
+
+  function showNoResults() {
+    setStatus(NO_RESULTS_TEXT);
+    hint.hidden = false;
   }
 
   function highlight(index) {
@@ -85,7 +98,7 @@ export function createPlaceSearchControl({ map, onSearch, onChoose, onClear }) {
     if (results.length === 0) {
       list.hidden = true;
       credit.hidden = true;
-      setStatus('No places found');
+      showNoResults();
       return;
     }
 
