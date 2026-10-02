@@ -160,5 +160,11 @@ export function createMarkersLayer(
     return entry ? entry.marker : null;
   }
 
-  return { sync, setJourney, getMarker, group: () => group, count: () => markersById.size };
+  return {
+    sync,
+    setJourney,
+    getMarker,
+    clusterGroup: () => group,
+    count: () => markersById.size
+  };
 }

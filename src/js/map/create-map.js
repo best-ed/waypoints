@@ -1,12 +1,17 @@
 import { DEFAULT_VIEW, MIN_ZOOM, MAX_ZOOM, TILE_LAYER } from '../config.js';
 
-export function createMap(containerId) {
+export function createMap(containerId, { reducedMotion = false } = {}) {
   const map = L.map(containerId, {
     center: DEFAULT_VIEW.center,
     zoom: DEFAULT_VIEW.zoom,
     minZoom: MIN_ZOOM,
     maxZoom: MAX_ZOOM,
-    zoomControl: false
+    zoomControl: false,
+    /* Set here because the cluster plugin's zoomToShowLayer calls fitBounds with no options
+       of its own, and a map-level flag is the only way to stop that one animating. */
+    zoomAnimation: !reducedMotion,
+    fadeAnimation: !reducedMotion,
+    markerZoomAnimation: !reducedMotion
   });
 
   L.tileLayer(TILE_LAYER.url, {

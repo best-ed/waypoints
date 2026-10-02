@@ -89,3 +89,13 @@
   display: block;
   position: relative;
 }
+
+/* The cluster plugin animates its splits, merges and spider legs through CSS transitions in
+   its own stylesheet, which carries no reduced-motion guard of its own. */
+@media (prefers-reduced-motion: reduce) {
+  .leaflet-cluster-anim .leaflet-marker-icon,
+  .leaflet-cluster-anim .leaflet-marker-shadow,
+  .leaflet-cluster-spider-leg {
+    transition: none;
+  }
+}

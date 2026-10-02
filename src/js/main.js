@@ -67,7 +67,7 @@ function boot() {
     document.getElementById('sandbox-banner').hidden = false;
   }
 
-  const map = createMap(MAP_CONTAINER_ID);
+  const map = createMap(MAP_CONTAINER_ID, { reducedMotion: prefersReducedMotion() });
 
   const makeId = createIdFactory(window.crypto);
   const now = () => new Date();
@@ -124,6 +124,8 @@ function boot() {
   });
 
   const markers = createMarkersLayer(map, {
+    /* The plugin reads animate once, when the group is built. */
+    animate: !prefersReducedMotion(),
     renderPopup: (memory) =>
       buildPopupContent(memory, {
         onEdit: () => {
@@ -336,7 +338,10 @@ function boot() {
     }
 
     selection.select(stop.id);
-    focusMarker(map, marker, { reducedMotion: prefersReducedMotion() });
+    focusMarker(map, marker, {
+      reducedMotion: prefersReducedMotion(),
+      clusterGroup: markers.clusterGroup()
+    });
   }
 
   playback.subscribe((state) => {
@@ -425,7 +430,10 @@ function boot() {
       pauseForInteraction();
     }
     selection.select(id);
-    focusMarker(map, marker, { reducedMotion: prefersReducedMotion() });
+    focusMarker(map, marker, {
+      reducedMotion: prefersReducedMotion(),
+      clusterGroup: markers.clusterGroup()
+    });
   }
 
   const form = createMemoryForm({
