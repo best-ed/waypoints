@@ -1,4 +1,4 @@
-import { DEFAULT_VIEW, MIN_ZOOM, MAX_ZOOM, TILE_LAYER } from '../config.js';
+import { DEFAULT_VIEW, MIN_ZOOM, MAX_ZOOM } from '../config.js';
 
 export function createMap(containerId, { reducedMotion = false } = {}) {
   const map = L.map(containerId, {
@@ -14,10 +14,8 @@ export function createMap(containerId, { reducedMotion = false } = {}) {
     markerZoomAnimation: !reducedMotion
   });
 
-  L.tileLayer(TILE_LAYER.url, {
-    attribution: TILE_LAYER.attribution,
-    maxZoom: TILE_LAYER.maxZoom
-  }).addTo(map);
+  /* No tile layer here: the basemap control owns it, so there is exactly one place that adds
+     and removes one and the attribution cannot end up stacked. */
 
   L.control.zoom({ position: 'bottomright' }).addTo(map);
   L.control.scale({ metric: true, imperial: false }).addTo(map);

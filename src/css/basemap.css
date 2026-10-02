@@ -1,0 +1,33 @@
+.basemap-control {
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.3);
+}
+
+.basemap-options {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.basemap-option {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.basemap-option[aria-pressed='true'] {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.basemap-option:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}

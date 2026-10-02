@@ -6,6 +6,8 @@ import { createPlacementMode } from './map/placement-mode.js';
 import { createDraftMarker } from './map/draft-marker.js';
 import { createMarkersLayer } from './map/markers-layer.js';
 import { createClusterIcon, enableClusterKeyboard } from './map/cluster-icon.js';
+import { createBasemapControl } from './map/basemap-control.js';
+import { readBasemapId, writeBasemapId } from './map/basemap-preference.js';
 import { createMoveMode } from './map/move-mode.js';
 import { focusMarker, openMarkerPopup } from './map/focus-marker.js';
 import { createPlaceSearchControl } from './map/place-search-control.js';
@@ -157,6 +159,11 @@ function boot() {
         selection.clear();
       }
     }
+  });
+
+  createBasemapControl(map, {
+    initialId: readBasemapId(window.localStorage),
+    onChange: (id) => writeBasemapId(window.localStorage, id)
   });
 
   enableClusterKeyboard(map);
