@@ -30,14 +30,18 @@ function asStorageError(error) {
   return isQuotaError(error) ? new StorageFullError(error) : error;
 }
 
-export function createIndexedDbBackend({ indexedDb = indexedDB, storage = navigator.storage } = {}) {
+export function createIndexedDbBackend({
+  indexedDb = indexedDB,
+  storage = navigator.storage,
+  databaseName = DATABASE_NAME
+} = {}) {
   let openPromise = null;
   let persistenceRequested = false;
 
   function open() {
     if (!openPromise) {
       openPromise = new Promise((resolve, reject) => {
-        const request = indexedDb.open(DATABASE_NAME, DATABASE_VERSION);
+        const request = indexedDb.open(databaseName, DATABASE_VERSION);
 
         request.onupgradeneeded = () => {
           const db = request.result;

@@ -41,6 +41,7 @@ import { createToast } from './ui/toast.js';
 import { ValidationError, StorageFullError } from './data/errors.js';
 import { createPhotoRepository } from './photos/photo-repository.js';
 import { createIndexedDbBackend } from './photos/indexeddb-backend.js';
+import { buildSearch, isSandbox, storageNamesFor } from './dev/sandbox.js';
 import { processImage } from './photos/process-image.js';
 import { checkFile } from './photos/photo-rules.js';
 import { computeOrphans } from './photos/orphans.js';
@@ -60,14 +61,25 @@ function isDevHost() {
 }
 
 function boot() {
+  /* Decided once, before anything is read, so no code path can see one mode for the
+     memories and another for the photos. */
+  const sandbox = isSandbox(window.location.search);
+  const names = storageNamesFor(sandbox);
+
+  if (sandbox) {
+    document.getElementById('sandbox-banner').hidden = false;
+  }
+
   const map = createMap(MAP_CONTAINER_ID);
 
   const makeId = createIdFactory(window.crypto);
   const now = () => new Date();
 
-  const store = createMemoryStore({ storage: window.localStorage, now, makeId });
+  const store = createMemoryStore({ storage: window.localStorage, now, makeId, names });
 
-  const photos = createPhotoRepository({ backend: createIndexedDbBackend() });
+  const photos = createPhotoRepository({
+    backend: createIndexedDbBackend({ databaseName: names.databaseName })
+  });
 
   /* One file failing must not take the rest of the selection down with it, so each is
      checked and decoded on its own and reported by name. */
@@ -383,10 +395,9 @@ function boot() {
   /* replaceState, not pushState: filtering is not navigation, and a history entry per
      keystroke would bury whatever page the user arrived from. */
   function writeFiltersToUrl(current) {
-    const params = serializeFilters(current).toString();
-    const url = window.location.pathname + (params === '' ? '' : '?' + params);
+    const search = buildSearch(serializeFilters(current).toString(), sandbox);
 
-    window.history.replaceState(null, '', url);
+    window.history.replaceState(null, '', window.location.pathname + search);
   }
 
   filters.subscribe((current) => {

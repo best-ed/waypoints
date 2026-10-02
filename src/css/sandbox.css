@@ -1,0 +1,14 @@
+/* Deliberately loud and across the full width: the whole point is that nobody mistakes
+   seeded throwaway data for their real memories. */
+.sandbox-banner {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  background-color: #7c2d12;
+  color: #ffffff;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: center;
+  position: relative;
+  z-index: var(--z-header);
+}

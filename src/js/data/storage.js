@@ -1,6 +1,13 @@
 import { CORRUPT_KEY_PREFIX, STORAGE_KEY, STORAGE_VERSION } from './schema.js';
 import { StorageFullError } from './errors.js';
 
+/* The real names. Sandbox mode passes its own set instead, which is why these are a
+   default argument rather than read straight from the module. */
+export const DEFAULT_NAMES = Object.freeze({
+  storageKey: STORAGE_KEY,
+  corruptKeyPrefix: CORRUPT_KEY_PREFIX
+});
+
 export function createEmptyEnvelope() {
   return { version: STORAGE_VERSION, memories: [] };
 }
@@ -23,8 +30,8 @@ function isQuotaError(error) {
   );
 }
 
-function backupCorruptValue(storage, raw, now) {
-  const key = CORRUPT_KEY_PREFIX + now().toISOString();
+function backupCorruptValue(storage, raw, now, corruptKeyPrefix) {
+  const key = corruptKeyPrefix + now().toISOString();
   try {
     storage.setItem(key, raw);
   } catch {
@@ -34,8 +41,8 @@ function backupCorruptValue(storage, raw, now) {
   return key;
 }
 
-export function readEnvelope(storage, now) {
-  const raw = storage.getItem(STORAGE_KEY);
+export function readEnvelope(storage, now, names = DEFAULT_NAMES) {
+  const raw = storage.getItem(names.storageKey);
   if (raw === null || raw === undefined || raw === '') {
     return createEmptyEnvelope();
   }
@@ -44,22 +51,22 @@ export function readEnvelope(storage, now) {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    backupCorruptValue(storage, raw, now);
+    backupCorruptValue(storage, raw, now, names.corruptKeyPrefix);
     return createEmptyEnvelope();
   }
 
   if (!isEnvelopeShape(parsed)) {
-    backupCorruptValue(storage, raw, now);
+    backupCorruptValue(storage, raw, now, names.corruptKeyPrefix);
     return createEmptyEnvelope();
   }
 
   return { version: parsed.version ?? STORAGE_VERSION, memories: parsed.memories };
 }
 
-export function writeEnvelope(storage, memories) {
+export function writeEnvelope(storage, memories, names = DEFAULT_NAMES) {
   const envelope = { version: STORAGE_VERSION, memories };
   try {
-    storage.setItem(STORAGE_KEY, JSON.stringify(envelope));
+    storage.setItem(names.storageKey, JSON.stringify(envelope));
   } catch (error) {
     if (isQuotaError(error)) {
       throw new StorageFullError(error);

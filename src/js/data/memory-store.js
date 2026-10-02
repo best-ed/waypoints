@@ -1,7 +1,7 @@
 import { normalizeMemoryInput } from './normalize.js';
 import { validateMemory, validateStoredMemory } from './validate.js';
 import { ValidationError } from './errors.js';
-import { readEnvelope, writeEnvelope } from './storage.js';
+import { DEFAULT_NAMES, readEnvelope, writeEnvelope } from './storage.js';
 
 function cloneMemory(memory) {
   return { ...memory, tags: [...memory.tags], photoIds: [...memory.photoIds] };
@@ -33,8 +33,14 @@ function rethrowAsync(error) {
   });
 }
 
-export function createMemoryStore({ storage, now, makeId, onListenerError = rethrowAsync }) {
-  let memories = readEnvelope(storage, now).memories.map(cloneMemory);
+export function createMemoryStore({
+  storage,
+  now,
+  makeId,
+  onListenerError = rethrowAsync,
+  names = DEFAULT_NAMES
+}) {
+  let memories = readEnvelope(storage, now, names).memories.map(cloneMemory);
   const listeners = new Set();
 
   function notify() {
@@ -61,7 +67,7 @@ export function createMemoryStore({ storage, now, makeId, onListenerError = reth
   /* Writes first: if storage rejects the change, in-memory state and listeners are
      left exactly as they were. */
   function commit(nextMemories) {
-    writeEnvelope(storage, nextMemories);
+    writeEnvelope(storage, nextMemories, names);
     memories = nextMemories;
     notify();
   }
