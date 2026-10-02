@@ -42,12 +42,13 @@ import { ValidationError, StorageFullError } from './data/errors.js';
 import { createPhotoRepository } from './photos/photo-repository.js';
 import { createIndexedDbBackend } from './photos/indexeddb-backend.js';
 import { buildSearch, isSandbox, storageNamesFor } from './dev/sandbox.js';
+import { buildDevApi, isDevHost } from './dev/dev-api.js';
+import { generateSeedMemories } from './dev/seed-memories.js';
+import { writeEnvelope } from './data/storage.js';
 import { processImage } from './photos/process-image.js';
 import { checkFile } from './photos/photo-rules.js';
 import { computeOrphans } from './photos/orphans.js';
 import { createPhotoPicker } from './ui/photo-picker.js';
-
-const DEV_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]', '::1'];
 
 const STORAGE_FULL_MESSAGE =
   'There is no room left in this browser to save another memory. Remove one and try again.';
@@ -55,10 +56,6 @@ const UNEXPECTED_MESSAGE = 'Something went wrong saving this memory. Please try 
 const UNDO_FAILED_MESSAGE = 'That memory could not be brought back.';
 const MOVE_FAILED_MESSAGE = 'That pin could not be moved.';
 const PHOTO_LOAD_FAILED_MESSAGE = 'The photos for that memory could not be opened.';
-
-function isDevHost() {
-  return DEV_HOSTNAMES.includes(window.location.hostname);
-}
 
 function boot() {
   /* Decided once, before anything is read, so no code path can see one mode for the
@@ -782,8 +779,33 @@ function boot() {
     true
   );
 
-  if (isDevHost()) {
-    window.waypoints = store;
+  /* Writes the envelope and reloads rather than calling store.add a thousand times: a
+     thousand validations, writes and notifications would take far longer than the reload, and
+     the point of seeding is to get to a populated app quickly. */
+  function seed(count) {
+    const memories = generateSeedMemories(count, { now });
+    writeEnvelope(window.localStorage, memories, names);
+    window.location.reload();
+    return memories.length;
+  }
+
+  function clearSandbox() {
+    writeEnvelope(window.localStorage, [], names);
+    /* The seeds carry no photos, but a hand-added one in sandbox mode would, and clearing
+       should mean clearing. */
+    window.indexedDB.deleteDatabase(names.databaseName);
+    window.location.reload();
+  }
+
+  const devApi = buildDevApi(store, {
+    sandbox,
+    devHost: isDevHost(window.location.hostname),
+    seed,
+    clearSandbox
+  });
+
+  if (devApi) {
+    window.waypoints = devApi;
   }
 }
 
