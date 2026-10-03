@@ -1,0 +1,33 @@
+.settings-section {
+  margin-top: var(--space-5);
+}
+
+.settings-section:first-of-type {
+  margin-top: var(--space-4);
+}
+
+.settings-heading {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-base);
+  line-height: var(--line-tight);
+}
+
+/* The input comes before its label in the markup, so the checkbox sits on the left and a
+   sibling selector can reach the label from the input's state. */
+.field-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.field-checkbox input {
+  flex: 0 0 auto;
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--color-accent);
+}
+
+.field-checkbox label {
+  font-size: var(--text-sm);
+  line-height: var(--line-base);
+}

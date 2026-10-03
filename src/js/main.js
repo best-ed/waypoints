@@ -37,6 +37,8 @@ import { createMemoryList } from './ui/memory-list.js';
 import { createSidebarToggle } from './ui/sidebar-toggle.js';
 import { prefersReducedMotion } from './ui/motion.js';
 import { createMemoryForm } from './ui/memory-form.js';
+import { createSettingsDialog } from './ui/settings-dialog.js';
+import { createSettingsStore } from './data/settings-store.js';
 import { buildPopupContent, findPhotoStrip } from './ui/popup-content.js';
 import { createPopupPhotos } from './ui/popup-photos.js';
 import { createLightbox } from './ui/lightbox.js';
@@ -76,6 +78,11 @@ function boot() {
   const now = () => new Date();
 
   const store = createMemoryStore({ storage: window.localStorage, now, makeId, names });
+
+  const settings = createSettingsStore({
+    storage: window.localStorage,
+    key: names.settingsKey
+  });
 
   const photos = createPhotoRepository({
     backend: createIndexedDbBackend({ databaseName: names.databaseName })
@@ -778,6 +785,16 @@ function boot() {
     draftMarker.show(coordinates);
     form.openForAdd(coordinates, { returnFocus: addButton, placeName: result.name });
   }
+
+  createSettingsDialog({
+    dialog: document.getElementById('settings-dialog'),
+    openButton: document.getElementById('open-settings'),
+    closeButton: document.getElementById('settings-close'),
+    toggleElement: document.getElementById('setting-suggest-place-names'),
+    usageElement: document.getElementById('storage-usage'),
+    persistedElement: document.getElementById('storage-persisted'),
+    settings
+  });
 
   sweepOrphanedPhotos().catch((error) => console.error(error));
 

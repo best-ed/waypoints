@@ -54,6 +54,7 @@
     <link rel="stylesheet" href="src/css/cluster.css" />
     <link rel="stylesheet" href="src/css/journey.css" />
     <link rel="stylesheet" href="src/css/sandbox.css" />
+    <link rel="stylesheet" href="src/css/settings.css" />
     <link rel="stylesheet" href="src/css/toast.css" />
     <link rel="stylesheet" href="src/css/dialog.css" />
     <link rel="stylesheet" href="src/css/lightbox.css" />
@@ -78,6 +79,10 @@
 
       <button id="add-memory" class="button" type="button" aria-pressed="false">
         Add memory
+      </button>
+
+      <button id="open-settings" class="button" type="button" aria-haspopup="dialog">
+        Settings
       </button>
     </header>
 
@@ -251,6 +256,37 @@
           <button id="memory-save" class="button button-primary" type="submit">Save memory</button>
         </div>
       </form>
+    </dialog>
+
+    <dialog id="settings-dialog" class="dialog" aria-labelledby="settings-title">
+      <h2 id="settings-title" class="dialog-title">Settings</h2>
+
+      <section class="settings-section">
+        <h3 class="settings-heading">Place names</h3>
+
+        <div class="field-checkbox">
+          <input
+            id="setting-suggest-place-names"
+            type="checkbox"
+            aria-describedby="setting-suggest-help"
+          />
+          <label for="setting-suggest-place-names">Suggest place names for new pins</label>
+        </div>
+
+        <p id="setting-suggest-help" class="field-hint">
+          Sends the pin's coordinates to OpenStreetMap's Nominatim service.
+        </p>
+      </section>
+
+      <section class="settings-section">
+        <h3 class="settings-heading">Storage</h3>
+        <p id="storage-usage" class="field-hint" hidden></p>
+        <p id="storage-persisted" class="field-hint" hidden></p>
+      </section>
+
+      <div class="dialog-actions">
+        <button id="settings-close" class="button" type="button">Close</button>
+      </div>
     </dialog>
 
     <dialog id="lightbox" class="lightbox" aria-label="Photo viewer">
