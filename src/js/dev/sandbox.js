@@ -1,4 +1,5 @@
 import { CORRUPT_KEY_PREFIX, STORAGE_KEY } from '../data/schema.js';
+import { SETTINGS_KEY } from '../data/settings-store.js';
 import { DATABASE_NAME } from '../photos/indexeddb-backend.js';
 
 export const SANDBOX_PARAM = 'sandbox';
@@ -19,14 +20,16 @@ export function storageNamesFor(sandbox) {
     return {
       storageKey: SANDBOX_STORAGE_KEY,
       corruptKeyPrefix: SANDBOX_STORAGE_KEY + ':corrupt-',
-      databaseName: SANDBOX_DATABASE_NAME
+      databaseName: SANDBOX_DATABASE_NAME,
+      settingsKey: 'waypoints:sandbox:settings'
     };
   }
 
   return {
     storageKey: STORAGE_KEY,
     corruptKeyPrefix: CORRUPT_KEY_PREFIX,
-    databaseName: DATABASE_NAME
+    databaseName: DATABASE_NAME,
+    settingsKey: SETTINGS_KEY
   };
 }
 

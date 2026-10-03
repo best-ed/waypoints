@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { isSandbox, storageNamesFor, buildSearch, SANDBOX_PARAM } from '../../src/js/dev/sandbox.js';
 import { buildDevApi, isDevHost } from '../../src/js/dev/dev-api.js';
 import { STORAGE_KEY, CORRUPT_KEY_PREFIX } from '../../src/js/data/schema.js';
+import { SETTINGS_KEY } from '../../src/js/data/settings-store.js';
 import { DATABASE_NAME } from '../../src/js/photos/indexeddb-backend.js';
 
 test('a bare sandbox flag turns it on', () => {
@@ -32,13 +33,15 @@ test('sandbox names share nothing with the real ones', () => {
   assert.notEqual(real.storageKey, box.storageKey);
   assert.notEqual(real.corruptKeyPrefix, box.corruptKeyPrefix);
   assert.notEqual(real.databaseName, box.databaseName);
+  assert.notEqual(real.settingsKey, box.settingsKey);
 });
 
 test('the real names are the ones the rest of the app uses', () => {
   assert.deepEqual(storageNamesFor(false), {
     storageKey: STORAGE_KEY,
     corruptKeyPrefix: CORRUPT_KEY_PREFIX,
-    databaseName: DATABASE_NAME
+    databaseName: DATABASE_NAME,
+    settingsKey: SETTINGS_KEY
   });
 });
 
@@ -46,7 +49,8 @@ test('the sandbox names are the agreed ones', () => {
   assert.deepEqual(storageNamesFor(true), {
     storageKey: 'waypoints:sandbox:v1',
     corruptKeyPrefix: 'waypoints:sandbox:v1:corrupt-',
-    databaseName: 'waypoints-sandbox'
+    databaseName: 'waypoints-sandbox',
+    settingsKey: 'waypoints:sandbox:settings'
   });
 });
 
