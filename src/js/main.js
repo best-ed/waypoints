@@ -517,7 +517,10 @@ function boot() {
   function openPopupFor(id) {
     const marker = markers.getMarker(id);
     if (marker) {
-      openMarkerPopup(map, marker, { clusterGroup: markers.clusterGroup() });
+      openMarkerPopup(map, marker, {
+        clusterGroup: markers.clusterGroup(),
+        reducedMotion: prefersReducedMotion()
+      });
     }
   }
 

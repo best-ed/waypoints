@@ -35,3 +35,10 @@ export const BASEMAP_STORAGE_KEY = 'waypoints:basemap';
 /* Selecting a memory should get close enough to read the streets around it, but never
    zoom back out if the user is already closer in. */
 export const SELECT_ZOOM = 14;
+
+export const MAX_CLUSTER_RADIUS = 50;
+
+/* Past this zoom the pins are far enough apart to read on their own, and a cluster here would
+   hide the very pin someone zoomed in to find. Shared, because the reveal path relies on a
+   marker being its own pin at this zoom. */
+export const CLUSTER_DISABLE_ZOOM = 17;

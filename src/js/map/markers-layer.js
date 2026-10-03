@@ -1,10 +1,9 @@
+import { CLUSTER_DISABLE_ZOOM, MAX_CLUSTER_RADIUS } from '../config.js';
 import { createNumberedPinIcon, createPinIcon } from './pin-icon.js';
 
 const CLUSTER_OPTIONS = {
-  maxClusterRadius: 50,
-  /* Past this zoom the pins are far enough apart to read on their own, and a cluster here
-     would hide the very pin someone zoomed in to find. */
-  disableClusteringAtZoom: 17,
+  maxClusterRadius: MAX_CLUSTER_RADIUS,
+  disableClusteringAtZoom: CLUSTER_DISABLE_ZOOM,
   /* A thousand markers added in one synchronous pass locks the page. Chunking yields between
      batches, so the first paint is not held up waiting for the last marker. */
   chunkedLoading: true
