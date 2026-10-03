@@ -481,8 +481,16 @@ function boot() {
     }
   }
 
+  /* The setting is checked before the request is built, not after it comes back: with
+     suggestions off, placing a pin must send nothing to Nominatim at all. The hint is cleared
+     too, so the form does not sit there saying it is looking something up. */
   async function suggestPlaceName(coordinates) {
     cancelPlaceLookup();
+
+    if (!settings.get().suggestPlaceNames) {
+      form.showPlaceHint(false);
+      return;
+    }
 
     const controller = new AbortController();
     placeLookup = controller;
