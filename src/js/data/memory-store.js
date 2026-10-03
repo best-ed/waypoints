@@ -163,5 +163,72 @@ export function createMemoryStore({
     return true;
   }
 
-  return { list, get, add, update, remove, restore, subscribe };
+  /* Brings a whole set of records in at once, for import.
+
+     Everything is validated before anything is applied, so one bad record cannot leave half a
+     file merged. The importer has already filtered its records, which makes this a backstop
+     rather than the first line of defence.
+
+     The merge rule is by updatedAt: an unknown id is added, a known one is replaced only if
+     the incoming record is newer, and anything else is left exactly as it is. There is
+     deliberately no mode that replaces the collection wholesale.
+
+     One envelope write and one notification, whatever the size of the set. A merge that
+     changes nothing writes nothing and notifies nobody, since a re-render would be pure churn.
+
+     A repeated id inside one call keeps the first, mirroring the importer. */
+  function merge(records) {
+    const incoming = Array.isArray(records) ? records : [];
+
+    for (const record of incoming) {
+      const { valid, errors } = validateStoredMemory(record);
+      if (!valid) {
+        throw new ValidationError(errors);
+      }
+    }
+
+    const existingById = new Map(memories.map((memory) => [memory.id, memory]));
+    const merged = new Map(existingById);
+    const applied = new Set();
+
+    let added = 0;
+    let updated = 0;
+    let unchanged = 0;
+
+    for (const record of incoming) {
+      if (applied.has(record.id)) {
+        continue;
+      }
+      applied.add(record.id);
+
+      const existing = existingById.get(record.id);
+
+      /* Normalized on the way in, exactly as restore does, so a hand-edited file cannot put an
+         untrimmed title or an unrounded coordinate into the store. */
+      const normalized = {
+        id: record.id,
+        ...normalizeMemoryInput(record),
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt
+      };
+
+      if (!existing) {
+        merged.set(record.id, normalized);
+        added += 1;
+      } else if (record.updatedAt > existing.updatedAt) {
+        merged.set(record.id, normalized);
+        updated += 1;
+      } else {
+        unchanged += 1;
+      }
+    }
+
+    if (added > 0 || updated > 0) {
+      commit([...merged.values()]);
+    }
+
+    return { added, updated, unchanged };
+  }
+
+  return { list, get, add, update, remove, restore, merge, subscribe };
 }
