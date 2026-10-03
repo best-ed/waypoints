@@ -29,6 +29,7 @@ src/js/map/       everything that touches Leaflet
 src/js/filters/   search matching and filter state, pure
 src/js/journey/   chronological ordering, geometry and the playback machine, pure
 src/js/dev/       sandbox mode and the seed generator, pure
+src/js/io/        the export format and the import parser, pure except download.js
 src/js/geo/       Nominatim client, request scheduler and place parsers, pure
 src/js/photos/    photo processing, the repository and its IndexedDB backend
 src/js/ui/        everything that touches the DOM, plus selection state
@@ -81,7 +82,8 @@ Added in a later phase, documented here so the shape is agreed up front:
   `localStorage` is too small and string-only for image data.
 - The two stores are written together and must stay consistent; deleting a waypoint
   deletes its photo blob.
-- Export produces a single `waypoints-export*.json` file. Those are gitignored.
+- Export produces a single `waypoints-export*.json` file. Those are gitignored. The format is
+  specified in `docs/export-format.md`; see **Export and Import** below for the rules.
 
 ---
 
@@ -172,6 +174,23 @@ validations, writes and notifications cost far more than the reload. The generat
 randomness as an argument, so the tests are reproducible. It produces about 70% around one
 city and the rest scattered, because a uniform world scatter would make clustering look like it
 works while hiding the dense case that is actually hard.
+
+---
+
+## Settings
+
+`waypoints:settings`, its own key, outside the memories envelope and with a sandbox variant
+following the same naming scheme. Same reasoning as the basemap preference: settings are not
+user data, they should not travel with an export, and a corrupt memories envelope must not take
+them down with it.
+
+Junk, a half-written value or blocked storage all fall back to the defaults, field by field with
+a typed fallback, so one bad value can only ever cost that one setting. A setting that cannot be
+written is still applied for the session: only remembering it is lost.
+
+`suggestPlaceNames`, default on. When it is off, placing a pin sends **nothing** to Nominatim.
+The check is before the request is built, not after it returns, and the "finding place" hint is
+cleared so the form does not claim to be looking something up.
 
 ---
 
@@ -551,6 +570,70 @@ Entering journey mode is the heaviest thing here, at around 155ms for 1000 stops
 draws 999 polylines with up to 64 interpolated points each plus 999 chevrons. It is inside
 budget at a thousand and over it by about 2000, which is the next thing to look at if the
 numbers ever matter again.
+
+---
+
+## Export and Import
+
+The file format is specified in `docs/export-format.md`. What matters here is the posture.
+
+### Export
+
+`io/export-format.js` is pure and builds the envelope from a named field list, so nothing that
+has been hung off a record in memory can travel into the file. Photos are encoded separately,
+because turning a Blob into base64 is asynchronous and the envelope shape has to stay testable
+without one.
+
+Base64 goes through `btoa`/`atob`, which exist in node and the browser alike, chunked at 8k
+because `String.fromCharCode` is applied with the chunk as arguments and a few hundred thousand
+of those overflow the call stack. A photo blob is comfortably that big.
+
+`io/download.js` is the only browser-facing part: one object URL, created and revoked in the
+same function, revoked a task later because revoking immediately cancels the download in some
+browsers.
+
+With photos left out, `photos` is empty **but the photoIds stay on the memories**, so an import
+can reconcile them against blobs the owner may still have here.
+
+### Import
+
+**The file is hostile.** It can be hand-edited, truncated, or written by something else.
+
+- Over 250MB is refused before being read. Non-JSON, the wrong `format` and an unsupported
+  `version` each get their own message; a *newer* version says to update rather than implying
+  the file is broken.
+- **Every record is rebuilt field by field, by name.** Nothing is spread, `Object.assign`-ed or
+  otherwise copied wholesale from the parsed object, so a `__proto__` or `constructor` key is
+  never read and never written. A test proves it.
+- A mixed-type array is rejected whole rather than filtered, so the problem is reported instead
+  of silently changing what the file said. This also keeps `validateMemory` safe: it reads
+  `tag.length` with no type check, which throws outright on a null tag.
+- An invalid record is skipped and reported with a reason, never fatal. A repeated id keeps the
+  first *usable* entry, so a broken first copy cannot shadow a good second one.
+- Photos are checked for id, type, clean base64 and decoded size, and then **decoded with
+  `createImageBitmap`**, because only an actual decode tells an image from bytes claiming to be
+  one. Anything over the pipeline's limits, or missing a usable thumbnail, goes back through the
+  ordinary pipeline keeping its id.
+
+Nothing is written until the preview is confirmed. Then photos first, so a memory never
+references a blob that is not there yet, with progress in an `aria-live` region. If the merge
+then fails, the photos just written are deleted again, so a failed import leaves nothing behind
+either way. `writeImportedPhotos` rolls back its own failures the same way, and a rollback that
+cannot finish never replaces the original error with its own.
+
+### store.merge
+
+`merge(records)` validates everything before applying anything, so one bad record cannot leave
+half a file merged. The importer has already filtered, which makes this a backstop rather than
+the first line of defence.
+
+The rule is by `updatedAt`: an unknown id is added, a known one is replaced only if the incoming
+record is newer, anything else is left exactly as it is. **There is no mode that replaces the
+collection wholesale.** Records are normalized on the way in, as `restore` does, so a
+hand-edited file cannot put an untrimmed title or an unrounded coordinate into the store.
+
+One envelope write and one notification whatever the size of the set. A merge that changes
+nothing writes nothing and notifies nobody, since a re-render would be pure churn.
 
 ---
 
