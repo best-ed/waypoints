@@ -41,6 +41,9 @@ import { createSettingsDialog } from './ui/settings-dialog.js';
 import { createSettingsStore } from './data/settings-store.js';
 import { buildExport, exportFilename } from './io/export-format.js';
 import { downloadText } from './io/download.js';
+import { checkFileSize, readImport, ImportError } from './io/parse-import.js';
+import { writeImportedPhotos } from './photos/import-photos.js';
+import { createImportDialog } from './ui/import-dialog.js';
 import { buildPopupContent, findPhotoStrip } from './ui/popup-content.js';
 import { createPopupPhotos } from './ui/popup-photos.js';
 import { createLightbox } from './ui/lightbox.js';
@@ -837,6 +840,112 @@ function boot() {
     runExport().catch((error) => console.error(error));
   });
 
+  const importInput = document.getElementById('import-input');
+  const importStatus = document.getElementById('import-status');
+  const settingsButton = document.getElementById('open-settings');
+
+  const importDialog = createImportDialog({
+    dialog: document.getElementById('import-dialog'),
+    summaryElement: document.getElementById('import-summary'),
+    countsElement: document.getElementById('import-counts'),
+    skippedElement: document.getElementById('import-skipped'),
+    skippedSummaryElement: document.getElementById('import-skipped-summary'),
+    skippedListElement: document.getElementById('import-skipped-list'),
+    progressElement: document.getElementById('import-progress'),
+    errorElement: document.getElementById('import-error'),
+    cancelButton: document.getElementById('import-cancel'),
+    confirmButton: document.getElementById('import-confirm'),
+    onConfirm: (plan) => {
+      applyImport(plan).catch((error) => console.error(error));
+    }
+  });
+
+  /* Read and checked in full before anything is shown, so the preview describes exactly what
+     would happen rather than a guess that gets corrected half way through writing. */
+  async function previewImport(file) {
+    importStatus.textContent = 'Reading the file...';
+
+    try {
+      checkFileSize(file.size);
+
+      const plan = readImport(await file.text(), {
+        existingMemories: store.list(),
+        existingPhotoIds: await photos.listIds()
+      });
+
+      importStatus.textContent = '';
+      importDialog.showPlan(plan, { returnFocus: settingsButton });
+    } catch (error) {
+      /* An ImportError already carries a message written for the person reading it. */
+      importStatus.textContent =
+        error instanceof ImportError ? error.message : 'That file could not be read.';
+
+      if (!(error instanceof ImportError)) {
+        console.error(error);
+      }
+    }
+  }
+
+  /* Photos first, then the memories, because a memory record must never reference a blob that
+     is not there yet. If the merge then fails, the blobs just written are removed, so a failed
+     import leaves nothing behind either way. */
+  async function applyImport(plan) {
+    importDialog.setBusy(true);
+    importDialog.setProgress(
+      plan.photosToWrite.length > 0 ? 'Importing photos 0 of ' + plan.photosToWrite.length : 'Importing...'
+    );
+
+    let written = [];
+
+    try {
+      const photoResult = await writeImportedPhotos(plan.photosToWrite, {
+        repository: photos,
+        /* The decode check proper: only an actual decode tells an image from bytes claiming to
+           be one. */
+        decode: (blob) => createImageBitmap(blob),
+        reprocess: (blob, options) => processImage(blob, options),
+        onProgress: (done, total) =>
+          importDialog.setProgress('Importing photos ' + done + ' of ' + total),
+        now
+      });
+
+      written = photoResult.written;
+
+      const merged = store.merge(plan.records);
+
+      importDialog.showResult({ ...merged, photos: written.length });
+    } catch (error) {
+      if (written.length > 0) {
+        await photos.removeMany(written).catch((removeError) => console.error(removeError));
+      }
+
+      if (error instanceof StorageFullError) {
+        importDialog.showError(STORAGE_FULL_MESSAGE);
+        return;
+      }
+
+      if (error instanceof ValidationError) {
+        importDialog.showError('That file holds a memory this version cannot store.');
+        return;
+      }
+
+      importDialog.showError('That import could not be completed, so nothing was changed.');
+      console.error(error);
+    } finally {
+      importDialog.setBusy(false);
+    }
+  }
+
+  importInput.addEventListener('change', () => {
+    const [file] = importInput.files;
+    /* Cleared straight away, so picking the same file twice still fires a change event. */
+    importInput.value = '';
+
+    if (file) {
+      previewImport(file).catch((error) => console.error(error));
+    }
+  });
+
   createSettingsDialog({
     dialog: document.getElementById('settings-dialog'),
     openButton: document.getElementById('open-settings'),
@@ -848,6 +957,7 @@ function boot() {
     /* A status line from a previous export should not still be sitting there next time. */
     onOpen: () => {
       exportStatus.textContent = '';
+      importStatus.textContent = '';
     }
   });
 

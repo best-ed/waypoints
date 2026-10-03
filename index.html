@@ -297,6 +297,24 @@
       </section>
 
       <section class="settings-section">
+        <h3 class="settings-heading">Import</h3>
+
+        <p class="field-hint">
+          Nothing is written until you have seen what the file would change.
+        </p>
+
+        <input
+          id="import-input"
+          class="import-input"
+          type="file"
+          accept="application/json,.json"
+        />
+        <label class="button import-pick" for="import-input">Choose a file</label>
+
+        <p id="import-status" class="field-hint" role="status"></p>
+      </section>
+
+      <section class="settings-section">
         <h3 class="settings-heading">Storage</h3>
         <p id="storage-usage" class="field-hint" hidden></p>
         <p id="storage-persisted" class="field-hint" hidden></p>
@@ -304,6 +322,28 @@
 
       <div class="dialog-actions">
         <button id="settings-close" class="button" type="button">Close</button>
+      </div>
+    </dialog>
+
+    <dialog id="import-dialog" class="dialog" aria-labelledby="import-dialog-title">
+      <h2 id="import-dialog-title" class="dialog-title">Import preview</h2>
+
+      <p id="import-summary" class="import-summary"></p>
+
+      <ul id="import-counts" class="import-counts"></ul>
+
+      <details id="import-skipped" class="import-skipped" hidden>
+        <summary id="import-skipped-summary"></summary>
+        <ul id="import-skipped-list" class="import-skipped-list"></ul>
+      </details>
+
+      <p id="import-progress" class="field-hint" aria-live="polite"></p>
+
+      <p id="import-error" class="form-error" role="alert" hidden></p>
+
+      <div class="dialog-actions">
+        <button id="import-cancel" class="button" type="button">Cancel</button>
+        <button id="import-confirm" class="button button-primary" type="button">Import</button>
       </div>
     </dialog>
 
