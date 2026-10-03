@@ -39,6 +39,8 @@ import { prefersReducedMotion } from './ui/motion.js';
 import { createMemoryForm } from './ui/memory-form.js';
 import { createSettingsDialog } from './ui/settings-dialog.js';
 import { createSettingsStore } from './data/settings-store.js';
+import { buildExport, exportFilename } from './io/export-format.js';
+import { downloadText } from './io/download.js';
 import { buildPopupContent, findPhotoStrip } from './ui/popup-content.js';
 import { createPopupPhotos } from './ui/popup-photos.js';
 import { createLightbox } from './ui/lightbox.js';
@@ -786,6 +788,55 @@ function boot() {
     form.openForAdd(coordinates, { returnFocus: addButton, placeName: result.name });
   }
 
+  const exportButton = document.getElementById('export-button');
+  const exportStatus = document.getElementById('export-status');
+  const exportIncludePhotos = document.getElementById('export-include-photos');
+
+  /* Every stored photo is loaded, not just the referenced ones, because an id a memory points
+     at is exactly what has to end up in the file. computeOrphans has already swept anything
+     nothing refers to. */
+  async function loadAllPhotoRecords(memories) {
+    const wanted = new Set(memories.flatMap((memory) => memory.photoIds));
+    const records = [];
+
+    for (const photoId of wanted) {
+      const record = await photos.get(photoId);
+      if (record) {
+        records.push(record);
+      }
+    }
+
+    return records;
+  }
+
+  async function runExport() {
+    const includePhotos = exportIncludePhotos.checked;
+
+    exportButton.disabled = true;
+    exportStatus.textContent = includePhotos ? 'Reading photos...' : 'Building the file...';
+
+    try {
+      const memories = store.list();
+      const photoRecords = includePhotos ? await loadAllPhotoRecords(memories) : [];
+      const envelope = await buildExport({ memories, photoRecords, includePhotos, now });
+
+      downloadText(exportFilename(now()), JSON.stringify(envelope, null, 2));
+
+      exportStatus.textContent =
+        'Exported ' + memories.length + (memories.length === 1 ? ' memory' : ' memories') +
+        (includePhotos ? ' and ' + photoRecords.length + ' photos.' : ', without photos.');
+    } catch (error) {
+      exportStatus.textContent = 'That export could not be built.';
+      console.error(error);
+    } finally {
+      exportButton.disabled = false;
+    }
+  }
+
+  exportButton.addEventListener('click', () => {
+    runExport().catch((error) => console.error(error));
+  });
+
   createSettingsDialog({
     dialog: document.getElementById('settings-dialog'),
     openButton: document.getElementById('open-settings'),
@@ -793,7 +844,11 @@ function boot() {
     toggleElement: document.getElementById('setting-suggest-place-names'),
     usageElement: document.getElementById('storage-usage'),
     persistedElement: document.getElementById('storage-persisted'),
-    settings
+    settings,
+    /* A status line from a previous export should not still be sitting there next time. */
+    onOpen: () => {
+      exportStatus.textContent = '';
+    }
   });
 
   sweepOrphanedPhotos().catch((error) => console.error(error));

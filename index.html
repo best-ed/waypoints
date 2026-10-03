@@ -279,6 +279,24 @@
       </section>
 
       <section class="settings-section">
+        <h3 class="settings-heading">Export</h3>
+
+        <div class="field-checkbox">
+          <input id="export-include-photos" type="checkbox" checked />
+          <label for="export-include-photos">Include photos</label>
+        </div>
+
+        <p class="field-hint">
+          Without photos the file is far smaller, and the references are kept so an import can
+          match them to photos already here.
+        </p>
+
+        <button id="export-button" class="button" type="button">Export memories</button>
+
+        <p id="export-status" class="field-hint" role="status"></p>
+      </section>
+
+      <section class="settings-section">
         <h3 class="settings-heading">Storage</h3>
         <p id="storage-usage" class="field-hint" hidden></p>
         <p id="storage-persisted" class="field-hint" hidden></p>
