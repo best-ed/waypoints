@@ -6,7 +6,8 @@ A web app for pinning memories on an interactive map.
 
 ## Stack Constraints
 
-- Vanilla HTML, CSS, and JavaScript ES modules
+- Vanilla HTML, CSS, and JavaScript ES modules. The single exception is
+  `src/js/theme-boot.js`, which has to run before the first paint and so cannot be deferred
 - Leaflet 1.9.4 for mapping, loaded from CDN with SRI integrity hashes
 - Leaflet.markercluster 1.5.3, same arrangement. Only its structural stylesheet
   (`MarkerCluster.css`) is loaded: `MarkerCluster.Default.css` skins the `.marker-cluster`
@@ -30,6 +31,7 @@ src/js/filters/   search matching and filter state, pure
 src/js/journey/   chronological ordering, geometry and the playback machine, pure
 src/js/dev/       sandbox mode and the seed generator, pure
 src/js/io/        the export format and the import parser, pure except download.js
+src/js/theme-boot.js  the one classic script, run in <head> before the stylesheets
 src/js/geo/       Nominatim client, request scheduler and place parsers, pure
 src/js/photos/    photo processing, the repository and its IndexedDB backend
 src/js/ui/        everything that touches the DOM, plus selection state
@@ -634,6 +636,139 @@ hand-edited file cannot put an untrimmed title or an unrounded coordinate into t
 
 One envelope write and one notification whatever the size of the set. A merge that changes
 nothing writes nothing and notifies nobody, since a re-render would be pure churn.
+
+---
+
+## Colour and Theme
+
+**No colour literal appears anywhere outside `tokens.css`.** No hex, no `rgb()`, no named
+colour. Shadows and scrims are tokenised whole rather than just their colour, so a theme can
+change their weight as well as their tint. SVG built in JavaScript carries no `fill` or
+`stroke` of its own; it takes them from CSS, or from `currentColor` where it should follow the
+text around it.
+
+Two border tokens, because they owe different things:
+
+| | used for | contrast |
+|---|---|---|
+| `--color-border` | dividers and panel edges | none - the areas either side already differ |
+| `--color-border-strong` | the edge of anything interactive | 3:1 |
+
+### The dark set
+
+Declared **twice**, on purpose:
+
+```css
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) { … } }
+:root[data-theme='dark'] { … }
+```
+
+The media query carries `:not([data-theme='light'])` so an explicit light choice beats the
+system preference, and the attribute selector applies dark on a system that prefers light.
+Written out twice rather than through another layer of indirection, because one list of values
+per theme is far easier to read - and a test asserts the two copies are identical, so they
+cannot drift.
+
+The `theme` setting is `system`, `light` or `dark`. **`system` is the absence of the
+attribute**, not `data-theme="system"`: that would match neither selector and quietly do
+nothing.
+
+`theme-boot.js` applies an explicit choice in `<head>`, before the stylesheets. It is a classic
+script because a module is deferred by definition, which would flash the light theme first. It
+cannot import, so it repeats the settings key scheme, and it must never throw - reading
+`localStorage` alone throws outright when site data is blocked, and a theme preference is never
+worth stopping the page for.
+
+### Contrast
+
+`tests/style/contrast.test.js` parses `tokens.css` and checks **every pairing the interface
+actually puts together**, in both themes, against an explicit list. 4.5:1 for text, 3:1 for
+large text and the things WCAG 1.4.11 calls user interface components, 1.0 for a pairing with no
+requirement - and each of those says why.
+
+The list is the point. A new colour token fails the suite until it appears there with a
+decision attached. The helper lives in `tests/helpers/` rather than `src/`, because the app
+never computes contrast at runtime and `src/` is what ships.
+
+### Dark basemap
+
+In dark mode, CARTO Voyager is swapped for Dark Matter through `setUrl` on the **existing**
+layer. Rebuilding the layer would make Leaflet's attribution control see a remove and an add,
+which is how a credit ends up flickering or stacked. Only a url that actually changes is
+swapped, so a theme change does not refetch every OpenStreetMap tile. OpenStreetMap standard
+has no dark counterpart and is left alone.
+
+---
+
+## Forced Colours
+
+Windows High Contrast and anything like it flattens the palette to a handful of system
+keywords. Everything that carries meaning through colour alone - a pressed chip, a traversed
+journey leg, a bar inside the selected range - would otherwise collapse into the same two
+colours. `forced-colors.css` is loaded last and restates those in system colours.
+
+Every property relied on there (`color`, `background-color`, `border-color`, `outline-color`,
+`fill`, `stroke`) is one the user agent forces, which is why assigning a system keyword is
+enough.
+
+**`forced-color-adjust: none` is used in exactly one place**: photo thumbnails and the lightbox
+image. A photo is content, not interface. The user agent leaves the image alone but forces the
+background of the button behind it, which on some palettes paints a solid block into the gap
+around a non-square thumbnail.
+
+---
+
+## Mobile
+
+The breakpoint is 720px, where the sidebar and a usable map stop fitting side by side.
+
+- **Header.** Two labels per button, swapped with `display` - not `visibility`, not
+  `aria-hidden` - so the hidden one leaves the accessibility tree and the button's name is
+  whichever label is showing. Settings keeps an `aria-label` so its name survives being cut
+  down to the icon. The title may ellipsis; the controls may not be pushed off.
+- **Map and List.** `data-view` on the app body, read entirely by CSS. Above the breakpoint the
+  attribute is **removed**, so a wide layout can never be left with a hidden map. Choosing a
+  memory in List switches to Map first, because flying to a marker on a map of the wrong size
+  lands in the wrong place - every path that reveals the map calls `invalidateSize`.
+- **The sidebar header is not sticky on narrow.** It holds the search, the chips, the dates,
+  the timeline and the journey controls, which together are taller than a phone screen; sticky
+  pinned all of it over the list and nothing below could be reached.
+- **16px inputs.** Below that, iOS Safari zooms the page on focus and does not undo it.
+- **`100dvh`, not `100vh`.** With `vh` the page is the height of the largest viewport, so the
+  bottom of the layout hides under the URL bar until it scrolls away.
+- **Safe areas.** `viewport-fit=cover` plus `env(safe-area-inset-*)` on the header, the dialogs
+  and the toast region - the fixed edges.
+- **Touch.** 44px minimum under `(pointer: coarse)`. The timeline thumb is the only target
+  there, since the input carries `pointer-events: none` so both handles of the pair stay
+  reachable; it gets a 44px box with a transparent border and `background-clip: content-box`,
+  so the padding does the hitting and the visible disc stays small.
+- **No marker tooltips under `(hover: none)`.** A tooltip is a hover affordance: on a touch
+  screen it fires on tap, lands over the popup that same tap opened, and will not go away.
+- **Lightbox swipe.** Pointer events, so a mouse drag and a pen behave the same. The horizontal
+  travel has to beat the vertical, or scrolling a tall photo pages it sideways. `draggable="false"`
+  on the image, because a native image drag fires `pointercancel` and the gesture is lost.
+
+---
+
+## Accessibility
+
+Landmarks: the header is `banner`, `<main>` wraps the map, the sidebar is an `<aside>` named by
+its heading, and the map container is a **named region**. Deliberately not
+`role="application"`: that stops browse mode and passes keys straight through, which would put
+the markers - real buttons with real names - out of reach of ordinary navigation.
+
+A skip link is the first thing in the tab order. It targets the memory list, which carries
+`tabindex="-1"` so focus can actually land there, and on a narrow screen it brings the list into
+view first rather than moving focus to something nobody can see.
+
+One `h1`, then `h2` for the sidebar, popups and dialog titles, then `h3` for the sections inside
+Settings. No level is skipped.
+
+axe-core runs from the scratchpad over every state - default, no results, the add and edit
+dialogs, settings, the import preview, the lightbox, journey playback, a toast, the sandbox
+banner, place search results - in light, dark and forced colours, at 1280px and 375px, plus the
+existing suites under WebKit at 375px. **It is never added to the repo**: `package.json` has no
+dependencies and is not going to grow any.
 
 ---
 
