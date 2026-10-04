@@ -9,6 +9,16 @@ const CLUSTER_OPTIONS = {
   chunkedLoading: true
 };
 
+const POPUP_OPTIONS = {
+  /* Leaflet knows nothing about the app header, so an auto-panned popup would happily tuck
+     itself underneath it. */
+  autoPanPaddingTopLeft: [16, 72],
+  autoPanPaddingBottomRight: [16, 16],
+  /* Narrower than Leaflet's 300 default, so a popup still fits a 360px screen with its own
+     chrome and the map's margins. */
+  maxWidth: 280
+};
+
 /* Everything the popup and tooltip actually show. Compared as a whole so a change to any
    displayed field refreshes the popup, while an untouched memory keeps its DOM node. */
 function displaySignature(memory) {
@@ -92,7 +102,7 @@ export function createMarkersLayer(
 
        Reading entry.memory rather than the argument means the function always sees the
        current record, so an edit needs no rebinding. */
-    marker.bindPopup(() => renderPopup(entry.memory));
+    marker.bindPopup(() => renderPopup(entry.memory), POPUP_OPTIONS);
 
     marker.on('popupopen', () => onPopupOpen(memory.id));
     marker.on('popupclose', () => onPopupClose(memory.id));

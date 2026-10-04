@@ -7,6 +7,13 @@ body {
   height: 100%;
 }
 
+/* dvh follows a mobile browser's collapsing toolbars, which 100vh does not: with vh the page
+   is the height of the *largest* viewport, so the bottom of the layout sits under the URL bar
+   until it scrolls away. The percentage above stays as the fallback for anything without dvh. */
+body {
+  height: 100dvh;
+}
+
 body {
   display: flex;
   flex-direction: column;

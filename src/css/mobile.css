@@ -104,3 +104,66 @@
     position: static;
   }
 }
+
+/* ---- full-screen dialogs, readable inputs, safe areas ----------------------- */
+
+/* 16px is the threshold below which iOS Safari zooms the page when a field takes focus, and
+   that zoom does not undo itself. Applied at every width rather than only on narrow screens,
+   because a desktop browser emulating a phone hits the same rule. */
+.field-input,
+.search-input,
+.date-input,
+.place-search-input,
+.field-select {
+  font-size: 1rem;
+}
+
+@media (max-width: 720px) {
+  /* A modal on a phone is the whole screen; a centred box with a margin wastes the room and
+     leaves the backdrop as a target that is easy to hit by accident. */
+  .dialog,
+  .lightbox {
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+  }
+
+  .dialog {
+    overflow-y: auto;
+    /* Below the notch, and clear of a home indicator. */
+    padding-top: max(var(--space-4), env(safe-area-inset-top));
+    padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+    padding-left: max(var(--space-4), env(safe-area-inset-left));
+    padding-right: max(var(--space-4), env(safe-area-inset-right));
+  }
+
+  /* The header is the top edge of the page, so it is what has to clear a notch. */
+  .app-header {
+    padding-top: env(safe-area-inset-top);
+    padding-left: max(var(--space-2), env(safe-area-inset-left));
+    padding-right: max(var(--space-2), env(safe-area-inset-right));
+    height: calc(var(--header-height) + env(safe-area-inset-top));
+    flex-basis: calc(var(--header-height) + env(safe-area-inset-top));
+  }
+
+  /* Toasts sit on the bottom edge, which is where a home indicator lives. */
+  .toast-region {
+    padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+    padding-left: max(var(--space-4), env(safe-area-inset-left));
+    padding-right: max(var(--space-4), env(safe-area-inset-right));
+  }
+
+  .app-body[data-view='list'] .sidebar {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* A popup has to fit the screen it is on, and clear of the header so autoPan has somewhere
+     to put it. */
+  .leaflet-popup-content {
+    max-width: calc(100vw - var(--space-6));
+  }
+}
