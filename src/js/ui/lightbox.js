@@ -46,7 +46,12 @@ export function createLightbox({ document: doc = document }) {
 
     show();
     dialog.showModal();
-    nextButton.focus();
+
+    /* With one photo Previous and Next are disabled, so focusing Next would put focus
+       nowhere. showModal happens to autofocus Close in that case, but only because it falls
+       back to the first enabled control and because focus() on a disabled button silently
+       does nothing - neither of which is a contract worth relying on. */
+    (records.length < 2 ? closeButton : nextButton).focus();
   }
 
   previousButton.addEventListener('click', () => step(-1));
