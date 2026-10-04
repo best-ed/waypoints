@@ -1,0 +1,161 @@
+/* Windows High Contrast and any other forced-colours mode flattens the palette to a handful
+   of system keywords. Everything this app uses to carry meaning through colour alone - a
+   pressed chip, a traversed journey leg, a bar inside the selected range - would otherwise
+   collapse into the same two colours.
+
+   Every property set here (color, background-color, border-color, outline-color, fill,
+   stroke) is one the user agent forces, so assigning a system keyword is enough.
+   forced-color-adjust: none is used in exactly one place, noted at the bottom. */
+@media (forced-colors: active) {
+  /* Focus has to be unmistakable, and the accent token is gone in this mode. */
+  :focus-visible {
+    outline-color: Highlight;
+  }
+
+  /* ---- pins ---------------------------------------------------------------- */
+  /* A solid CanvasText pin with a Canvas outline, so it reads against map tiles whatever the
+     chosen theme does to them. */
+  .pin-body {
+    fill: CanvasText;
+    stroke: Canvas;
+  }
+
+  .pin-centre {
+    fill: Canvas;
+  }
+
+  /* The step number is cut out of the pin rather than drawn on top of it. */
+  .pin-number {
+    fill: Canvas;
+  }
+
+  /* Selection and an open popup are states, so they take the selected colours. */
+  .pin:hover .pin-body,
+  .pin:focus-visible .pin-body,
+  .pin.leaflet-popup-open .pin-body,
+  .pin.pin-active .pin-body {
+    fill: Highlight;
+    stroke: HighlightText;
+  }
+
+  .pin.leaflet-popup-open .pin-centre,
+  .pin.pin-active .pin-centre,
+  .pin:hover .pin-centre {
+    fill: HighlightText;
+  }
+
+  .pin-draft .pin-body,
+  .pin-moving .pin-body {
+    fill: GrayText;
+    stroke: Canvas;
+  }
+
+  /* ---- cluster icons ------------------------------------------------------- */
+  .memory-cluster {
+    background-color: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+  }
+
+  .memory-cluster:hover,
+  .memory-cluster:focus-visible {
+    background-color: Highlight;
+    color: HighlightText;
+    border-color: HighlightText;
+  }
+
+  /* ---- tag chips ----------------------------------------------------------- */
+  /* The pressed state is the important one: without this a selected chip and an unselected
+     one are the same two colours, and the filter looks like it is doing nothing. */
+  .tag-chip {
+    background-color: ButtonFace;
+    color: ButtonText;
+    border-color: ButtonBorder;
+  }
+
+  .tag-chip[aria-pressed='true'] {
+    background-color: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+
+  /* ---- the timeline -------------------------------------------------------- */
+  .timeline-bar-fill {
+    background-color: GrayText;
+  }
+
+  .timeline-bar.is-in-range .timeline-bar-fill {
+    background-color: CanvasText;
+  }
+
+  .timeline-handle::-webkit-slider-runnable-track,
+  .timeline-handle::-moz-range-track {
+    background-color: CanvasText;
+  }
+
+  .timeline-handle::-webkit-slider-thumb {
+    background-color: Highlight;
+    border-color: HighlightText;
+  }
+
+  .timeline-handle::-moz-range-thumb {
+    background-color: Highlight;
+    border-color: HighlightText;
+  }
+
+  /* ---- the journey path ---------------------------------------------------- */
+  /* Travelled against untravelled is the whole point of the two styles, so they take the two
+     system colours that still differ here. The dashes carry it as well, for anyone whose
+     forced palette makes these two close. */
+  .journey-segment {
+    stroke: CanvasText;
+  }
+
+  .journey-segment.is-pending {
+    stroke: GrayText;
+  }
+
+  .journey-chevron-stroke {
+    stroke: CanvasText;
+  }
+
+  .journey-chevron.is-pending .journey-chevron-stroke {
+    stroke: GrayText;
+  }
+
+  /* ---- the sandbox banner -------------------------------------------------- */
+  /* Mark is the system's "this is called out" pair, which is exactly what the banner is. */
+  .sandbox-banner {
+    background-color: Mark;
+    color: MarkText;
+  }
+
+  /* ---- scrims and shadows -------------------------------------------------- */
+  /* Shadows are dropped by the user agent in this mode, so dialogs get a real border to sit
+     behind instead, and the backdrop stops pretending to dim anything. */
+  .dialog,
+  .lightbox {
+    border: 1px solid CanvasText;
+  }
+
+  /* ---- the one override --------------------------------------------------- */
+  /* forced-color-adjust: none is needed here and nowhere else. A photo thumbnail is content,
+     not interface: the user agent leaves the image itself alone, but it forces the button's
+     background behind it, which on some palettes paints a solid block over the gap around a
+     non-square thumbnail. Keeping the button transparent is the only way to leave the photo
+     looking like the photo. */
+  .popup-photo-button,
+  .lightbox-image {
+    forced-color-adjust: none;
+    background-color: transparent;
+  }
+
+  .popup-photo-button {
+    border: 1px solid CanvasText;
+  }
+
+  .popup-photo-button:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}
