@@ -3,7 +3,7 @@
   padding: var(--space-2);
   border-radius: var(--radius-md);
   background-color: var(--color-surface);
-  box-shadow: 0 1px 6px rgb(0 0 0 / 0.3);
+  box-shadow: var(--shadow-control);
 }
 
 .place-search-form {

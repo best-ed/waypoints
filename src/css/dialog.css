@@ -8,7 +8,7 @@
 }
 
 .dialog::backdrop {
-  background-color: rgb(0 0 0 / 0.45);
+  background-color: var(--color-backdrop);
 }
 
 .dialog-title {
