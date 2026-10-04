@@ -399,7 +399,9 @@
     </dialog>
 
     <dialog id="lightbox" class="lightbox" aria-label="Photo viewer">
-      <img id="lightbox-image" class="lightbox-image" alt="" />
+      <!-- draggable="false": an img is draggable by default, and a native drag fires
+           pointercancel, which kills the swipe before it can be read. -->
+      <img id="lightbox-image" class="lightbox-image" alt="" draggable="false" />
 
       <p id="lightbox-position" class="lightbox-position" aria-live="polite"></p>
 

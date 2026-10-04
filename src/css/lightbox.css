@@ -32,3 +32,56 @@
   gap: var(--space-2);
   margin-top: var(--space-3);
 }
+
+/* A photo pages in from the side it came from. Short, because it is feedback for a swipe
+   rather than a transition worth watching. */
+@keyframes lightbox-slide-next {
+  from {
+    transform: translateX(10%);
+    opacity: 0.3;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes lightbox-slide-prev {
+  from {
+    transform: translateX(-10%);
+    opacity: 0.3;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.lightbox-image.slide-next {
+  animation: lightbox-slide-next 180ms ease-out;
+}
+
+.lightbox-image.slide-prev {
+  animation: lightbox-slide-prev 180ms ease-out;
+}
+
+/* Vertical panning stays with the browser; horizontal is ours to read as a swipe. */
+.lightbox {
+  touch-action: pan-y;
+}
+
+/* Belt and braces with draggable="false" on the element: a native image drag would fire
+   pointercancel part way through a swipe and the gesture would be lost. */
+.lightbox-image {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* Guarded twice over: the module checks the query before adding the class, and this stops the
+   animation even if something adds it anyway. */
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-image.slide-next,
+  .lightbox-image.slide-prev {
+    animation: none;
+  }
+}

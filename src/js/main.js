@@ -136,7 +136,7 @@ function boot() {
 
   const selection = createSelection();
   const filters = createFilterState();
-  const lightbox = createLightbox({});
+  const lightbox = createLightbox({ reducedMotion: prefersReducedMotion });
 
   const popupPhotos = createPopupPhotos({
     loadPhotos: (ids) => loadPhotos(ids),

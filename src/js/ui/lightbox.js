@@ -1,6 +1,10 @@
 import { createObjectUrlPool } from './object-urls.js';
 
-export function createLightbox({ document: doc = document }) {
+/* Far enough that a tap or a small wobble cannot page the photo, close enough that a deliberate
+   flick does. */
+const SWIPE_MIN_DISTANCE = 48;
+
+export function createLightbox({ document: doc = document, reducedMotion = () => false }) {
   const dialog = doc.getElementById('lightbox');
   const image = doc.getElementById('lightbox-image');
   const position = doc.getElementById('lightbox-position');
@@ -30,12 +34,25 @@ export function createLightbox({ document: doc = document }) {
     nextButton.disabled = single;
   }
 
+  /* Restarting a CSS animation needs the class gone and the layout flushed before it goes
+     back on, or the browser coalesces the two changes and nothing plays. */
+  function slide(offset) {
+    if (reducedMotion()) {
+      return;
+    }
+
+    image.classList.remove('slide-next', 'slide-prev');
+    void image.offsetWidth;
+    image.classList.add(offset > 0 ? 'slide-next' : 'slide-prev');
+  }
+
   function step(offset) {
     if (records.length < 2) {
       return;
     }
     index = (index + offset + records.length) % records.length;
     show();
+    slide(offset);
   }
 
   function open(nextRecords, startIndex, memory, returnFocus) {
@@ -53,6 +70,45 @@ export function createLightbox({ document: doc = document }) {
        does nothing - neither of which is a contract worth relying on. */
     (records.length < 2 ? closeButton : nextButton).focus();
   }
+
+  /* Pointer events rather than touch events, so a mouse drag and a pen work the same way.
+     Only the primary pointer: a second finger landing mid-pinch must not page the photo. */
+  let swipeFrom = null;
+
+  dialog.addEventListener('pointerdown', (event) => {
+    if (!event.isPrimary) {
+      swipeFrom = null;
+      return;
+    }
+    swipeFrom = { x: event.clientX, y: event.clientY, id: event.pointerId };
+  });
+
+  dialog.addEventListener('pointerup', (event) => {
+    if (!swipeFrom || event.pointerId !== swipeFrom.id) {
+      return;
+    }
+
+    const dx = event.clientX - swipeFrom.x;
+    const dy = event.clientY - swipeFrom.y;
+    swipeFrom = null;
+
+    if (Math.abs(dx) < SWIPE_MIN_DISTANCE) {
+      return;
+    }
+
+    /* The horizontal travel has to beat the vertical, or scrolling a tall photo would page it
+       sideways on the way past. */
+    if (Math.abs(dx) <= Math.abs(dy)) {
+      return;
+    }
+
+    /* Swiping left brings the next photo in from the right, like turning a page. */
+    step(dx < 0 ? 1 : -1);
+  });
+
+  dialog.addEventListener('pointercancel', () => {
+    swipeFrom = null;
+  });
 
   previousButton.addEventListener('click', () => step(-1));
   nextButton.addEventListener('click', () => step(1));
