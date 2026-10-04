@@ -61,6 +61,7 @@
     <link rel="stylesheet" href="src/css/journey.css" />
     <link rel="stylesheet" href="src/css/sandbox.css" />
     <link rel="stylesheet" href="src/css/settings.css" />
+    <link rel="stylesheet" href="src/css/mobile.css" />
     <!-- Last, so its system colours win over every component sheet. -->
     <link rel="stylesheet" href="src/css/forced-colors.css" />
     <link rel="stylesheet" href="src/css/toast.css" />
@@ -86,11 +87,29 @@
       <h1 class="app-title">waypoints</h1>
 
       <button id="add-memory" class="button" type="button" aria-pressed="false">
-        Add memory
+        <span class="label-wide">Add memory</span>
+        <span class="label-narrow">Add</span>
       </button>
 
-      <button id="open-settings" class="button" type="button" aria-haspopup="dialog">
-        Settings
+      <button
+        id="open-settings"
+        class="button icon-button"
+        type="button"
+        aria-haspopup="dialog"
+        aria-label="Settings"
+      >
+        <svg class="icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+          <path
+            d="M1 4.5h7M12.5 4.5h2.5M1 11.5h2.5M8 11.5h7"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+          />
+          <circle cx="10.25" cy="4.5" r="2" fill="none" stroke="currentColor" stroke-width="1.6" />
+          <circle cx="5.75" cy="11.5" r="2" fill="none" stroke="currentColor" stroke-width="1.6" />
+        </svg>
+        <span class="label-wide">Settings</span>
       </button>
     </header>
 

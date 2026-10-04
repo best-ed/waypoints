@@ -1,0 +1,57 @@
+/* Narrow-screen layout. 720px is where the sidebar and a usable map stop fitting side by
+   side on the same screen. */
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.icon {
+  display: block;
+  flex: 0 0 auto;
+}
+
+/* One label per width. display, not visibility or aria-hidden, so the hidden one leaves the
+   accessibility tree too and the button's name is whichever label is showing. */
+.label-narrow {
+  display: none;
+}
+
+/* The title gives way before the controls do: it can ellipsis, they cannot be pushed off. */
+.app-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .app-header {
+    padding-inline: var(--space-2);
+    gap: var(--space-2);
+  }
+
+  .label-wide {
+    display: none;
+  }
+
+  .label-narrow {
+    display: inline;
+  }
+
+  /* Down to the icon alone. aria-label keeps the name. */
+  .icon-button#open-settings {
+    padding-inline: var(--space-2);
+  }
+
+  /* The sidebar does not sit beside the map at this width, so collapsing it means nothing:
+     the Map and List switch takes over. */
+  #sidebar-toggle {
+    display: none;
+  }
+
+  .app-title {
+    font-size: var(--text-base);
+  }
+}
