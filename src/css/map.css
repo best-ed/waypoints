@@ -99,3 +99,11 @@
     transition: none;
   }
 }
+
+/* Leaflet's own attribution links come with a blue that sits at about 2.55:1 against the
+   surrounding grey and no underline, so colour is the only thing marking them as links. The
+   markup is Leaflet's; the styling is ours to set. */
+.leaflet-control-attribution a {
+  text-decoration: underline;
+  color: inherit;
+}
