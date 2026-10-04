@@ -71,6 +71,8 @@
     <link rel="stylesheet" href="src/css/lightbox.css" />
   </head>
   <body>
+    <a class="skip-link" href="#memory-list">Skip to the memory list</a>
+
     <p id="sandbox-banner" class="sandbox-banner" hidden>
       Sandbox &mdash; this is throwaway data, kept apart from your real memories.
     </p>
@@ -218,11 +220,18 @@
 
         <p id="memory-empty" class="sidebar-empty" tabindex="-1" hidden></p>
 
-        <ul id="memory-list" class="memory-list"></ul>
+        <!-- tabindex="-1" so the skip link can actually land focus on it. -->
+      <ul id="memory-list" class="memory-list" tabindex="-1"></ul>
       </aside>
 
       <main class="app-main">
-        <div id="map" class="map"></div>
+        <!--
+          region rather than application: application tells a screen reader to stop browsing
+          and pass keys straight through, which would put the markers - real buttons with real
+          names - out of reach of the usual navigation. A named region gives the landmark
+          without taking that away.
+        -->
+        <div id="map" class="map" role="region" aria-label="Map"></div>
       </main>
     </div>
 

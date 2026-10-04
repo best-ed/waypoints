@@ -889,6 +889,14 @@ function boot() {
     }
   });
 
+  /* On a narrow screen the list may be in the other view, where skipping to it would move
+     focus to something nobody can see. The link brings the list up first. */
+  document.querySelector('.skip-link').addEventListener('click', () => {
+    if (viewSwitch.isNarrow()) {
+      viewSwitch.setView(LIST_VIEW);
+    }
+  });
+
   const importInput = document.getElementById('import-input');
   const importStatus = document.getElementById('import-status');
   const settingsButton = document.getElementById('open-settings');
