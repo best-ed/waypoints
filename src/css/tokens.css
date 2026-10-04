@@ -3,7 +3,14 @@
   --color-surface: #ffffff;
   --color-text: #1b1b19;
   --color-text-muted: #6b6b66;
+  /* Dividers and panel edges. Decorative: it separates areas that are already distinguishable
+     by their background, so it carries no contrast requirement. */
   --color-border: #e0e0da;
+
+  /* The boundary of anything interactive - inputs, buttons, chips. This one is what tells a
+     control from the page around it, so it has to clear 3:1. */
+  --color-border-strong: #8b8b85;
+
   --color-accent: #c2410c;
   --color-accent-contrast: #ffffff;
 
@@ -57,4 +64,65 @@
   --z-panel: 1200;
   --z-modal: 1300;
   --z-toast: 1400;
+}
+
+/* The dark set, declared twice on purpose.
+
+   The media query carries :root:not([data-theme="light"]) so an explicit light choice beats
+   the system preference, and the attribute selector below applies dark on a system that
+   prefers light. Duplicated rather than built out of a second layer of indirection, because
+   one list of values per theme is far easier to read - and a test asserts the two copies are
+   identical so they cannot drift apart. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+  --color-bg: #15151a;
+  --color-surface: #1e1e24;
+  --color-text: #ececf0;
+  --color-text-muted: #9b9ba5;
+  --color-border: #2e2e36;
+  --color-border-strong: #6e6e79;
+  --color-accent: #f97316;
+  --color-accent-contrast: #1b1b19;
+
+  --color-journey: #2dd4bf;
+  --color-journey-muted: #5a8480;
+  --color-journey-contrast: #0b1b1a;
+
+  --color-sandbox: #b4401a;
+  --color-sandbox-contrast: #ffffff;
+
+  /* Heavier than the light ones: a black shadow has far less to work with on a dark surface,
+     and the controls still have to lift off the map. */
+  --shadow-control: 0 1px 6px rgb(0 0 0 / 0.6);
+  --shadow-cluster: 0 1px 4px rgb(0 0 0 / 0.6);
+  --shadow-toast: 0 4px 16px rgb(0 0 0 / 0.6);
+  --color-backdrop: rgb(0 0 0 / 0.6);
+  --color-backdrop-strong: rgb(0 0 0 / 0.85);
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #15151a;
+  --color-surface: #1e1e24;
+  --color-text: #ececf0;
+  --color-text-muted: #9b9ba5;
+  --color-border: #2e2e36;
+  --color-border-strong: #6e6e79;
+  --color-accent: #f97316;
+  --color-accent-contrast: #1b1b19;
+
+  --color-journey: #2dd4bf;
+  --color-journey-muted: #5a8480;
+  --color-journey-contrast: #0b1b1a;
+
+  --color-sandbox: #b4401a;
+  --color-sandbox-contrast: #ffffff;
+
+  /* Heavier than the light ones: a black shadow has far less to work with on a dark surface,
+     and the controls still have to lift off the map. */
+  --shadow-control: 0 1px 6px rgb(0 0 0 / 0.6);
+  --shadow-cluster: 0 1px 4px rgb(0 0 0 / 0.6);
+  --shadow-toast: 0 4px 16px rgb(0 0 0 / 0.6);
+  --color-backdrop: rgb(0 0 0 / 0.6);
+  --color-backdrop-strong: rgb(0 0 0 / 0.85);
 }
