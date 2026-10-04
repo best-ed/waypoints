@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { isRealCalendarDate, validateMemory } from '../../src/js/data/validate.js';
+import { isRealCalendarDate, validateMemory, validateStoredMemory } from '../../src/js/data/validate.js';
 import { ValidationError } from '../../src/js/data/errors.js';
 import { normalizeMemoryInput } from '../../src/js/data/normalize.js';
 import {
@@ -251,5 +251,67 @@ test('rejects photo ids that are not a list', () => {
 
     assert.equal(result.valid, false);
     assert.equal(result.errors.photoIds, 'Photo ids must be a list');
+  }
+});
+
+/* validateMemory used to read tag.length with no type check, so a null tag threw a TypeError
+   out of the one function whose job is to report problems rather than raise them. These build
+   the record raw: normalizeMemoryInput strips bad tags, so going through validMemory would
+   never let the bad value reach the validator. */
+function rawMemory(overrides = {}) {
+  return {
+    title: 'Sunset at the pier',
+    note: 'Cold wind.',
+    date: '2025-03-04',
+    lat: -1.2921,
+    lng: 36.8219,
+    placeName: 'Nairobi',
+    tags: ['trail'],
+    photoIds: [],
+    ...overrides
+  };
+}
+
+test('a non-string tag is reported rather than thrown', () => {
+  for (const tags of [[null], [undefined], [42], [{}], [[]], ['ok', null], [true]]) {
+    const result = validateMemory(rawMemory({ tags }));
+
+    assert.equal(result.valid, false, JSON.stringify(tags));
+    assert.equal(result.errors.tags, 'Tags must be text');
+  }
+});
+
+test('a non-string photo id is reported rather than thrown', () => {
+  for (const photoIds of [[null], [undefined], [42], [{}], ['ok', null]]) {
+    const result = validateMemory(rawMemory({ photoIds }));
+
+    assert.equal(result.valid, false, JSON.stringify(photoIds));
+    assert.equal(result.errors.photoIds, 'Photo ids must be text');
+  }
+});
+
+test('the tag type error comes before the per-tag length error', () => {
+  const result = validateMemory(rawMemory({ tags: [null, 'x'.repeat(100)] }));
+
+  assert.equal(result.errors.tags, 'Tags must be text');
+});
+
+test('a raw record of real strings still passes', () => {
+  const result = validateMemory(rawMemory({ tags: ['trail', 'view'], photoIds: ['p1'] }));
+
+  assert.equal(result.valid, true, JSON.stringify(result.errors));
+});
+
+test('validateStoredMemory is safe against the same input', () => {
+  for (const tags of [[null], [42]]) {
+    const result = validateStoredMemory({
+      id: 'm1',
+      ...rawMemory({ tags }),
+      createdAt: '2025-01-01T00:00:00.000Z',
+      updatedAt: '2025-01-01T00:00:00.000Z'
+    });
+
+    assert.equal(result.valid, false);
+    assert.equal(result.errors.tags, 'Tags must be text');
   }
 });

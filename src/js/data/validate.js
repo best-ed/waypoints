@@ -86,6 +86,10 @@ export function validateMemory(memory) {
     errors.tags = 'Tags must be a list';
   } else if (value.tags.length > MAX_TAGS) {
     errors.tags = `Use ${MAX_TAGS} tags or fewer`;
+  } else if (value.tags.some((tag) => typeof tag !== 'string')) {
+    /* Checked before the length test below, which reads tag.length: on a null that throws a
+       TypeError out of a function whose whole job is to report problems. */
+    errors.tags = 'Tags must be text';
   } else if (value.tags.some((tag) => tag.length > TAG_MAX_LENGTH)) {
     errors.tags = `Each tag must be ${TAG_MAX_LENGTH} characters or fewer`;
   }
