@@ -130,7 +130,11 @@
       </div>
     </header>
 
-    <div class="app-body">
+    <!--
+      main wraps both panes rather than just the map. On a narrow screen one of the two is
+      display:none, and when that was the map the document lost its only main landmark.
+    -->
+    <main class="app-body">
       <aside id="sidebar" class="sidebar" aria-labelledby="sidebar-heading">
         <div class="sidebar-header">
           <h2 id="sidebar-heading" class="sidebar-heading">Memories</h2>
@@ -228,7 +232,7 @@
       <ul id="memory-list" class="memory-list" tabindex="-1"></ul>
       </aside>
 
-      <main class="app-main">
+      <div class="app-main">
         <!--
           region rather than application: application tells a screen reader to stop browsing
           and pass keys straight through, which would put the markers - real buttons with real
@@ -236,8 +240,8 @@
           without taking that away.
         -->
         <div id="map" class="map" role="region" aria-label="Map"></div>
-      </main>
-    </div>
+      </div>
+    </main>
 
     <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
