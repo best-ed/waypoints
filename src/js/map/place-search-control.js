@@ -34,6 +34,12 @@ export function createPlaceSearchControl({ map, onSearch, onChoose, onClear }) {
   input.setAttribute('aria-label', 'Search for a place');
   input.autocomplete = 'off';
   submit.type = 'submit';
+
+  /* The result buttons carry role="option", which is only allowed inside a listbox or a group.
+     The li wrappers would otherwise sit between the two and break that, so they are marked
+     presentational: the options end up the listbox's effective children. */
+  list.setAttribute('role', 'listbox');
+  list.setAttribute('aria-label', 'Place search results');
   status.hidden = true;
   hint.hidden = true;
   list.hidden = true;
@@ -104,6 +110,8 @@ export function createPlaceSearchControl({ map, onSearch, onChoose, onClear }) {
 
     results.forEach((result, index) => {
       const item = element('li', 'place-search-result');
+      item.setAttribute('role', 'presentation');
+
       const button = element('button', 'place-search-result-button');
       button.type = 'button';
       button.setAttribute('role', 'option');
