@@ -20,6 +20,15 @@ body {
   overflow: hidden;
 }
 
+/* The banner landmark: the sandbox notice stacked above the control row. */
+.app-top {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: var(--z-header);
+}
+
 .app-header {
   flex: 0 0 var(--header-height);
   display: flex;

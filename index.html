@@ -73,11 +73,14 @@
   <body>
     <a class="skip-link" href="#memory-list">Skip to the memory list</a>
 
-    <p id="sandbox-banner" class="sandbox-banner" hidden>
-      Sandbox &mdash; this is throwaway data, kept apart from your real memories.
-    </p>
+    <!-- The banner landmark covers the whole top strip, so the sandbox notice is inside a
+         landmark rather than loose page content. -->
+    <header class="app-top">
+      <p id="sandbox-banner" class="sandbox-banner" hidden>
+        Sandbox &mdash; this is throwaway data, kept apart from your real memories.
+      </p>
 
-    <header class="app-header">
+      <div class="app-header">
       <button
         id="sidebar-toggle"
         class="button icon-button"
@@ -122,8 +125,9 @@
           <circle cx="10.25" cy="4.5" r="2" fill="none" stroke="currentColor" stroke-width="1.6" />
           <circle cx="5.75" cy="11.5" r="2" fill="none" stroke="currentColor" stroke-width="1.6" />
         </svg>
-        <span class="label-wide">Settings</span>
-      </button>
+          <span class="label-wide">Settings</span>
+        </button>
+      </div>
     </header>
 
     <div class="app-body">
