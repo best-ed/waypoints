@@ -80,3 +80,8 @@
      dialog with one long unbroken string. */
   overflow-wrap: anywhere;
 }
+
+.field-select {
+  /* The browser's own arrow, so it follows the system theme and forced colours. */
+  appearance: auto;
+}

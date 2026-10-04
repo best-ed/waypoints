@@ -1,13 +1,22 @@
 export const SETTINGS_KEY = 'waypoints:settings';
 
+export const THEME_VALUES = Object.freeze(['system', 'light', 'dark']);
+
 export const DEFAULT_SETTINGS = Object.freeze({
   /* On by default, because a place name is the thing most people want and the request is made
      only when a pin is placed. Turning it off stops the request being made at all. */
-  suggestPlaceNames: true
+  suggestPlaceNames: true,
+
+  /* "system" follows prefers-color-scheme. The other two override it. */
+  theme: 'system'
 });
 
 function asBoolean(value, fallback) {
   return typeof value === 'boolean' ? value : fallback;
+}
+
+function asTheme(value, fallback) {
+  return THEME_VALUES.includes(value) ? value : fallback;
 }
 
 /* Every field is read by name with a typed fallback, so a hand-edited or half-written value
@@ -16,7 +25,8 @@ export function resolveSettings(raw) {
   const source = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
 
   return {
-    suggestPlaceNames: asBoolean(source.suggestPlaceNames, DEFAULT_SETTINGS.suggestPlaceNames)
+    suggestPlaceNames: asBoolean(source.suggestPlaceNames, DEFAULT_SETTINGS.suggestPlaceNames),
+    theme: asTheme(source.theme, DEFAULT_SETTINGS.theme)
   };
 }
 
@@ -84,7 +94,8 @@ export function createSettingsStore({ storage, key = SETTINGS_KEY, onListenerErr
     const patch = changes !== null && typeof changes === 'object' && !Array.isArray(changes) ? changes : {};
 
     const next = resolveSettings({
-      suggestPlaceNames: asBoolean(patch.suggestPlaceNames, current.suggestPlaceNames)
+      suggestPlaceNames: asBoolean(patch.suggestPlaceNames, current.suggestPlaceNames),
+      theme: asTheme(patch.theme, current.theme)
     });
 
     /* Compared as a whole, so a new setting needs no change here. Both sides come out of

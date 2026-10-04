@@ -36,9 +36,11 @@ export function createSettingsDialog({
   openButton,
   closeButton,
   toggleElement,
+  themeElement,
   usageElement,
   persistedElement,
   settings,
+  onThemeChange = () => {},
   onOpen = () => {}
 }) {
   let returnFocusTo = null;
@@ -70,6 +72,7 @@ export function createSettingsDialog({
   function open() {
     returnFocusTo = openButton;
     toggleElement.checked = settings.get().suggestPlaceNames;
+    themeElement.value = settings.get().theme;
     onOpen();
     dialog.showModal();
 
@@ -83,6 +86,11 @@ export function createSettingsDialog({
 
   toggleElement.addEventListener('change', () => {
     settings.set({ suggestPlaceNames: toggleElement.checked });
+  });
+
+  themeElement.addEventListener('change', () => {
+    settings.set({ theme: themeElement.value });
+    onThemeChange(settings.get().theme);
   });
 
   /* The single teardown path, as with every other dialog here: Escape, the close button and a

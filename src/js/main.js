@@ -39,6 +39,7 @@ import { prefersReducedMotion } from './ui/motion.js';
 import { createMemoryForm } from './ui/memory-form.js';
 import { createSettingsDialog } from './ui/settings-dialog.js';
 import { createSettingsStore } from './data/settings-store.js';
+import { applyTheme, effectiveTheme, watchSystemTheme } from './ui/theme.js';
 import { buildExport, exportFilename } from './io/export-format.js';
 import { downloadText } from './io/download.js';
 import { checkFileSize, readImport, ImportError } from './io/parse-import.js';
@@ -848,6 +849,23 @@ function boot() {
     runExport().catch((error) => console.error(error));
   });
 
+  /* The boot script has already set the attribute from storage; this keeps it in step
+     with the setting for the rest of the session. */
+  function changeTheme(theme) {
+    applyTheme(theme);
+    onEffectiveThemeChange(effectiveTheme(theme));
+  }
+
+  /* Replaced once the basemap control exists. */
+  let onEffectiveThemeChange = () => {};
+
+  /* A session left on "system" follows the OS without a reload. */
+  watchSystemTheme(() => {
+    if (settings.get().theme === 'system') {
+      onEffectiveThemeChange(effectiveTheme('system'));
+    }
+  });
+
   const importInput = document.getElementById('import-input');
   const importStatus = document.getElementById('import-status');
   const settingsButton = document.getElementById('open-settings');
@@ -960,8 +978,10 @@ function boot() {
     closeButton: document.getElementById('settings-close'),
     toggleElement: document.getElementById('setting-suggest-place-names'),
     usageElement: document.getElementById('storage-usage'),
+    themeElement: document.getElementById('setting-theme'),
     persistedElement: document.getElementById('storage-persisted'),
     settings,
+    onThemeChange: (theme) => changeTheme(theme),
     /* A status line from a previous export should not still be sitting there next time. */
     onOpen: () => {
       exportStatus.textContent = '';

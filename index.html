@@ -6,6 +6,12 @@
     <title>waypoints</title>
     <meta name="description" content="Pin memories on an interactive map." />
 
+    <!--
+      Before the stylesheets and not deferred, so an explicit dark choice is applied ahead of
+      the first paint rather than flashing light first. The one classic script in the project.
+    -->
+    <script src="src/js/theme-boot.js"></script>
+
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
@@ -276,6 +282,19 @@
         <p id="setting-suggest-help" class="field-hint">
           Sends the pin's coordinates to OpenStreetMap's Nominatim service.
         </p>
+      </section>
+
+      <section class="settings-section">
+        <h3 class="settings-heading">Appearance</h3>
+
+        <div class="field">
+          <label class="field-label" for="setting-theme">Theme</label>
+          <select id="setting-theme" class="field-input field-select">
+            <option value="system">Match my system</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </div>
       </section>
 
       <section class="settings-section">

@@ -46,7 +46,7 @@ test('place name suggestions are on by default', () => {
 
 test('an empty store starts at the defaults', () => {
   const { settings } = setup();
-  assert.deepEqual(settings.get(), { suggestPlaceNames: true });
+  assert.deepEqual(settings.get(), { suggestPlaceNames: true, theme: 'system' });
 });
 
 test('reads a stored setting', () => {
@@ -59,7 +59,7 @@ test('reads a stored setting', () => {
 test('junk in the key falls back to the defaults', () => {
   for (const raw of ['', 'not json', '[]', 'null', '42', '{', '{"suggestPlaceNames":"yes"}']) {
     const { settings } = setup({ [SETTINGS_KEY]: raw });
-    assert.deepEqual(settings.get(), { suggestPlaceNames: true }, JSON.stringify(raw));
+    assert.deepEqual(settings.get(), { suggestPlaceNames: true, theme: 'system' }, JSON.stringify(raw));
   }
 });
 
@@ -68,7 +68,7 @@ test('an unknown key in the stored value is ignored', () => {
     [SETTINGS_KEY]: JSON.stringify({ suggestPlaceNames: false, somethingElse: 'x' })
   });
 
-  assert.deepEqual(settings.get(), { suggestPlaceNames: false });
+  assert.deepEqual(settings.get(), { suggestPlaceNames: false, theme: 'system' });
 });
 
 test('a __proto__ key in the stored value pollutes nothing', () => {
@@ -80,18 +80,18 @@ test('a __proto__ key in the stored value pollutes nothing', () => {
 });
 
 test('resolveSettings fills every field with a typed fallback', () => {
-  assert.deepEqual(resolveSettings(null), { suggestPlaceNames: true });
-  assert.deepEqual(resolveSettings([]), { suggestPlaceNames: true });
-  assert.deepEqual(resolveSettings('nope'), { suggestPlaceNames: true });
-  assert.deepEqual(resolveSettings({ suggestPlaceNames: 'false' }), { suggestPlaceNames: true });
-  assert.deepEqual(resolveSettings({ suggestPlaceNames: 0 }), { suggestPlaceNames: true });
-  assert.deepEqual(resolveSettings({ suggestPlaceNames: false }), { suggestPlaceNames: false });
+  assert.deepEqual(resolveSettings(null), { suggestPlaceNames: true, theme: 'system' });
+  assert.deepEqual(resolveSettings([]), { suggestPlaceNames: true, theme: 'system' });
+  assert.deepEqual(resolveSettings('nope'), { suggestPlaceNames: true, theme: 'system' });
+  assert.deepEqual(resolveSettings({ suggestPlaceNames: 'false' }), { suggestPlaceNames: true, theme: 'system' });
+  assert.deepEqual(resolveSettings({ suggestPlaceNames: 0 }), { suggestPlaceNames: true, theme: 'system' });
+  assert.deepEqual(resolveSettings({ suggestPlaceNames: false }), { suggestPlaceNames: false, theme: 'system' });
 });
 
 test('parseSettings copes with anything', () => {
-  assert.deepEqual(parseSettings(undefined), { suggestPlaceNames: true });
-  assert.deepEqual(parseSettings('{"suggestPlaceNames":false}'), { suggestPlaceNames: false });
-  assert.deepEqual(parseSettings('{{{'), { suggestPlaceNames: true });
+  assert.deepEqual(parseSettings(undefined), { suggestPlaceNames: true, theme: 'system' });
+  assert.deepEqual(parseSettings('{"suggestPlaceNames":false}'), { suggestPlaceNames: false, theme: 'system' });
+  assert.deepEqual(parseSettings('{{{'), { suggestPlaceNames: true, theme: 'system' });
 });
 
 test('a setting is written under its own key and nothing else', () => {
@@ -99,7 +99,7 @@ test('a setting is written under its own key and nothing else', () => {
 
   settings.set({ suggestPlaceNames: false });
 
-  assert.deepEqual(storedSettings(storage), { suggestPlaceNames: false });
+  assert.deepEqual(storedSettings(storage), { suggestPlaceNames: false, theme: 'system' });
   assert.deepEqual([...storage.values.keys()], [SETTINGS_KEY]);
 });
 
@@ -220,7 +220,7 @@ test('a throwing listener does not stop the others', () => {
 test('blocked storage still yields usable settings', () => {
   const settings = createSettingsStore({ storage: blockedStorage() });
 
-  assert.deepEqual(settings.get(), { suggestPlaceNames: true });
+  assert.deepEqual(settings.get(), { suggestPlaceNames: true, theme: 'system' });
 });
 
 /* The setting still applies for this session; only remembering it is lost. */
@@ -243,4 +243,45 @@ test('a custom key is honoured, for the sandbox variant', () => {
 
   assert.deepEqual([...storage.values.keys()], ['waypoints:sandbox:settings']);
   assert.equal(storage.getItem(SETTINGS_KEY), null, 'the real key was left alone');
+});
+
+// ------------------------------------------------------------------------- theme
+
+test('the theme defaults to following the system', () => {
+  assert.equal(DEFAULT_SETTINGS.theme, 'system');
+  assert.equal(setup().settings.get().theme, 'system');
+});
+
+test('each theme value is accepted', () => {
+  const { settings } = setup();
+
+  for (const theme of ['light', 'dark', 'system']) {
+    settings.set({ theme });
+    assert.equal(settings.get().theme, theme);
+  }
+});
+
+test('an unknown theme leaves the setting as it was', () => {
+  const { settings } = setup();
+  settings.set({ theme: 'dark' });
+
+  for (const theme of ['midnight', '', null, 42, {}, 'DARK']) {
+    settings.set({ theme });
+    assert.equal(settings.get().theme, 'dark', JSON.stringify(theme));
+  }
+});
+
+test('a junk stored theme falls back to system', () => {
+  const { settings } = setup({ 'waypoints:settings': '{"theme":"midnight"}' });
+  assert.equal(settings.get().theme, 'system');
+});
+
+test('the two settings are independent', () => {
+  const { settings } = setup();
+
+  settings.set({ theme: 'dark' });
+  assert.equal(settings.get().suggestPlaceNames, true, 'the other setting survived');
+
+  settings.set({ suggestPlaceNames: false });
+  assert.equal(settings.get().theme, 'dark', 'the theme survived');
 });
