@@ -15,6 +15,9 @@ export const BASEMAPS = Object.freeze({
   voyager: Object.freeze({
     label: 'Voyager',
     url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    /* The same CARTO basemap drawn dark. Only this provider has one: OpenStreetMap standard
+       has no dark counterpart, so it stays as it is in either theme. */
+    darkUrl: 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png',
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     subdomains: 'abcd',
     maxZoom: MAX_ZOOM

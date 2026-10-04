@@ -1,26 +1,58 @@
 import { BASEMAPS, DEFAULT_BASEMAP_ID } from '../config.js';
 import { resolveBasemapId } from './basemap-preference.js';
 
-function buildTileLayer(basemap) {
-  return L.tileLayer(basemap.url, {
+/* A provider only has a dark variant if it ships one. Where it does not, the light tiles are
+   used in both themes rather than inventing something. */
+function urlFor(basemap, theme) {
+  return theme === 'dark' && basemap.darkUrl ? basemap.darkUrl : basemap.url;
+}
+
+function buildTileLayer(basemap, theme) {
+  return L.tileLayer(urlFor(basemap, theme), {
     attribution: basemap.attribution,
     maxZoom: basemap.maxZoom,
     ...(basemap.subdomains ? { subdomains: basemap.subdomains } : {})
   });
 }
 
-export function createBasemapControl(map, { initialId = DEFAULT_BASEMAP_ID, onChange = () => {} } = {}) {
+export function createBasemapControl(
+  map,
+  { initialId = DEFAULT_BASEMAP_ID, initialTheme = 'light', onChange = () => {} } = {}
+) {
   const layers = new Map();
   const buttons = new Map();
   let currentId = null;
+  let theme = initialTheme === 'dark' ? 'dark' : 'light';
 
   /* Built once each and kept, so switching back and forth does not throw away a warm tile
      cache and refetch everything. */
   function layerFor(id) {
     if (!layers.has(id)) {
-      layers.set(id, buildTileLayer(BASEMAPS[id]));
+      layers.set(id, buildTileLayer(BASEMAPS[id], theme));
     }
     return layers.get(id);
+  }
+
+  /* setUrl on the existing layer rather than rebuilding it: the layer keeps its identity, so
+     Leaflet's attribution control never sees a remove and an add, and the credit cannot
+     flicker or end up stacked. Leaflet redraws the tiles itself. */
+  function setTheme(nextTheme) {
+    const settled = nextTheme === 'dark' ? 'dark' : 'light';
+
+    if (settled === theme) {
+      return;
+    }
+
+    theme = settled;
+
+    for (const [id, layer] of layers) {
+      const url = urlFor(BASEMAPS[id], theme);
+      /* Only when it actually changes, so switching theme does not refetch every OSM tile for
+         a url that was never going to differ. */
+      if (layer._url !== url) {
+        layer.setUrl(url);
+      }
+    }
   }
 
   function markButtons() {
@@ -87,5 +119,5 @@ export function createBasemapControl(map, { initialId = DEFAULT_BASEMAP_ID, onCh
      value it just read. */
   select(initialId, { notify: false });
 
-  return { select, current: () => currentId };
+  return { select, setTheme, current: () => currentId, currentTheme: () => theme };
 }

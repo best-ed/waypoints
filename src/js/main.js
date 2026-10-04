@@ -90,6 +90,10 @@ function boot() {
     key: names.settingsKey
   });
 
+  /* Declared before the basemap control, which assigns it: a let assigned above its own
+     declaration would throw on boot. Replaced once the control exists. */
+  let onEffectiveThemeChange = () => {};
+
   const photos = createPhotoRepository({
     backend: createIndexedDbBackend({ databaseName: names.databaseName })
   });
@@ -174,10 +178,14 @@ function boot() {
     }
   });
 
-  createBasemapControl(map, {
+  const basemaps = createBasemapControl(map, {
     initialId: readBasemapId(window.localStorage),
+    initialTheme: effectiveTheme(settings.get().theme),
     onChange: (id) => writeBasemapId(window.localStorage, id)
   });
+
+  /* Now that the control exists, theme changes reach the tiles. */
+  onEffectiveThemeChange = (next) => basemaps.setTheme(next);
 
   enableClusterKeyboard(map);
 
@@ -855,9 +863,6 @@ function boot() {
     applyTheme(theme);
     onEffectiveThemeChange(effectiveTheme(theme));
   }
-
-  /* Replaced once the basemap control exists. */
-  let onEffectiveThemeChange = () => {};
 
   /* A session left on "system" follows the OS without a reload. */
   watchSystemTheme(() => {
