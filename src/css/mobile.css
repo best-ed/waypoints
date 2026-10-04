@@ -193,20 +193,33 @@
     min-height: 44px;
   }
 
-  /* A range thumb is dragged rather than tapped, so it needs the size most of all. The track
-     keeps its own height; only the thumb grows. */
+  /* The thumb is the target here, not the input: the input carries pointer-events: none so
+     both handles of the pair stay reachable, which means the input's own 2px box is not
+     something a thumb can be aimed at. So the thumb gets the full 44px, with a transparent
+     border and background-clip keeping the visible disc small - the padding is the hit area.
+     The surface-coloured ring is dropped on touch, where there is no hover to give feedback.
+
+     The input and its container need the height to put that thumb in. */
+  .timeline-handles {
+    height: 2.75rem;
+  }
+
+  .timeline-handle {
+    height: 2.75rem;
+  }
+
   .timeline-handle::-webkit-slider-thumb {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 0.72rem solid transparent;
+    background-clip: content-box;
   }
 
   .timeline-handle::-moz-range-thumb {
-    width: 1.75rem;
-    height: 1.75rem;
-  }
-
-  .timeline-handles {
-    min-height: 2.25rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 0.72rem solid transparent;
+    background-clip: content-box;
   }
 
   /* The cluster circles are tap targets too. */
