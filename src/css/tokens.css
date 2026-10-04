@@ -17,7 +17,8 @@
   /* A journey line has to read against both the orange pins and the OSM tiles, so it
      takes a hue neither of them uses. */
   --color-journey: #0f766e;
-  --color-journey-muted: #9ebfbb;
+  /* Muted, but still a line someone has to be able to see: 3:1 against both surfaces. */
+  --color-journey-muted: #5f918b;
   --color-journey-contrast: #ffffff;
 
   /* Sandbox mode is deliberately loud: nobody should mistake seeded data for real memories. */
