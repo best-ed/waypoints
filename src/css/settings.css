@@ -82,6 +82,7 @@
 }
 
 .field-select {
-  /* The browser's own arrow, so it follows the system theme and forced colours. */
+  /* The browser's own arrow, which follows forced colours for free. It also follows the
+     theme, because :root declares color-scheme. */
   appearance: auto;
 }

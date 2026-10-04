@@ -1,4 +1,9 @@
 :root {
+  /* Tells the browser which scheme its own widgets should use: native selects, date pickers,
+     scrollbars and form controls. WebKit otherwise paints a select light while our CSS puts
+     light text on it, which is light on light. */
+  color-scheme: light;
+
   --color-bg: #f7f7f5;
   --color-surface: #ffffff;
   --color-text: #1b1b19;
@@ -76,6 +81,8 @@
    identical so they cannot drift apart. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
+  color-scheme: dark;
+
   --color-bg: #15151a;
   --color-surface: #1e1e24;
   --color-text: #ececf0;
@@ -103,6 +110,8 @@
 }
 
 :root[data-theme='dark'] {
+  color-scheme: dark;
+
   --color-bg: #15151a;
   --color-surface: #1e1e24;
   --color-text: #ececf0;
