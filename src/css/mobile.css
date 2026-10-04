@@ -167,3 +167,59 @@
     max-width: calc(100vw - var(--space-6));
   }
 }
+
+/* ---- touch ------------------------------------------------------------------ */
+
+@media (pointer: coarse) {
+  /* 44px is the smallest target that can be hit reliably with a thumb. */
+  .button,
+  .tag-chip,
+  .view-option,
+  .basemap-option,
+  .memory-button,
+  .popup-photo-button,
+  .search-clear,
+  .journey-step,
+  .journey-play,
+  .import-pick {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .field-input,
+  .search-input,
+  .date-input,
+  .field-select {
+    min-height: 44px;
+  }
+
+  /* A range thumb is dragged rather than tapped, so it needs the size most of all. The track
+     keeps its own height; only the thumb grows. */
+  .timeline-handle::-webkit-slider-thumb {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .timeline-handle::-moz-range-thumb {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .timeline-handles {
+    min-height: 2.25rem;
+  }
+
+  /* The cluster circles are tap targets too. */
+  .memory-cluster.is-small {
+    width: 44px !important;
+    height: 44px !important;
+  }
+}
+
+@media (hover: none) {
+  /* A marker tooltip is a hover affordance. On a touch screen it fires on tap, lands on top of
+     the popup that the same tap just opened, and then will not go away. */
+  .leaflet-tooltip {
+    display: none !important;
+  }
+}
