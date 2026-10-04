@@ -55,3 +55,52 @@
     font-size: var(--text-base);
   }
 }
+
+/* ---- the Map and List switch ------------------------------------------------ */
+
+.view-switch {
+  display: flex;
+  gap: 0;
+  margin-inline: auto;
+}
+
+.view-option {
+  border-radius: 0;
+}
+
+.view-option:first-child {
+  border-start-start-radius: var(--radius-sm);
+  border-end-start-radius: var(--radius-sm);
+}
+
+.view-option:last-child {
+  border-start-end-radius: var(--radius-sm);
+  border-end-end-radius: var(--radius-sm);
+  margin-inline-start: -1px;
+}
+
+@media (max-width: 720px) {
+  /* One at a time, full width. Above this breakpoint data-view is removed entirely, so these
+     rules can never leave a desktop layout with a hidden map. */
+  .app-body[data-view='map'] .sidebar {
+    display: none;
+  }
+
+  .app-body[data-view='list'] .app-main {
+    display: none;
+  }
+
+  .app-body[data-view='list'] .sidebar {
+    width: 100%;
+    max-width: none;
+    border-right: none;
+  }
+
+  /* The sidebar header carries the search, the chips, the dates, the timeline and the journey
+     controls. Together those are taller than a phone screen, so sticky pins the whole lot over
+     the list and nothing below it can be reached. On a narrow screen the panel scrolls as one
+     piece instead. */
+  .sidebar-header {
+    position: static;
+  }
+}

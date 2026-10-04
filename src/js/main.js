@@ -35,6 +35,7 @@ import { createJourneyPanel } from './ui/journey-panel.js';
 import { createJourneyControls } from './ui/journey-controls.js';
 import { createMemoryList } from './ui/memory-list.js';
 import { createSidebarToggle } from './ui/sidebar-toggle.js';
+import { createViewSwitch, LIST_VIEW, MAP_VIEW } from './ui/view-switch.js';
 import { prefersReducedMotion } from './ui/motion.js';
 import { createMemoryForm } from './ui/memory-form.js';
 import { createSettingsDialog } from './ui/settings-dialog.js';
@@ -212,6 +213,16 @@ function boot() {
     toggleButton: document.getElementById('sidebar-toggle'),
     sidebar: document.getElementById('sidebar'),
     onResize: () => map.invalidateSize()
+  });
+
+  /* A Leaflet map that was display:none has a stale idea of its own size, so every path that
+     brings the map back on screen tells it to measure again. */
+  const viewSwitch = createViewSwitch({
+    container: document.getElementById('view-switch'),
+    mapButton: document.getElementById('view-map'),
+    listButton: document.getElementById('view-list'),
+    bodyElement: document.querySelector('.app-body'),
+    onShowMap: () => map.invalidateSize()
   });
 
   selection.subscribe((id) => list.setSelected(id));
@@ -462,6 +473,13 @@ function boot() {
     const marker = markers.getMarker(id);
     if (!marker) {
       return;
+    }
+
+    /* Picking something in the list on a narrow screen means wanting to see it on the map, so
+       the view follows. The map is shown before focusMarker runs, because flying to a marker
+       on a map of the wrong size lands in the wrong place. */
+    if (viewSwitch.isNarrow() && viewSwitch.current() === LIST_VIEW) {
+      viewSwitch.showMap();
     }
     if (journeyActive && id !== currentStopId()) {
       pauseForInteraction();
