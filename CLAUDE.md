@@ -6,8 +6,9 @@ A web app for pinning memories on an interactive map.
 
 ## Stack Constraints
 
-- Vanilla HTML, CSS, and JavaScript ES modules. The single exception is
-  `src/js/theme-boot.js`, which has to run before the first paint and so cannot be deferred
+- Vanilla HTML, CSS, and JavaScript ES modules. Two files are not modules, each for a reason
+  the platform imposes: `src/js/theme-boot.js` has to run before the first paint and so cannot
+  be deferred, and `sw.js` reads its file list with `importScripts`, which cannot load one
 - Leaflet 1.9.4 for mapping, loaded from CDN with SRI integrity hashes
 - Leaflet.markercluster 1.5.3, same arrangement. Only its structural stylesheet
   (`MarkerCluster.css`) is loaded: `MarkerCluster.Default.css` skins the `.marker-cluster`
@@ -23,6 +24,11 @@ A web app for pinning memories on an interactive map.
 
 ```
 index.html        entry point, lives at the repo root
+sw.js             the service worker, at the root so its scope is the whole app
+manifest.webmanifest  the web app manifest
+precache-manifest.js  generated, committed; the file list the worker caches
+icons/            the app icon as svg, and the rendered png sizes
+scripts/          node tooling, not shipped to the browser
 src/css/          stylesheets
 src/js/           ES modules
 src/js/data/      schema, normalization, validation, storage, the memory store
@@ -32,6 +38,7 @@ src/js/journey/   chronological ordering, geometry and the playback machine, pur
 src/js/dev/       sandbox mode and the seed generator, pure
 src/js/io/        the export format and the import parser, pure except download.js
 src/js/theme-boot.js  the one classic script, run in <head> before the stylesheets
+src/js/sw-register.js the registration gate and the update flow, pure
 src/js/geo/       Nominatim client, request scheduler and place parsers, pure
 src/js/photos/    photo processing, the repository and its IndexedDB backend
 src/js/ui/        everything that touches the DOM, plus selection state
@@ -162,7 +169,8 @@ memories can never land on top of real ones.
 `dev/sandbox.js` resolves all three names **once, at boot, before anything is read**. There is
 deliberately no code path that can read one mode's memories while writing the other's photos.
 A visible banner says which mode is on, and the filter URL sync puts `?sandbox` back on every
-rewrite, since otherwise one keystroke would drop the session onto the real data.
+rewrite, since otherwise one keystroke would drop the session onto the real data. `?sw` rides
+along the same way - `buildSearch` is the one place that knows how to put a bare flag back.
 
 ### Seeding
 
@@ -201,7 +209,10 @@ cleared so the form does not claim to be looking something up.
 Blobs live in IndexedDB; the memory record in `localStorage` only holds their ids.
 
 - Database `waypoints`, version 1, object store `photos`, keyPath `id`
-- Record: `{ id, blob, thumb, width, height, createdAt }` - real Blobs, never base64
+- Stored record: `{ id, bytes, type, thumbBytes, thumbType, width, height, createdAt }`,
+  where both byte fields are `ArrayBuffer`s. Never base64
+- Everything above the backend still sees `{ id, blob, thumb, width, height, createdAt }`
+  with real Blobs. See **Photo bytes** below
 - Max 6 per memory, enforced in `data/schema.js`, in validation, and in the picker
 - Files over 25MB are rejected before decoding; anything that fails to decode (HEIC off
   Safari, a text file renamed to .jpg) reports per file and leaves the rest attached
@@ -215,6 +226,27 @@ white first, because JPEG has no alpha and a transparent PNG would otherwise go 
 one and maps a `QuotaExceededError` to `StorageFullError`; tests use an in-memory fake.
 `navigator.storage.persist()` is requested once, after the first successful write, and
 only when `navigator.storage` exists - it is missing in insecure contexts.
+
+### Photo bytes
+
+**WebKit's IndexedDB cannot store a `Blob`.** The transaction errors outright. Probed on that
+engine directly: a Blob fails, an `ArrayBuffer`, a `Uint8Array` and a string all succeed, and
+Chromium takes any of them. Since that is the backend Safari ships, a photo added there was
+simply lost.
+
+So photos are stored as bytes. `photos/photo-serialize.js` holds the two pure functions and
+`indexeddb-backend.js` is the **only** place that calls them: `put` serializes, `get`
+rebuilds the Blobs. The repository, the picker, the popup strip, the lightbox, export and
+import are all unchanged and still deal in Blobs.
+
+Two things this depends on:
+
+- **`blob.arrayBuffer()` is awaited before the transaction is opened, never inside it.** It is
+  not an IndexedDB request, so awaiting it with a transaction open lets the microtask queue
+  drain and the transaction auto-commits before the write is ever issued.
+- **Reads accept both shapes.** A record holding Blobs is handed straight back, so photos
+  written before this keep working with no migration and no database version bump. `bytes`
+  wins if a record somehow carries both.
 
 ### Lifecycle
 
@@ -769,6 +801,123 @@ dialogs, settings, the import preview, the lightbox, journey playback, a toast, 
 banner, place search results - in light, dark and forced colours, at 1280px and 375px, plus the
 existing suites under WebKit at 375px. **It is never added to the repo**: `package.json` has no
 dependencies and is not going to grow any.
+
+---
+
+## Offline and Installing
+
+A progressive web app: a manifest, an icon, and a service worker that precaches everything
+needed to boot. `start_url` and `scope` are both `./`, so it still works served from a
+subdirectory.
+
+### The precache manifest
+
+`scripts/build-precache.js` writes `precache-manifest.js`, which is **generated and
+committed**. It lists every shipped file with the sha-256 of its contents, plus the jsDelivr
+urls taken out of `index.html` rather than written down twice. `VERSION` is the hash of the
+whole list, so a rename moves it as surely as an edit does, and it names the cache.
+
+**Change a shipped file and you must run `npm run precache`.** This is not a convention:
+`tests/pwa/precache.test.js` regenerates the manifest and compares, so a stale one fails the
+suite, and with the pre-commit hook on it cannot be committed. The test walks the trees
+independently of the generator - sharing the walk would only prove the generator agrees with
+itself - and follows the module graph, so a leaf that is imported but not precached is caught
+too.
+
+`sw.js` and `precache-manifest.js` are deliberately **not** in the list. The browser manages
+the worker's own script cache; a copy of it inside the cache it fills would only ever be
+staler.
+
+`.gitattributes` forces `eol=lf`. With `text=auto` alone the working tree follows
+`core.autocrlf`, so the same commit checks out LF on one machine and CRLF on another, and
+every hash changes with it.
+
+### What the worker does
+
+| request | strategy |
+|---|---|
+| navigation | the cached `index.html`, network as a fallback |
+| anything in the precache | cache first, from the versioned cache |
+| OSM and CARTO tiles | stale while revalidate, own cache, capped at 300 |
+| Nominatim, and everything else | straight to the network, never cached |
+| any non-GET | passed through untouched |
+
+- **install** fills a cache named for the version with one `addAll`, which is all or nothing.
+  A half-filled precache would boot offline and then fail on one module, which is worse than
+  not installing at all. CDN entries are requested in `cors` mode to match the `crossorigin`
+  attributes in `index.html`: a `no-cors` request would store an opaque response whose status
+  cannot be read, making a cached error page indistinguishable from the library.
+- **No `skipWaiting` on install.** A running session is never swapped onto a different set of
+  modules underneath itself.
+- **activate** deletes every other `waypoints-` cache and calls `clients.claim`, so a first
+  visit works offline without a reload. The tile cache is kept: it is not a version of the
+  app, and dropping it on every update would blank the map exactly when someone is least able
+  to refill it.
+- **Anything we do not cache is left alone entirely** - not fetched and passed on, but never
+  touched. Not calling `respondWith` is the difference, and for Nominatim it matters: a cached
+  geocode is a stale answer to a question about the world, and serving one offline would make
+  the app lie rather than say it cannot reach the service.
+
+The tile cache is trimmed oldest first, which `Cache.keys` gives for free in insertion order -
+no timestamps to store and keep in step. The trim runs after the response is stored, so a trim
+that fails never costs the tile.
+
+**Tile layers set `crossOrigin: 'anonymous'`.** Leaflet leaves it off by default, which makes
+every tile a `no-cors` request and every response opaque, and an opaque response has status 0.
+The worker's `response.ok` check then rejected every tile and cached nothing, while the map
+still drew offline out of the browser's HTTP cache and hid it. Both providers answer with
+`Access-Control-Allow-Origin: *`, so asking for CORS costs nothing and keeps the guarantee
+that a rate-limit page is never stored as a tile.
+
+### Registering it
+
+On a real host the worker is on. On a development host - the same list as sandbox mode - it
+takes **`?sw`**, because a worker serving a cached `index.html` is the last thing you want
+while editing one. An insecure context has no `navigator.serviceWorker` at all, so the app
+served over a LAN address never registers one; that is expected, not a fault.
+
+`updateViaCache: 'none'`, or the browser serves the worker script itself out of the HTTP cache
+and an update can go unnoticed for as long as that lasts.
+
+When a new worker is waiting, a toast offers **Reload**, which posts `skip-waiting` and
+reloads on `controllerchange`. **The page never reloads without that click**, and that is
+structural: `controllerchange` is only listened for once the button is pressed. Listening from
+registration would reload on a first install, since `activate` calls `clients.claim`, and
+again whenever another tab took an update. A worker left waiting from a previous session is
+offered at boot too, not only one that installs while the page is open.
+
+### The icon
+
+`icons/icon.svg` is a pin drawn from its geometry - a disc with a real hole, closed off by the
+two tangent lines that meet at the point below it. `icon-maskable.svg` is the same glyph,
+smaller and full bleed, because a launcher masks to its own shape and a corner radius of ours
+would leave gaps inside it; iOS takes that one too, for the same reason. The PNGs are rendered
+from these with Playwright in the scratchpad and committed.
+
+A rasterised icon cannot read a custom property, so the icons, the manifest and the
+`theme-color` metas are the only places outside `tokens.css` that write a colour out in full.
+`tests/style/icon.test.js` and `tests/pwa/manifest.test.js` pin every one of them to a token,
+so they cannot drift.
+
+A `theme-color` meta understands `media` and nothing else, so the chrome follows the **system**
+preference rather than the theme setting. Someone running the app light on a dark system gets
+dark chrome over a light header. The alternative is rewriting the metas from script on every
+theme change, which trades a cosmetic mismatch for a second source of truth about the theme.
+
+### Offline and install UI
+
+The offline banner lives inside the banner landmark. Its text is written in on every show
+rather than once at startup: the region carries `role="status"`, and a live region announces a
+change to its **contents**, not a change to its visibility. The state is also read at load,
+since a page opened with no connection never fires the `offline` event. Dismissing lasts for
+that outage only.
+
+The install button appears in Settings only once `beforeinstallprompt` has fired, which only
+Chromium-based browsers do. The event is kept because `prompt()` needs that same object, and
+dropped after one use: a prompted event cannot be prompted again, and holding it would leave a
+button that silently does nothing. There is deliberately no iOS walkthrough - Safari installs
+from its own share sheet, and a panel of instructions about another browser's menus is not a
+setting.
 
 ---
 
