@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "9a6d4aff8047";
+self.PRECACHE_VERSION = "bf6c7669c8f1";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -15,7 +15,7 @@ self.PRECACHE_FILES = [
   { url: "icons/icon-maskable-512.png", hash: "9d9adfc08b12d69dbb9382711a07ec02b468102b07595f4504870d53278ac782" },
   { url: "icons/icon-maskable.svg", hash: "8cc77e94ee61857679fef6e9351cd60e6100f33d46bdbbb32e9d3f6a7751723a" },
   { url: "icons/icon.svg", hash: "2eb6bff67b3d1ed0d1279cbe5dac1c58eee100760366b1fe358bb7f5df3c320d" },
-  { url: "index.html", hash: "fbbb1a1f54fb804b9f0153702504d972faf955cfee823adb059087425c45bbf5" },
+  { url: "index.html", hash: "e7e9c22a2d170bd5d56a049151996d288e2290815e3945e3eae0505f626c78e0" },
   { url: "manifest.webmanifest", hash: "36f0e64c3f0ae7309c1ab5db686939ccdaefe9162bda323bdde5c4b40c45a078" },
   { url: "src/css/base.css", hash: "c20be0d99cca130eeb2ae323efb76df0a3d27cb2bbc93b9fffaf93b81eb1222e" },
   { url: "src/css/basemap.css", hash: "4326b75e449e12b327cbf6bd9fefcf09f994adfa3c1ac655fa8bb18ce57a81b2" },

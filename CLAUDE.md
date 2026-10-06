@@ -876,6 +876,13 @@ takes **`?sw`**, because a worker serving a cached `index.html` is the last thin
 while editing one. An insecure context has no `navigator.serviceWorker` at all, so the app
 served over a LAN address never registers one; that is expected, not a fault.
 
+The flag turns it **off** as well as on: a development host loaded without it unregisters
+whatever is there and drops the `waypoints-` caches. Otherwise `?sw` would be a one way switch,
+and one visit with it would leave localhost serving a cached `index.html` on every later load -
+the exact problem the gate exists to avoid, except permanent. It takes effect from the next
+load, since unregistering does not release the page already being controlled. Off a development
+host this is unreachable, so a deployment can never unregister itself.
+
 `updateViaCache: 'none'`, or the browser serves the worker script itself out of the HTTP cache
 and an update can go unnoticed for as long as that lasts.
 
