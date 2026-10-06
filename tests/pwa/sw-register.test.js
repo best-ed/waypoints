@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   applyUpdate,
   registerServiceWorker,
+  removeServiceWorkers,
   shouldRegister,
   SERVICE_WORKER_URL
 } from '../../src/js/sw-register.js';
@@ -233,4 +234,65 @@ test('nothing listens for controllerchange until the action is taken', () => {
 
   serviceWorker.fire('controllerchange');
   assert.equal(reloads, 0);
+});
+
+/* ------------------------------------------------------- turning it back off */
+
+function fakeCacheStorage(names) {
+  return {
+    deleted: [],
+    keys: () => Promise.resolve(names),
+    delete(name) {
+      this.deleted.push(name);
+      return Promise.resolve(true);
+    }
+  };
+}
+
+function fakeRegistry(count) {
+  const registrations = Array.from({ length: count }, () => ({
+    unregistered: false,
+    unregister() {
+      this.unregistered = true;
+      return Promise.resolve(true);
+    }
+  }));
+
+  return { registrations, getRegistrations: () => Promise.resolve(registrations) };
+}
+
+test('removing unregisters every worker it finds', async () => {
+  const registry = fakeRegistry(2);
+
+  const removed = await removeServiceWorkers({ serviceWorker: registry, cacheStorage: null });
+
+  assert.equal(removed, 2);
+  assert.ok(registry.registrations.every((r) => r.unregistered));
+});
+
+test('removing takes our caches with it and leaves everything else alone', async () => {
+  const cacheStorage = fakeCacheStorage([
+    'waypoints-precache-aaa',
+    'waypoints-tiles',
+    'something-else'
+  ]);
+
+  await removeServiceWorkers({ serviceWorker: fakeRegistry(1), cacheStorage });
+
+  assert.deepEqual(cacheStorage.deleted, ['waypoints-precache-aaa', 'waypoints-tiles']);
+});
+
+test('removing copes with nothing being registered', async () => {
+  const cacheStorage = fakeCacheStorage([]);
+
+  assert.equal(await removeServiceWorkers({ serviceWorker: fakeRegistry(0), cacheStorage }), 0);
+});
+
+test('removing works where CacheStorage is missing', async () => {
+  /* Only reachable in an odd browser, but an absent caches object must not throw on the way
+     out of a cleanup path. */
+  assert.equal(
+    await removeServiceWorkers({ serviceWorker: fakeRegistry(1), cacheStorage: undefined }),
+    1
+  );
 });

@@ -59,6 +59,7 @@ import { buildSearch, isSandbox, storageNamesFor, wantsServiceWorker } from './d
 import {
   applyUpdate,
   registerServiceWorker,
+  removeServiceWorkers,
   shouldRegister,
   UPDATE_ACTION_LABEL,
   UPDATE_READY_MESSAGE
@@ -1119,13 +1120,25 @@ function boot() {
 
   /* Last, and deliberately not awaited: registering is housekeeping, and nothing above it
      should wait on the network for a worker that only matters next time. */
+  const serviceWorkerSupported = 'serviceWorker' in window.navigator;
+
   if (
-    shouldRegister({
+    !shouldRegister({
       hostname: window.location.hostname,
       search: window.location.search,
-      supported: 'serviceWorker' in window.navigator
+      supported: serviceWorkerSupported
     })
   ) {
+    /* A development host without the flag clears any worker a previous ?sw visit left behind,
+       so the flag turns it off as well as on. Takes effect from the next load: unregistering
+       does not release the page already being controlled. */
+    if (serviceWorkerSupported && isDevHost(window.location.hostname)) {
+      removeServiceWorkers({
+        serviceWorker: window.navigator.serviceWorker,
+        cacheStorage: window.caches
+      }).catch((error) => console.error(error));
+    }
+  } else {
     registerServiceWorker({
       serviceWorker: window.navigator.serviceWorker,
       onUpdateReady: (worker) => {

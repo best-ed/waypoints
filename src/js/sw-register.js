@@ -22,6 +22,28 @@ export function shouldRegister({ hostname, search, supported }) {
   return isDevHost(hostname) ? wantsServiceWorker(search) : true;
 }
 
+/* The other half of the ?sw gate. Without this the flag is a one way switch: one visit with
+   it registers a worker that keeps serving a cached index.html on every later load, which is
+   the exact problem the gate exists to avoid, except now permanent. Off a development host
+   this is never reached, so a real deployment can never unregister itself.
+
+   The caches go too. Nothing would read them with no worker registered, but leaving a hundred
+   files per version lying around in storage is not what "off" should mean. */
+export async function removeServiceWorkers({ serviceWorker, cacheStorage, prefix = 'waypoints-' }) {
+  const registrations = await serviceWorker.getRegistrations();
+
+  await Promise.all(registrations.map((registration) => registration.unregister()));
+
+  if (cacheStorage) {
+    const names = await cacheStorage.keys();
+    await Promise.all(
+      names.filter((name) => name.startsWith(prefix)).map((name) => cacheStorage.delete(name))
+    );
+  }
+
+  return registrations.length;
+}
+
 /* An update is only an update if something is already controlling the page. The first install
    reaches "installed" too, and announcing a new version to someone who has just loaded the
    only version there has ever been would be nonsense. */
