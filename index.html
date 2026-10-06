@@ -373,6 +373,22 @@
         </div>
       </section>
 
+      <!--
+        Hidden until the browser offers an install, which only Chromium-based browsers do. A
+        button that cannot do anything is worse than no button, and there is deliberately no
+        iOS walkthrough here: Safari installs from its own share sheet, and a panel of
+        instructions about another browser's menus is not a setting.
+      -->
+      <section id="install-section" class="settings-section" hidden>
+        <h3 class="settings-heading">Install</h3>
+
+        <p class="field-hint">
+          Adds waypoints to your home screen or app list, in its own window.
+        </p>
+
+        <button id="install-button" class="button" type="button">Install app</button>
+      </section>
+
       <section class="settings-section">
         <h3 class="settings-heading">Export</h3>
 

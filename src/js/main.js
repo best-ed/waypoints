@@ -49,6 +49,7 @@ import { createImportDialog } from './ui/import-dialog.js';
 import { buildPopupContent, findPhotoStrip } from './ui/popup-content.js';
 import { createPopupPhotos } from './ui/popup-photos.js';
 import { createOfflineBanner } from './ui/offline-banner.js';
+import { createInstallPrompt } from './ui/install-prompt.js';
 import { createLightbox } from './ui/lightbox.js';
 import { createToast } from './ui/toast.js';
 import { ValidationError, StorageFullError } from './data/errors.js';
@@ -146,6 +147,13 @@ function boot() {
     dismissButton: document.getElementById('offline-banner-dismiss'),
     target: window,
     isOnline: () => window.navigator.onLine
+  });
+
+  createInstallPrompt({
+    section: document.getElementById('install-section'),
+    button: document.getElementById('install-button'),
+    target: window,
+    onError: (error) => console.error(error)
   });
 
   const addButton = document.getElementById('add-memory');
