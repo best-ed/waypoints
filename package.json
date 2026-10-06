@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "npx serve . -l 5173",
-    "test": "node --test --test-timeout=10000 \"tests/**/*.test.js\""
+    "test": "node --test --test-timeout=10000 \"tests/**/*.test.js\"",
+    "precache": "node scripts/build-precache.js"
   }
 }
