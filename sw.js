@@ -7,6 +7,25 @@ importScripts('./precache-manifest.js');
 const CACHE_PREFIX = 'waypoints-';
 const PRECACHE = CACHE_PREFIX + 'precache-' + self.PRECACHE_VERSION;
 
+/* Tiles live apart from the precache and outlive it. They are not part of a version of the
+   app - they are the same pictures whatever the app does - so throwing them away on every
+   update would mean a blank map after each one, exactly when someone is least able to refill
+   it. The name carries no version for the same reason. */
+const TILE_CACHE = CACHE_PREFIX + 'tiles';
+
+/* Suffixes rather than whole hosts: both providers serve from numbered or lettered subdomains
+   (a-d for CARTO, a-c for OpenStreetMap), and matching the suffix covers all of them without
+   writing each one out. */
+const TILE_HOSTS = ['.basemaps.cartocdn.com', '.tile.openstreetmap.org'];
+
+/* Roughly a screenful of tiles at a few zoom levels, which is what makes an offline map
+   useful without letting a long session grow without limit. */
+const TILE_CACHE_LIMIT = 300;
+
+function isTile(url) {
+  return TILE_HOSTS.some((host) => url.hostname.endsWith(host));
+}
+
 /* The page itself, whatever path a navigation asked for. */
 const INDEX = new URL('index.html', self.location).href;
 
@@ -52,7 +71,8 @@ async function dropOldCaches() {
 
   await Promise.all(
     names
-      .filter((name) => name.startsWith(CACHE_PREFIX) && name !== PRECACHE)
+      /* The tile cache is kept: it is not a version of the app. */
+      .filter((name) => name.startsWith(CACHE_PREFIX) && name !== PRECACHE && name !== TILE_CACHE)
       .map((name) => caches.delete(name))
   );
 }
@@ -78,6 +98,49 @@ async function fromPrecache(request) {
   const cached = await cache.match(request, { ignoreVary: true });
 
   return cached ?? fetch(request);
+}
+
+/* Oldest first. Cache.keys resolves in insertion order, so the front of the list is the least
+   recently added and trimming from there is enough - no timestamps to store and keep in step.
+   Run after the response is stored, so a trim that fails never costs the tile. */
+async function trimTileCache(cache) {
+  const keys = await cache.keys();
+  const excess = keys.length - TILE_CACHE_LIMIT;
+
+  for (let index = 0; index < excess; index++) {
+    await cache.delete(keys[index]);
+  }
+}
+
+/* Stale while revalidate: the cached tile is served straight away and a fresh one is fetched
+   in the background for next time. A tile is immutable in practice, so the staleness costs
+   nothing, and the map draws instantly on a slow connection instead of waiting on the
+   network. */
+async function serveTile(event) {
+  const cache = await caches.open(TILE_CACHE);
+  const cached = await cache.match(event.request);
+
+  const update = fetch(event.request)
+    .then(async (response) => {
+      /* A tile request is cors - Leaflet sets crossOrigin - so the status is readable and an
+         error page is not stored as if it were a tile. */
+      if (response.ok) {
+        await cache.put(event.request, response.clone());
+        await trimTileCache(cache);
+      }
+      return response;
+    })
+    .catch(() => null);
+
+  if (cached) {
+    /* Keeps the worker alive for the background fetch, which would otherwise be cut off the
+       moment the cached response is returned. */
+    event.waitUntil(update);
+    return cached;
+  }
+
+  const fresh = await update;
+  return fresh ?? Response.error();
 }
 
 async function serveNavigation(request) {
@@ -116,9 +179,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  /* Everything else is left alone. Not calling respondWith is the difference between "the
-     worker fetched it for you" and "the worker was never involved", and for anything we do
-     not cache the second is what we want. */
+  if (isTile(new URL(event.request.url))) {
+    event.respondWith(serveTile(event));
+    return;
+  }
+
+  /* Everything else is left alone, Nominatim above all. A cached geocode would be a stale
+     answer to a question about the world, and serving one offline instead of failing would
+     make the app lie rather than say it cannot reach the service. Not calling respondWith is
+     the difference between "the worker fetched it for you" and "the worker was never
+     involved", and here the second is what we want. */
 });
 
 /* ---------------------------------------------------------------- message */
