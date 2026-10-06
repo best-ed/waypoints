@@ -1,4 +1,5 @@
 import { StorageFullError } from '../data/errors.js';
+import { deserializePhotoRecord, serializePhotoRecord } from './photo-serialize.js';
 
 export const DATABASE_NAME = 'waypoints';
 export const DATABASE_VERSION = 1;
@@ -88,15 +89,22 @@ export function createIndexedDbBackend({
     }
   }
 
+  /* Serialized before the transaction is opened, never inside it. Blob.arrayBuffer is not an
+     IndexedDB request, so awaiting it with a transaction open lets the microtask queue drain
+     and the transaction commits before the put is ever issued. */
   async function put(record) {
-    await withStore('readwrite', (store) => promisifyRequest(store.put(record)));
+    const stored = await serializePhotoRecord(record);
+
+    await withStore('readwrite', (store) => promisifyRequest(store.put(stored)));
     await requestPersistence();
   }
 
   async function get(id) {
     const db = await open();
     const store = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE);
-    return promisifyRequest(store.get(id));
+    const stored = await promisifyRequest(store.get(id));
+
+    return deserializePhotoRecord(stored);
   }
 
   async function remove(id) {
