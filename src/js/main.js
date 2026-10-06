@@ -48,6 +48,7 @@ import { writeImportedPhotos } from './photos/import-photos.js';
 import { createImportDialog } from './ui/import-dialog.js';
 import { buildPopupContent, findPhotoStrip } from './ui/popup-content.js';
 import { createPopupPhotos } from './ui/popup-photos.js';
+import { createOfflineBanner } from './ui/offline-banner.js';
 import { createLightbox } from './ui/lightbox.js';
 import { createToast } from './ui/toast.js';
 import { ValidationError, StorageFullError } from './data/errors.js';
@@ -137,6 +138,14 @@ function boot() {
     countElement: document.getElementById('memory-photos-count'),
     errorElement: document.getElementById('memory-photos-errors'),
     processFiles
+  });
+
+  createOfflineBanner({
+    banner: document.getElementById('offline-banner'),
+    text: document.getElementById('offline-banner-text'),
+    dismissButton: document.getElementById('offline-banner-dismiss'),
+    target: window,
+    isOnline: () => window.navigator.onLine
   });
 
   const addButton = document.getElementById('add-memory');

@@ -130,6 +130,19 @@
     color: MarkText;
   }
 
+  /* ---- the offline banner -------------------------------------------------- */
+  /* Not Mark: this one is information rather than a warning, so it stays on the ordinary
+     surface and relies on its border to separate from the header below it. */
+  .offline-banner {
+    border-bottom-color: CanvasText;
+  }
+
+  .offline-banner-dismiss {
+    border-color: ButtonBorder;
+    color: ButtonText;
+    background-color: ButtonFace;
+  }
+
   /* ---- scrims and shadows -------------------------------------------------- */
   /* Shadows are dropped by the user agent in this mode, so dialogs get a real border to sit
      behind instead, and the backdrop stops pretending to dim anything. */
