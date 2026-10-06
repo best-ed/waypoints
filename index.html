@@ -8,6 +8,23 @@
     <title>waypoints</title>
     <meta name="description" content="Pin memories on an interactive map." />
 
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <!-- iOS ignores the manifest icons and takes this one, which is why it is the full-bleed
+         variant: iOS masks to its own squircle, so a plate rounded by us would leave gaps. -->
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" />
+
+    <!--
+      The colour of the browser's own chrome around the app, matching the header beneath it:
+      --color-surface from each token set. media is the only selector a theme-color meta
+      understands, so it follows the system preference and not the theme setting - someone
+      running the app light on a dark system gets dark chrome over a light header. The
+      alternative is rewriting these from script on every theme change, which trades a
+      cosmetic mismatch for a second source of truth about the theme.
+    -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1e1e24" />
+
     <!--
       Before the stylesheets and not deferred, so an explicit dark choice is applied ahead of
       the first paint rather than flashing light first. The one classic script in the project.
