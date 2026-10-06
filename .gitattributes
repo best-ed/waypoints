@@ -1,4 +1,7 @@
-* text=auto
+# eol=lf, not just text=auto: the precache manifest hashes the bytes of every shipped
+# file, so a checkout that turned LF into CRLF would change every hash and leave the
+# committed manifest looking stale on Windows and current everywhere else.
+* text=auto eol=lf
 
 .githooks/* text eol=lf
 *.sh text eol=lf
