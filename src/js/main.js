@@ -160,15 +160,17 @@ function boot() {
         onDelete: () => deleteMemory(memory.id),
         onToggleTag: (tag) => filters.toggleTag(tag)
       }),
+    /* The photo strip is filled from onPopupContent, not here: Leaflet rebuilds the content
+       on paths that never fire popupopen. */
     onPopupOpen: (id) => {
       selection.select(id);
-      fillPopupPhotos(id);
       /* Playback opens the current stop's popup itself, so only a different marker counts
          as the user taking over. */
       if (journeyActive && id !== currentStopId()) {
         pauseForInteraction();
       }
     },
+    onPopupContent: (id) => fillPopupPhotos(id),
     /* Switching markers closes the old popup after the new id is already selected, so
        only the popup that still owns the selection is allowed to clear it. */
     onPopupClose: (id) => {

@@ -39,7 +39,14 @@ function iconFor(title, step) {
 
 export function createMarkersLayer(
   map,
-  { renderPopup, onPopupOpen = () => {}, onPopupClose = () => {}, iconCreateFunction, animate = true }
+  {
+    renderPopup,
+    onPopupOpen = () => {},
+    onPopupClose = () => {},
+    onPopupContent = () => {},
+    iconCreateFunction,
+    animate = true
+  }
 ) {
   const clustered = L.markerClusterGroup({
     ...CLUSTER_OPTIONS,
@@ -106,6 +113,14 @@ export function createMarkersLayer(
 
     marker.on('popupopen', () => onPopupOpen(memory.id));
     marker.on('popupclose', () => onPopupClose(memory.id));
+
+    /* Anything built into the popup from outside the content function has to be rebuilt
+       whenever Leaflet rebuilds the content, and contentupdate is fired from the one place
+       that does it. popupopen is not enough: opening a popup that is already open re-runs the
+       content function without firing popupopen at all - _prepareOpen calls update, and openOn
+       then sees the layer is already on the map and adds nothing - and refreshIfNeeded below
+       calls update directly. Both left the photo strip empty. */
+    marker.getPopup().on('contentupdate', () => onPopupContent(memory.id));
 
     markersById.set(memory.id, entry);
 
