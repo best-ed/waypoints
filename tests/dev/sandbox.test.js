@@ -1,7 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { isSandbox, storageNamesFor, buildSearch, SANDBOX_PARAM } from '../../src/js/dev/sandbox.js';
+import {
+  isSandbox,
+  storageNamesFor,
+  buildSearch,
+  wantsServiceWorker,
+  SANDBOX_PARAM
+} from '../../src/js/dev/sandbox.js';
 import { buildDevApi, isDevHost } from '../../src/js/dev/dev-api.js';
 import { STORAGE_KEY, CORRUPT_KEY_PREFIX } from '../../src/js/data/schema.js';
 import { SETTINGS_KEY } from '../../src/js/data/settings-store.js';
@@ -65,21 +71,21 @@ test('the sandbox corrupt prefix is not a prefix of the real one, or the reverse
 });
 
 test('an unfiltered sandbox session keeps just the flag', () => {
-  assert.equal(buildSearch('', true), '?' + SANDBOX_PARAM);
+  assert.equal(buildSearch('', { sandbox: true }), '?' + SANDBOX_PARAM);
 });
 
 test('the flag survives a filter change', () => {
-  assert.equal(buildSearch('q=sunset&tags=trail', true), '?sandbox&q=sunset&tags=trail');
+  assert.equal(buildSearch('q=sunset&tags=trail', { sandbox: true }), '?sandbox&q=sunset&tags=trail');
 });
 
 test('a round trip through the search keeps sandbox on', () => {
-  assert.equal(isSandbox(buildSearch('q=sunset', true)), true);
-  assert.equal(isSandbox(buildSearch('', true)), true);
+  assert.equal(isSandbox(buildSearch('q=sunset', { sandbox: true })), true);
+  assert.equal(isSandbox(buildSearch('', { sandbox: true })), true);
 });
 
 test('nothing is added outside sandbox mode', () => {
-  assert.equal(buildSearch('q=sunset', false), '?q=sunset');
-  assert.equal(buildSearch('', false), '');
+  assert.equal(buildSearch('q=sunset', { sandbox: false }), '?q=sunset');
+  assert.equal(buildSearch('', { sandbox: false }), '');
 });
 
 test('development hosts are recognised', () => {
@@ -137,4 +143,35 @@ test('the exposed object does not leak seed back onto the store', () => {
   buildDevApi(store, { sandbox: true, devHost: true, seed: () => {}, clearSandbox: () => {} });
 
   assert.equal(store.seed, undefined, 'the store itself is left alone');
+});
+
+test('the service worker flag is read the same bare way as sandbox', () => {
+  assert.equal(wantsServiceWorker('?sw'), true);
+  assert.equal(wantsServiceWorker('?sw&q=sunset'), true);
+  assert.equal(wantsServiceWorker('?sandbox&sw'), true);
+  assert.equal(wantsServiceWorker('?q=sunset'), false);
+  assert.equal(wantsServiceWorker(''), false);
+  assert.equal(wantsServiceWorker(undefined), false);
+});
+
+test('the service worker flag survives a filter change', () => {
+  assert.equal(buildSearch('q=sunset', { sw: true }), '?sw&q=sunset');
+  assert.equal(buildSearch('', { sw: true }), '?sw');
+});
+
+test('both flags survive together, sandbox first', () => {
+  assert.equal(buildSearch('q=sunset', { sandbox: true, sw: true }), '?sandbox&sw&q=sunset');
+  assert.equal(buildSearch('', { sandbox: true, sw: true }), '?sandbox&sw');
+});
+
+test('a round trip keeps both flags readable', () => {
+  const search = buildSearch('q=sunset', { sandbox: true, sw: true });
+
+  assert.equal(isSandbox(search), true);
+  assert.equal(wantsServiceWorker(search), true);
+});
+
+test('no flags means no query string at all', () => {
+  assert.equal(buildSearch('', {}), '');
+  assert.equal(buildSearch(''), '');
 });

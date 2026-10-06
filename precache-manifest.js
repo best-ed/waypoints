@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "656a357fc3e6";
+self.PRECACHE_VERSION = "4efc8c47e7a0";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -44,7 +44,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/data/storage.js", hash: "76659ae35dc8641ee8de62138edbcc531065a628ec5d83ad9478003f895a913b" },
   { url: "src/js/data/validate.js", hash: "894b1df37ca48345793b4242d142935e9d5c45952e8760d32d261d0e07756975" },
   { url: "src/js/dev/dev-api.js", hash: "e8c236e749e9d36cb8e348db0f4c1cb2e625d657eed12e9528684f4ae17a3425" },
-  { url: "src/js/dev/sandbox.js", hash: "1d30debf2246172f31bbf9741da65b6e8e602c5c013f023e2a9584629ac217e2" },
+  { url: "src/js/dev/sandbox.js", hash: "8a2b4d08cc6f5e0427a08cd569f433316af78cb7f5ef01bb2176046baa40d432" },
   { url: "src/js/dev/seed-memories.js", hash: "69baa746fd6fbd3203cb5d18d63ea76498961f72128cce419a11016ad65da33f" },
   { url: "src/js/filters/apply-filters.js", hash: "660ff437259579cdd306ec351d4f0567af184ab0a2e8b61244e31a5d5e1813e6" },
   { url: "src/js/filters/filter-state.js", hash: "330d8cf8c167a8971c72b4c23a70e92e664eb25957188111ec235ca25728457f" },
@@ -63,7 +63,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/journey/journey-order.js", hash: "27cfd981a5c7984aa7a6ed70ac45bcc608b215f8528b25ac83c5cd84d545058b" },
   { url: "src/js/journey/journey-summary.js", hash: "29d2a44ebbd0be72b7faeae8978b8c4ae594fa344d1bd2047be144abe122e25c" },
   { url: "src/js/journey/playback.js", hash: "17c3477b8c72aafe38f837dbce44200494a1fe44104791520727a5779fe5b6b0" },
-  { url: "src/js/main.js", hash: "3d09f55b2a64909a1bbbe3d90e31e22cba7a1315abff2d292b6e64f7215a942a" },
+  { url: "src/js/main.js", hash: "ce9f52f0c1919d36668a84b7176d4b770eee2c20d0e843ecc02340d72bf99559" },
   { url: "src/js/map/basemap-control.js", hash: "e45fce7308fbd686e00b554ae83f9d586aa87bf338e9e66d45e4b560a87a9eec" },
   { url: "src/js/map/basemap-preference.js", hash: "19e95114e821d4e1c12a8c167e99a435da65639ab41f03eb05c1df0f68868436" },
   { url: "src/js/map/cluster-icon.js", hash: "4413a2377a9bcf88c137cde42d0e537a777756c32d9e883fee42e41314fe966a" },
@@ -85,6 +85,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/photos/photo-rules.js", hash: "74ceeb8db532729a2c0a149df15090169c2c268ed6f5065b1e2573111c0578de" },
   { url: "src/js/photos/photo-serialize.js", hash: "a3f602d2db028a6e6dfcb218680183702010990897cbb2d6ffc0725bb7c50c17" },
   { url: "src/js/photos/process-image.js", hash: "885f2586e6a69ef30c6f0e27d25b1c5df96589ced7825bf1a825130708ab592a" },
+  { url: "src/js/sw-register.js", hash: "9794c9485c45f3ab560544a19a11d659352d78e038062798817034717884af89" },
   { url: "src/js/theme-boot.js", hash: "5340f8a117b720ee67a48eca1edd31a02c98c3e30d684c7d37c78d58be4a3d8e" },
   { url: "src/js/ui/date-range.js", hash: "80e8854d322d3313c3de43cacb5a61bd8523398ac81e8be219775246e7e1d7f2" },
   { url: "src/js/ui/filter-summary.js", hash: "b3ddd0d1fe78357a18762eaa281c7d9c29bd5cb528d2bd81ceca97f898612d38" },

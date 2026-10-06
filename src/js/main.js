@@ -53,7 +53,14 @@ import { createToast } from './ui/toast.js';
 import { ValidationError, StorageFullError } from './data/errors.js';
 import { createPhotoRepository } from './photos/photo-repository.js';
 import { createIndexedDbBackend } from './photos/indexeddb-backend.js';
-import { buildSearch, isSandbox, storageNamesFor } from './dev/sandbox.js';
+import { buildSearch, isSandbox, storageNamesFor, wantsServiceWorker } from './dev/sandbox.js';
+import {
+  applyUpdate,
+  registerServiceWorker,
+  shouldRegister,
+  UPDATE_ACTION_LABEL,
+  UPDATE_READY_MESSAGE
+} from './sw-register.js';
 import { buildDevApi, isDevHost } from './dev/dev-api.js';
 import { generateSeedMemories } from './dev/seed-memories.js';
 import { writeEnvelope } from './data/storage.js';
@@ -74,6 +81,7 @@ function boot() {
      memories and another for the photos. */
   const sandbox = isSandbox(window.location.search);
   const names = storageNamesFor(sandbox);
+  const swFlag = wantsServiceWorker(window.location.search);
 
   if (sandbox) {
     document.getElementById('sandbox-banner').hidden = false;
@@ -447,7 +455,7 @@ function boot() {
   /* replaceState, not pushState: filtering is not navigation, and a history entry per
      keystroke would bury whatever page the user arrived from. */
   function writeFiltersToUrl(current) {
-    const search = buildSearch(serializeFilters(current).toString(), sandbox);
+    const search = buildSearch(serializeFilters(current).toString(), { sandbox, sw: swFlag });
 
     window.history.replaceState(null, '', window.location.pathname + search);
   }
@@ -1090,6 +1098,36 @@ function boot() {
 
   if (devApi) {
     window.waypoints = devApi;
+  }
+
+  /* Last, and deliberately not awaited: registering is housekeeping, and nothing above it
+     should wait on the network for a worker that only matters next time. */
+  if (
+    shouldRegister({
+      hostname: window.location.hostname,
+      search: window.location.search,
+      supported: 'serviceWorker' in window.navigator
+    })
+  ) {
+    registerServiceWorker({
+      serviceWorker: window.navigator.serviceWorker,
+      onUpdateReady: (worker) => {
+        toast.show({
+          message: UPDATE_READY_MESSAGE,
+          actionLabel: UPDATE_ACTION_LABEL,
+          onAction: () =>
+            applyUpdate({
+              serviceWorker: window.navigator.serviceWorker,
+              worker,
+              reload: () => window.location.reload()
+            })
+        });
+      }
+    }).catch((error) => {
+      /* A worker that will not register costs offline support and nothing else, so it must
+         not take the page down with it. */
+      console.error(error);
+    });
   }
 }
 
