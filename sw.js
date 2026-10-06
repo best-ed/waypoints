@@ -122,8 +122,9 @@ async function serveTile(event) {
 
   const update = fetch(event.request)
     .then(async (response) => {
-      /* A tile request is cors - Leaflet sets crossOrigin - so the status is readable and an
-         error page is not stored as if it were a tile. */
+      /* Readable because the tile layers ask for CORS: Leaflet leaves crossOrigin off by
+         default, and an opaque response has status 0, so this check would reject every tile
+         and silently cache nothing. */
       if (response.ok) {
         await cache.put(event.request, response.clone());
         await trimTileCache(cache);

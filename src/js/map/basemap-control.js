@@ -11,6 +11,14 @@ function buildTileLayer(basemap, theme) {
   return L.tileLayer(urlFor(basemap, theme), {
     attribution: basemap.attribution,
     maxZoom: basemap.maxZoom,
+    /* Leaflet leaves crossOrigin off by default, which makes every tile a no-cors request and
+       every tile response opaque. An opaque response has status 0, so the service worker
+       cannot tell a tile from a rate-limit page and refuses to cache either - the tile cache
+       stayed empty and the map only worked offline by accident, out of the HTTP cache.
+
+       Both providers answer with Access-Control-Allow-Origin: *, so asking for the tiles with
+       CORS costs nothing and gives the worker a status it can actually read. */
+    crossOrigin: 'anonymous',
     ...(basemap.subdomains ? { subdomains: basemap.subdomains } : {})
   });
 }
