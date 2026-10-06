@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The maskable variant of icons/icon.svg, and the source of the apple-touch icon.
+
+  Two differences, both because the platform does the shaping. The plate is full bleed with no
+  rounded corners, since a corner radius of ours would leave gaps inside whatever shape the
+  launcher masks to. And the glyph is smaller: a maskable icon is only guaranteed to show the
+  circle of 80% diameter at the centre, so the mark has to fit inside a circle of radius 204.8
+  here. At this size its half-diagonal is 180, which leaves room for the crop rather than
+  landing exactly on it.
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 512 512"
+  width="512"
+  height="512"
+  role="img"
+  aria-label="waypoints"
+>
+  <rect width="512" height="512" fill="#c2410c" />
+  <path
+    transform="translate(256 206)"
+    fill="#ffffff"
+    fill-rule="evenodd"
+    d="M-86.603 50 A100 100 0 1 1 86.603 50 L0 200 Z M0 -44 A44 44 0 1 0 0 44 A44 44 0 1 0 0 -44 Z"
+  />
+</svg>

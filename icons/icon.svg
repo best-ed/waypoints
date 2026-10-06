@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The app icon. A pin: a disc with a hole, closed off by the two tangent lines that meet at
+  the point below it, so the shoulders flow into the taper instead of being stuck onto a
+  circle. The hole is a real hole - fill-rule evenodd - so the plate shows through it and the
+  mark still reads if it is ever drawn over something else.
+
+  Geometry, in glyph units: disc of radius 100 at the origin, point at (0, 200). The tangent
+  points for a point 200 from a centre 100 away sit 60 degrees off the line to it, which puts
+  them at (+-86.603, 50), and the arc between them takes the long way over the top.
+
+  The two colours are --color-accent and --color-accent-contrast from the light token set. A
+  rasterised icon cannot read a custom property, so they are written out here, and
+  tests/style/icon.test.js asserts they still match tokens.css so the two cannot drift.
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 512 512"
+  width="512"
+  height="512"
+  role="img"
+  aria-label="waypoints"
+>
+  <rect width="512" height="512" rx="96" fill="#c2410c" />
+  <path
+    transform="translate(256 202.667) scale(1.066667)"
+    fill="#ffffff"
+    fill-rule="evenodd"
+    d="M-86.603 50 A100 100 0 1 1 86.603 50 L0 200 Z M0 -44 A44 44 0 1 0 0 44 A44 44 0 1 0 0 -44 Z"
+  />
+</svg>
