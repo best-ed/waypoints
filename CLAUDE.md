@@ -14,8 +14,11 @@ A web app for pinning memories on an interactive map.
   (`MarkerCluster.css`) is loaded: `MarkerCluster.Default.css` skins the `.marker-cluster`
   classes the plugin's own icon function emits, and ours emits none of them
 - **No framework. No bundler. No runtime npm dependencies.**
-- npm is used for dev tooling only (static server, test runner). `package.json` has no
-  `dependencies` block and should not grow one.
+- npm is used for dev tooling only (static server, test runners, Playwright). `package.json`
+  has no `dependencies` block and should not grow one.
+- **devDependencies are pinned to exact versions**, no ranges, so CI and a laptop run the same
+  browsers and the same assertions. A new one has to earn its place: it may not ship to the
+  browser, and it may not become something the app needs to build.
 - The browser loads the source files as written — what is in `src/` is what ships.
 
 ---
@@ -29,6 +32,9 @@ manifest.webmanifest  the web app manifest
 precache-manifest.js  generated, committed; the file list the worker caches
 icons/            the app icon as svg, and the rendered png sizes
 scripts/          node tooling, not shipped to the browser
+e2e/              Playwright specs and their fixtures
+vercel.json       the deployment's cache and security headers
+.vercelignore     what the deployment leaves behind
 src/css/          stylesheets
 src/js/           ES modules
 src/js/data/      schema, normalization, validation, storage, the memory store
@@ -485,20 +491,36 @@ can look detached from a line that is no longer drawn there.
 
 ## Basemaps
 
-CARTO Voyager by default, OpenStreetMap standard as the alternative, both configured in
-`config.js`. Each carries its own attribution, and keeping it visible is a condition of use,
-not decoration. Leaflet substitutes `{r}` with `@2x` on a retina screen by itself; CARTO serves
-subdomains a through d where Leaflet defaults to a through c.
+OpenStreetMap standard, and only that, configured in `config.js`. Attribution is a condition of
+use, not decoration; Leaflet's attribution control takes each credit on and off with its layer,
+so there is nothing to manage by hand.
 
-`create-map.js` deliberately adds **no** tile layer. The basemap control owns it, so exactly
-one place adds and removes one, and Leaflet's attribution control takes each credit on and off
-with its layer - there is no attribution to manage by hand and no way to leave a stale one
-stacked behind the new one. Both layers are built once and kept, so switching back does not
-throw away a warm tile cache.
+**CARTO was here until release day.** Voyager was the default and Dark Matter was the dark
+counterpart, and on 7 October 2026 every tile came back as a 2049 byte "API KEY REQUIRED"
+watermark - verified against the provider directly, with and without a referer, while
+OpenStreetMap returned a real 45KB tile. Shipping it would have meant shipping a map nobody
+could read.
 
-The choice persists under `waypoints:basemap`, its own key. A display preference is not user
-data, should not travel with an export, and must not go down with a corrupt memories envelope.
-An unknown or hand-edited value falls back to the default rather than leaving a blank map.
+Putting it back is a key away: the two urls go into `BASEMAPS` with the key in the query
+string, the host goes into the CSP in `vercel.json`, and the host goes into `TILE_HOSTS` in
+`sw.js`. A test derives the hosts the policy must allow from `BASEMAPS`, so a basemap the
+policy would block fails the suite rather than the deployment.
+
+**There is no keyless dark basemap**, so dark mode draws a light map. That is the honest trade
+rather than a broken one. The `darkUrl` machinery in `basemap-control.js` is left in place and
+is simply unused: it is one `if`, and it is what any replacement provider would need.
+
+The chooser hides itself when there is fewer than two basemaps to choose between - a control
+with nothing to choose is noise over the map - while the layer is added either way.
+
+`create-map.js` deliberately adds **no** tile layer. The basemap control owns it, so exactly one
+place adds and removes one. The choice persists under `waypoints:basemap`, its own key, because
+a display preference is not user data, should not travel with an export, and must not go down
+with a corrupt memories envelope. An unknown or hand-edited value falls back to the default
+rather than leaving a blank map.
+
+**Tile layers set `crossOrigin: 'anonymous'`.** See **Offline and Installing**: without it every
+tile response is opaque and the worker cannot tell a tile from an error page.
 
 ---
 
@@ -724,11 +746,15 @@ never computes contrast at runtime and `src/` is what ships.
 
 ### Dark basemap
 
-In dark mode, CARTO Voyager is swapped for Dark Matter through `setUrl` on the **existing**
-layer. Rebuilding the layer would make Leaflet's attribution control see a remove and an add,
-which is how a credit ends up flickering or stacked. Only a url that actually changes is
-swapped, so a theme change does not refetch every OpenStreetMap tile. OpenStreetMap standard
-has no dark counterpart and is left alone.
+**There isn't one.** No keyless provider offers a dark raster basemap, and the one that did now
+wants an API key (see **Basemaps**), so dark mode draws the light map. The interface is dark
+around it.
+
+The swap itself still works and is one `if`: a basemap with a `darkUrl` has it applied through
+`setUrl` on the **existing** layer, never by rebuilding it - a rebuild makes Leaflet's
+attribution control see a remove and an add, which is how a credit ends up flickering or
+stacked. Only a url that actually changes is swapped, so a theme change does not refetch every
+tile. Nothing currently declares a `darkUrl`; any replacement provider would.
 
 ---
 
@@ -838,7 +864,7 @@ every hash changes with it.
 |---|---|
 | navigation | the cached `index.html`, network as a fallback |
 | anything in the precache | cache first, from the versioned cache |
-| OSM and CARTO tiles | stale while revalidate, own cache, capped at 300 |
+| map tiles | stale while revalidate, own cache, capped at 300 |
 | Nominatim, and everything else | straight to the network, never cached |
 | any non-GET | passed through untouched |
 
@@ -925,6 +951,89 @@ dropped after one use: a prompted event cannot be prompted again, and holding it
 button that silently does nothing. There is deliberately no iOS walkthrough - Safari installs
 from its own share sheet, and a panel of instructions about another browser's menus is not a
 setting.
+
+---
+
+## Deploying
+
+Static hosting. There is nothing to build: the files in the repository are the files the browser
+loads.
+
+`vercel.json` carries the headers, and they are not decoration. The **cache rules are written
+not to overlap**, so nothing depends on which rule wins when two match:
+
+| path | Cache-Control |
+| --- | --- |
+| `/`, `/index.html`, `/sw.js`, `/precache-manifest.js`, `/manifest.webmanifest` | `no-cache` |
+| `/src/(.*)` | `public, max-age=300, must-revalidate` |
+| `/icons/(.*)` | `public, max-age=31536000, immutable` |
+
+Nothing is fingerprinted, so application code revalidates rather than being pinned; the worker
+is what makes that cheap. The entry point, the worker and its file list are never cached,
+because an update must never be a cache's decision.
+
+The **CSP** allows jsDelivr for scripts and styles and the tile host for images and connections.
+`'unsafe-inline'` appears in `style-src` only, and only because Leaflet positions every pane,
+tile and popup through `element.style`. `script-src` has no inline anything - the one classic
+script in the head is a file for exactly this reason - and nothing anywhere allows `eval`.
+
+`Referrer-Policy` is `strict-origin-when-cross-origin` rather than `no-referrer`: the tile usage
+policy asks for an identifiable referer, and an origin satisfies it without sending paths.
+
+`Permissions-Policy` denies camera, microphone and geolocation. **A file input is not gated by
+the camera permission**, so the photo picker still offers the camera on a phone; nothing in the
+app asks for the other two.
+
+`.vercelignore` drops the tests, the tooling and the docs, keeping only the export format
+specification the export file points people at. A test asserts that nothing in the precache
+manifest is excluded by it, since a file the worker is told to cache and the deployment does not
+serve would fail the install.
+
+### scripts/serve.mjs
+
+`npm run serve:prod` serves the app with those headers applied, and `npm run test:e2e` runs
+against it. **A policy that only exists in production is a policy nobody has tested**, and the
+first thing it breaks is the thing you just shipped.
+
+It understands the two `source` forms `vercel.json` actually uses and **throws on anything
+else**, rather than treating an unrecognised pattern as a literal and silently dropping a header
+in testing that production would apply.
+
+---
+
+## End-to-end Tests
+
+`e2e/`, Playwright, Chromium and WebKit, run with `npm run test:e2e` against `serve:prod`. About
+a minute and a half for both engines.
+
+Curated, not exhaustive. The unit suite covers the pure logic; these are the paths that only
+break once a real browser, real storage and the production headers are all involved at once.
+Each test seeds its own state rather than clicking through setup.
+
+**The fixture in `e2e/fixtures.js` is global, not per-test**, because a fault is a fault wherever
+it happens:
+
+- A **console error**, a **page error** or a **CSP violation** fails whichever test it occurs in.
+  The violation is reported from inside the page through `securitypolicyviolation`, which carries
+  the directive, rather than by pattern-matching a log line that differs between engines.
+- **Nominatim is never reached.** A guard route records any request that gets through and fails
+  the test naming the url. A test that needs results installs its own route, which Playwright
+  matches first because it was added later.
+- **Tiles are answered from a local fixture.** Routing is on the **context**, not the page,
+  because the service worker makes its own requests and those do not pass through `page.route`.
+
+Two things are skipped on WebKit with the reason recorded where they are skipped: Playwright's
+WebKit precaches identically and serves through the worker while online, but will not answer
+from the cache once offline emulation is on. Real Safari is an open question, not a known
+failure.
+
+When a test needs to choose a memory from the list, **seed it an uncrowded map**. That path flies
+the map and opens a popup through the cluster plugin, and with several pins stacked on one city
+it occasionally never produced a popup on WebKit under parallel load. The cluster path has its
+own scenarios; it is a slow and flaky way in to something else.
+
+CI runs the unit tests first, before the browsers are installed - they need none, they are fast,
+and a failure should not wait on a few hundred megabytes of download.
 
 ---
 
