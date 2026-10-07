@@ -1,0 +1,27 @@
+# What the deployment does not need. The browser only ever loads index.html, the files under
+# src/, icons/, the manifest, the worker and its file list - which is exactly what the precache
+# manifest lists, and a test asserts nothing in that list is excluded here.
+
+node_modules
+
+tests
+e2e
+playwright-report
+test-results
+playwright.config.js
+
+scripts
+
+.github
+.githooks
+.claude
+.editorconfig
+.gitattributes
+
+CLAUDE.md
+CHANGELOG.md
+
+# docs/ is kept only for the format specification the export file points people at; the
+# screenshots in it are for the README on GitHub and are not served.
+docs/*
+!docs/export-format.md
