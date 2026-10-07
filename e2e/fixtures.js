@@ -122,10 +122,16 @@ export const LIBRARY = [
 ];
 
 /* Written before anything on the page runs, so the app boots with the library already there
-   rather than being clicked into existence. */
+   rather than being clicked into existence.
+
+   Only when nothing is stored yet. addInitScript runs on every navigation, so seeding
+   unconditionally would quietly undo whatever the test had just done the moment it reloaded -
+   which is exactly how the photo test came to assert against a memory that no longer had one. */
 export async function seedLibrary(page, memories = LIBRARY) {
   await page.addInitScript((records) => {
-    window.localStorage.setItem('waypoints:v1', JSON.stringify({ version: 1, memories: records }));
+    if (window.localStorage.getItem('waypoints:v1') === null) {
+      window.localStorage.setItem('waypoints:v1', JSON.stringify({ version: 1, memories: records }));
+    }
   }, memories);
 }
 
