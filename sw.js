@@ -13,10 +13,10 @@ const PRECACHE = CACHE_PREFIX + 'precache-' + self.PRECACHE_VERSION;
    it. The name carries no version for the same reason. */
 const TILE_CACHE = CACHE_PREFIX + 'tiles';
 
-/* Suffixes rather than whole hosts: both providers serve from numbered or lettered subdomains
-   (a-d for CARTO, a-c for OpenStreetMap), and matching the suffix covers all of them without
-   writing each one out. */
-const TILE_HOSTS = ['.basemaps.cartocdn.com', '.tile.openstreetmap.org'];
+/* A suffix rather than whole hosts: the provider serves from lettered subdomains, a through c,
+   and matching the suffix covers all of them without writing each one out. A list, because a
+   second provider only needs its host adding here. */
+const TILE_HOSTS = ['.tile.openstreetmap.org'];
 
 /* Roughly a screenful of tiles at a few zoom levels, which is what makes an offline map
    useful without letting a long session grow without limit. */

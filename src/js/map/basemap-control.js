@@ -119,9 +119,14 @@ export function createBasemapControl(
   L.DomEvent.disableClickPropagation(container);
   L.DomEvent.disableScrollPropagation(container);
 
+  /* A chooser with nothing to choose between is noise over the map. The layer itself is still
+     added by select() above, so the basemap works whether or not the control is shown. */
   const control = L.control({ position: 'bottomleft' });
   control.onAdd = () => container;
-  control.addTo(map);
+
+  if (Object.keys(BASEMAPS).length > 1) {
+    control.addTo(map);
+  }
 
   /* The stored choice is applied without notifying, or boot would immediately write back the
      value it just read. */

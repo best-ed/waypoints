@@ -32,8 +32,22 @@ test('the default is one of the basemaps on offer', () => {
   assert.ok(Object.hasOwn(BASEMAPS, DEFAULT_BASEMAP_ID));
 });
 
-test('CARTO Voyager is the default', () => {
-  assert.equal(DEFAULT_BASEMAP_ID, 'voyager');
+test('the default is a basemap that actually exists', () => {
+  /* Named by id rather than asserted to be a particular provider: which one ships is a
+     deployment decision, but a default pointing at nothing is a blank map. */
+  assert.ok(
+    Object.prototype.hasOwnProperty.call(BASEMAPS, DEFAULT_BASEMAP_ID),
+    DEFAULT_BASEMAP_ID + ' is not one of ' + Object.keys(BASEMAPS).join(', ')
+  );
+});
+
+test('no basemap needs an API key we do not have', () => {
+  /* CARTO started requiring one and every tile came back as a watermark. Nothing ships with a
+     key placeholder or an empty key in its url. */
+  for (const [id, basemap] of Object.entries(BASEMAPS)) {
+    assert.doesNotMatch(basemap.url, /api[_-]?key|access[_-]?token/i, id);
+    assert.doesNotMatch(basemap.darkUrl ?? '', /api[_-]?key|access[_-]?token/i, id);
+  }
 });
 
 test('every basemap carries a url, a label and an attribution', () => {

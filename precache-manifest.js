@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "87f44dd31c76";
+self.PRECACHE_VERSION = "6d377f80ab12";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -35,7 +35,7 @@ self.PRECACHE_FILES = [
   { url: "src/css/sidebar.css", hash: "54453021a4181df7cc6633f909f8573dd0d1495904bedec9217bef7c9fba7c5d" },
   { url: "src/css/toast.css", hash: "e83344bff53a8385046c212132737df2ed7d422e3b298b5c0045941a9418b4ff" },
   { url: "src/css/tokens.css", hash: "c44ea327495fe8100c1ef8e7a554bd4b02b17e2ab61e24d27ddf0fa1fbf589e6" },
-  { url: "src/js/config.js", hash: "13479d396ecec7d99e143adbe3e71a60019e10b6ebc56008cda6b50831744f73" },
+  { url: "src/js/config.js", hash: "9404bdda91b3e2e16c421add30783391f1ad3946c5d3b4f4c6e5e4da7b17220b" },
   { url: "src/js/data/errors.js", hash: "cf37f88d48b6510f784f3ebbae55121fb426025080aff4f7f9901625ef285310" },
   { url: "src/js/data/make-id.js", hash: "540be621332cd51f8c6ecf66afe2a97e4b83a285d5ef42ab9416572bb348e70f" },
   { url: "src/js/data/memory-store.js", hash: "7c3aa1f1eebf0ce8342d54297f4c2d7844f94b0c7039f7f55ec12bc360f66034" },
@@ -65,7 +65,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/journey/journey-summary.js", hash: "29d2a44ebbd0be72b7faeae8978b8c4ae594fa344d1bd2047be144abe122e25c" },
   { url: "src/js/journey/playback.js", hash: "17c3477b8c72aafe38f837dbce44200494a1fe44104791520727a5779fe5b6b0" },
   { url: "src/js/main.js", hash: "8ea6b3d2c02d55b6c09ae820385c0d4df37535ee39ef660c50560f4a6749e103" },
-  { url: "src/js/map/basemap-control.js", hash: "d07365252e9e2b42d8619f58602bbc8a14797c4cec2f9140c4cccdd5b1462cff" },
+  { url: "src/js/map/basemap-control.js", hash: "34f9d047896b722472fec9b78a8ec7d366697b13c47252ac8f79879ea75e7959" },
   { url: "src/js/map/basemap-preference.js", hash: "19e95114e821d4e1c12a8c167e99a435da65639ab41f03eb05c1df0f68868436" },
   { url: "src/js/map/cluster-icon.js", hash: "4413a2377a9bcf88c137cde42d0e537a777756c32d9e883fee42e41314fe966a" },
   { url: "src/js/map/create-map.js", hash: "b5b9073471e0fe889dd09a37a582fbdfc4de6a376f6c6e141a854a7733de21dc" },

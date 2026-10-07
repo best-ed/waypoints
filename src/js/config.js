@@ -13,20 +13,21 @@ export const DEFAULT_VIEW = {
 export const MIN_ZOOM = 3;
 export const MAX_ZOOM = 19;
 
-/* Both providers require their attribution to stay visible; that is a condition of use, not
-   decoration. Leaflet substitutes {r} with "@2x" on a retina screen by itself.
-   The subdomains differ: CARTO serves a through d, and Leaflet defaults to a through c. */
+/* OpenStreetMap standard, and only that.
+
+   CARTO's Voyager and Dark Matter were here until release day, when every tile came back as a
+   2049 byte "API KEY REQUIRED" watermark - verified directly against the provider, with and
+   without a referer, while OpenStreetMap returned a real 45KB tile. CARTO now wants an account
+   and a key for their basemaps, so shipping them would mean shipping a map nobody can read.
+
+   Restoring them is a key away: put the two urls back here with the key in the query string
+   and add the host to the policy in vercel.json and to TILE_HOSTS in sw.js. The dark basemap
+   goes with them - no keyless provider offers one - so dark mode draws a light map, which is
+   the honest trade rather than a broken one.
+
+   Attribution is a condition of use, not decoration. Leaflet substitutes {r} with "@2x" on a
+   retina screen by itself. */
 export const BASEMAPS = Object.freeze({
-  voyager: Object.freeze({
-    label: 'Voyager',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    /* The same CARTO basemap drawn dark. Only this provider has one: OpenStreetMap standard
-       has no dark counterpart, so it stays as it is in either theme. */
-    darkUrl: 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-    subdomains: 'abcd',
-    maxZoom: MAX_ZOOM
-  }),
   osm: Object.freeze({
     label: 'OpenStreetMap',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -35,7 +36,7 @@ export const BASEMAPS = Object.freeze({
   })
 });
 
-export const DEFAULT_BASEMAP_ID = 'voyager';
+export const DEFAULT_BASEMAP_ID = 'osm';
 
 /* Its own key. A display preference does not belong in the memories envelope. */
 export const BASEMAP_STORAGE_KEY = 'waypoints:basemap';

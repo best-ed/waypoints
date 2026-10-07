@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 
 import { compileRules, compileSource, headersFor } from '../../scripts/serve.mjs';
+import { BASEMAPS } from '../../src/js/config.js';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const config = JSON.parse(readFileSync(join(root, 'vercel.json'), 'utf8'));
@@ -126,13 +127,24 @@ test('default-src is self, so an undeclared directive falls back to nothing exte
   assert.deepEqual(csp['default-src'], ["'self'"]);
 });
 
+test('the policy allows a host for every basemap that ships', () => {
+  /* Written from the config rather than from a list here, so adding a basemap whose tiles the
+     policy would block fails this instead of failing silently in production. */
+  for (const basemap of Object.values(BASEMAPS)) {
+    const host = new URL(basemap.url.replace('{s}', 'a')).hostname;
+    const allowed = [...csp['img-src'], ...csp['connect-src']].some(
+      (source) => source === 'https://' + host || source === 'https://*.' + host.split('.').slice(1).join('.')
+    );
+
+    assert.ok(allowed, basemap.label + ' serves from ' + host + ', which the policy blocks');
+  }
+});
+
 test('every external host the app actually uses is allowed', () => {
   const needed = [
     { directive: 'connect-src', host: 'https://nominatim.openstreetmap.org', why: 'place search' },
-    { directive: 'img-src', host: 'https://*.basemaps.cartocdn.com', why: 'CARTO tiles' },
-    { directive: 'img-src', host: 'https://*.tile.openstreetmap.org', why: 'OSM tiles' },
-    { directive: 'connect-src', host: 'https://*.basemaps.cartocdn.com', why: 'the worker caching CARTO tiles' },
-    { directive: 'connect-src', host: 'https://*.tile.openstreetmap.org', why: 'the worker caching OSM tiles' },
+    { directive: 'img-src', host: 'https://*.tile.openstreetmap.org', why: 'map tiles' },
+    { directive: 'connect-src', host: 'https://*.tile.openstreetmap.org', why: 'the worker caching tiles' },
     { directive: 'connect-src', host: 'https://cdn.jsdelivr.net', why: 'the worker precaching Leaflet' },
     { directive: 'script-src', host: 'https://cdn.jsdelivr.net', why: 'Leaflet and markercluster' },
     { directive: 'style-src', host: 'https://cdn.jsdelivr.net', why: 'their stylesheets' }
@@ -178,8 +190,7 @@ test('no external host is allowed that the app does not use', () => {
     'https://cdn.jsdelivr.net',
     'https://nominatim.openstreetmap.org',
     'https://*.tile.openstreetmap.org',
-    'https://tile.openstreetmap.org',
-    'https://*.basemaps.cartocdn.com'
+    'https://tile.openstreetmap.org'
   ]);
 
   for (const [directive, sources] of Object.entries(csp)) {
