@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "a16be9c01b5d";
+self.PRECACHE_VERSION = "3a81d5365e9f";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -76,7 +76,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/map/markers-layer.js", hash: "30f49f1861457ec2f093cca8f19c3e285d3f65e82e97fcc0d2a30c142fe55bee" },
   { url: "src/js/map/move-mode.js", hash: "01d6216451a769baa4ba2064ba550d66051d9ca1ed6401c1b79e3e7abee015dd" },
   { url: "src/js/map/pin-icon.js", hash: "a22817590e2f81096e52f16f9c47c21f49e95fceb039be99f978de9792a0368e" },
-  { url: "src/js/map/place-search-control.js", hash: "a092b65633de26873581feea7376fca8b6ae7eed01eb707a32ca3ab4e11955ed" },
+  { url: "src/js/map/place-search-control.js", hash: "e7d3eb56a5381e01780f5d59854bcdb9382a50aaaf8508e771ca58e2a678e04d" },
   { url: "src/js/map/placement-mode.js", hash: "002de09075b9200a5fb4c354face88c9c976ff48a5dff9b35719039887bbe146" },
   { url: "src/js/map/result-marker.js", hash: "0f184d7efdbbb3996982f4b60fd81559f0ca476c16089db68cd0127a144cdccd" },
   { url: "src/js/map/warm-tile-cache.js", hash: "a53b3212536714970fa8a78cc0c76eae0fce650ba01d8d30945eed861dd4af3a" },

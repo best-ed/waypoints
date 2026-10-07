@@ -120,7 +120,16 @@ export function createPlaceSearchControl({ map, onSearch, onChoose, onClear }) {
       button.append(element('span', 'place-search-name', result.name));
       button.append(element('span', 'place-search-detail', result.displayName));
 
-      button.addEventListener('click', () => choose(index));
+      /* The click is stopped here, not left to disableClickPropagation on the container.
+         That guard works by walking up from the event's target looking for the control, and
+         choosing a result removes this very button from the list before the event has finished
+         bubbling - so the map sees a click from a detached node, finds no control above it,
+         fires its synthetic preclick, and Leaflet closes the popup that was just opened. The
+         result pin appeared and vanished within a millisecond. */
+      button.addEventListener('click', (event) => {
+        L.DomEvent.stopPropagation(event);
+        choose(index);
+      });
       item.append(button);
       list.append(item);
     });
