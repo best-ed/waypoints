@@ -117,10 +117,13 @@ test('a photo survives a reload, on whichever engine is running', async ({ page 
 });
 
 test('edits a memory and sees it everywhere', async ({ page }) => {
-  await seedLibrary(page);
+  /* One memory, so choosing it from the list does not have to expand a cluster first. The
+     cluster path is covered elsewhere; here it is only a slow, flaky way in. */
+  await seedLibrary(page, [memory('only', 'The only memory', '2025-03-03', -1.29, 36.82, ['x'])]);
   await openApp(page);
 
   await page.locator('.memory-list li button').first().click();
+  await expect(page.locator('.leaflet-popup')).toBeVisible();
   await page.locator('.leaflet-popup button', { hasText: 'Edit' }).click();
   await page.locator('#memory-title').fill('Renamed on the way through');
   await page.locator('#memory-save').click();
@@ -129,23 +132,28 @@ test('edits a memory and sees it everywhere', async ({ page }) => {
   const stored = await page.evaluate(() =>
     JSON.parse(localStorage.getItem('waypoints:v1')).memories.map((m) => m.title)
   );
-  expect(stored).toContain('Renamed on the way through');
+  expect(stored).toEqual(['Renamed on the way through']);
 });
 
 test('deletes a memory and undoes it, keeping the same record', async ({ page }) => {
-  await seedLibrary(page);
+  /* Two, far enough apart not to cluster, so the one being deleted can be opened directly. */
+  await seedLibrary(page, [
+    memory('m1', 'Karura forest walk', '2023-03-12', -1.2359, 36.8137, ['trail']),
+    memory('m6', 'London South Bank', '2024-11-02', 51.5074, -0.1278, ['view'])
+  ]);
   await openApp(page);
 
   const before = await page.evaluate(() => JSON.parse(localStorage.getItem('waypoints:v1')).memories);
 
   await page.locator('.memory-list li button').first().click();
+  await expect(page.locator('.leaflet-popup')).toBeVisible();
   await page.locator('.leaflet-popup button', { hasText: 'Delete' }).click();
 
-  await expect(page.locator('.memory-list li')).toHaveCount(4);
+  await expect(page.locator('.memory-list li')).toHaveCount(1);
   await expect(page.locator('#toast-region')).toContainText('Deleted');
 
   await page.locator('.toast-action').click();
-  await expect(page.locator('.memory-list li')).toHaveCount(5);
+  await expect(page.locator('.memory-list li')).toHaveCount(2);
 
   /* Restored, not re-created: same id and same timestamps. */
   const after = await page.evaluate(() => JSON.parse(localStorage.getItem('waypoints:v1')).memories);
