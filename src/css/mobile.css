@@ -81,9 +81,19 @@
 
 @media (max-width: 720px) {
   /* One at a time, full width. Above this breakpoint data-view is removed entirely, so these
-     rules can never leave a desktop layout with a hidden map. */
-  .app-body[data-view='map'] .sidebar {
+     rules can never leave a desktop layout with a hidden map.
+
+     The map is the default here, with no attribute needed, because main.js sets data-view
+     after the first paint. While the attribute was the only thing hiding the sidebar, the page
+     painted both panes and then resized the map underneath the reader a moment later - 0.183
+     of cumulative layout shift, and the largest thing on the page moving. The stylesheet now
+     paints what the script is about to ask for. */
+  .sidebar {
     display: none;
+  }
+
+  .app-body[data-view='list'] .sidebar {
+    display: flex;
   }
 
   .app-body[data-view='list'] .app-main {
