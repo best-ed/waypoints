@@ -1047,9 +1047,12 @@ and a failure should not wait on a few hundred megabytes of download.
 - Leaflet popups are given an `HTMLElement`, never a string
 - Preserve a note's line breaks with `white-space: pre-wrap` in CSS, never by injecting
   `<br>`
-- There are no markup strings left in `src/`. `map/pin-icon.js` builds its pin with
-  `createElementNS` and hands `L.divIcon` an `Element`, which Leaflet 1.9 accepts, so even
-  a journey step number goes in through `textContent`.
+- **No markup string anywhere in `src/` interpolates or concatenates a value.** Two fixed
+  SVG literals remain - in `map/journey-chevrons.js` and `map/result-marker.js` - and they are
+  constants written here, with nothing substituted into them. `map/pin-icon.js` shows the
+  better pattern: it builds its pin with `createElementNS` and hands `L.divIcon` an `Element`,
+  which Leaflet 1.9 accepts, so even a journey step number goes in through `textContent`. The
+  other two are worth converting the next time either is touched.
 
 A memory titled `<img src=x onerror=alert(1)>` must render as those literal characters.
 
