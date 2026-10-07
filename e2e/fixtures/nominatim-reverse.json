@@ -1,0 +1,14 @@
+{
+  "place_id": 200,
+  "name": "Karura Forest",
+  "display_name": "Karura Forest, Nairobi, Kenya",
+  "lat": "-1.2359",
+  "lon": "36.8137",
+  "address": {
+    "leisure": "Karura Forest",
+    "suburb": "Muthaiga",
+    "city": "Nairobi",
+    "country": "Kenya",
+    "country_code": "ke"
+  }
+}

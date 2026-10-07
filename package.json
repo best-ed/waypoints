@@ -8,6 +8,11 @@
     "dev": "npx serve . -l 5173",
     "test": "node --test --test-timeout=10000 \"tests/**/*.test.js\"",
     "precache": "node scripts/build-precache.js",
-    "serve:prod": "node scripts/serve.mjs"
+    "serve:prod": "node scripts/serve.mjs",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.63.0"
   }
 }

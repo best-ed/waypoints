@@ -1,0 +1,22 @@
+[
+  {
+    "place_id": 100,
+    "name": "Nairobi",
+    "display_name": "Nairobi, Kenya",
+    "lat": "-1.2832533",
+    "lon": "36.8172449",
+    "boundingbox": ["-1.4441", "-1.1605", "36.6646", "37.1050"],
+    "type": "city",
+    "addresstype": "city"
+  },
+  {
+    "place_id": 101,
+    "name": "Nairobi West",
+    "display_name": "Nairobi West, Nairobi, Kenya",
+    "lat": "-1.3108",
+    "lon": "36.8203",
+    "boundingbox": ["-1.3300", "-1.2900", "36.8000", "36.8400"],
+    "type": "suburb",
+    "addresstype": "suburb"
+  }
+]

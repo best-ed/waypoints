@@ -9,3 +9,9 @@ npm-debug.log*
 .vercel
 
 waypoints-export*.json
+
+# Playwright output. The report is uploaded as a CI artifact on failure, never committed.
+/playwright-report/
+/test-results/
+/blob-report/
+/.playwright/
