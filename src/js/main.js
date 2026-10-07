@@ -1,4 +1,7 @@
-import { MAP_CONTAINER_ID } from './config.js';
+import {
+  APP_VERSION,
+  MAP_CONTAINER_ID
+} from './config.js';
 import { createMap } from './map/create-map.js';
 import { createMemoryStore } from './data/memory-store.js';
 import { createIdFactory } from './data/make-id.js';
@@ -151,6 +154,9 @@ function boot() {
     target: window,
     isOnline: () => window.navigator.onLine
   });
+
+  /* Quietly, at the bottom of Settings. textContent, so it is one string in one place. */
+  document.getElementById('app-version').textContent = 'waypoints ' + APP_VERSION;
 
   createInstallPrompt({
     section: document.getElementById('install-section'),

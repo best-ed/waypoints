@@ -86,3 +86,11 @@
      theme, because :root declares color-scheme. */
   appearance: auto;
 }
+
+/* The version, at the bottom of Settings. Quiet on purpose: useful when reporting something,
+   not something to read every time. */
+.app-version {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}

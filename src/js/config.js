@@ -1,3 +1,8 @@
+/* Kept in step with package.json by tests/meta/version.test.js: two places is one too many,
+   but the browser cannot read package.json and the deployment has no build step to write it
+   in, so the test is what makes them one fact rather than two. */
+export const APP_VERSION = '0.1.0';
+
 export const MAP_CONTAINER_ID = 'map';
 
 export const DEFAULT_VIEW = {
