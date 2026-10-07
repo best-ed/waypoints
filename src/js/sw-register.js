@@ -83,6 +83,27 @@ export async function registerServiceWorker({
   return registration;
 }
 
+/* A first visit has no controller when it boots. The worker installs while the page is already
+   running, so everything the page asked for before that - the opening view's map tiles above
+   all - never passed through it and never reached the tile cache. clients.claim in activate
+   takes over the page, but it cannot reach back and intercept requests that have already been
+   made.
+
+   So the page is told when it is taken over, and warms the cache itself. Nothing here reloads
+   anything: this listener and the one in applyUpdate are deliberately separate, because that
+   one must be armed by a click and this one must not be.
+
+   once: the handler is for taking over from nothing. A later controllerchange is an update
+   being applied, which reloads the page anyway. */
+export function onFirstControl({ serviceWorker, onTakeOver }) {
+  if (serviceWorker.controller) {
+    return false;
+  }
+
+  serviceWorker.addEventListener('controllerchange', () => onTakeOver(), { once: true });
+  return true;
+}
+
 /* The second half of the flow, and the only thing that ever reloads the page.
 
    controllerchange is listened for here rather than at registration on purpose: activate calls

@@ -58,12 +58,14 @@ import { createIndexedDbBackend } from './photos/indexeddb-backend.js';
 import { buildSearch, isSandbox, storageNamesFor, wantsServiceWorker } from './dev/sandbox.js';
 import {
   applyUpdate,
+  onFirstControl,
   registerServiceWorker,
   removeServiceWorkers,
   shouldRegister,
   UPDATE_ACTION_LABEL,
   UPDATE_READY_MESSAGE
 } from './sw-register.js';
+import { warmTileCache } from './map/warm-tile-cache.js';
 import { buildDevApi, isDevHost } from './dev/dev-api.js';
 import { generateSeedMemories } from './dev/seed-memories.js';
 import { writeEnvelope } from './data/storage.js';
@@ -1139,6 +1141,13 @@ function boot() {
       }).catch((error) => console.error(error));
     }
   } else {
+    /* A first visit draws its tiles long before the worker finishes installing, so they never
+       pass through it. Once it takes over, they are asked for again and cached. */
+    onFirstControl({
+      serviceWorker: window.navigator.serviceWorker,
+      onTakeOver: () => warmTileCache(document.getElementById('map'))
+    });
+
     registerServiceWorker({
       serviceWorker: window.navigator.serviceWorker,
       onUpdateReady: (worker) => {

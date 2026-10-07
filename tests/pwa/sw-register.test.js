@@ -1,8 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { readFileSync } from 'node:fs';
+
 import {
   applyUpdate,
+  onFirstControl,
   registerServiceWorker,
   removeServiceWorkers,
   shouldRegister,
@@ -295,4 +298,42 @@ test('removing works where CacheStorage is missing', async () => {
     await removeServiceWorkers({ serviceWorker: fakeRegistry(1), cacheStorage: undefined }),
     1
   );
+});
+
+/* --------------------------------------------------- taking over a first visit */
+
+test('a page with no controller is told when a worker takes over', () => {
+  const serviceWorker = fakeServiceWorker({ registration: fakeRegistration(), controller: null });
+
+  let takenOver = 0;
+  const armed = onFirstControl({ serviceWorker, onTakeOver: () => (takenOver += 1) });
+
+  assert.equal(armed, true);
+  assert.equal(takenOver, 0, 'nothing happens until the worker actually takes over');
+
+  serviceWorker.fire('controllerchange');
+  assert.equal(takenOver, 1);
+});
+
+test('a page that already has a controller is not armed at all', () => {
+  /* There is nothing to warm: everything this page asked for went through the worker. */
+  const serviceWorker = fakeServiceWorker({ registration: fakeRegistration(), controller: {} });
+
+  let takenOver = 0;
+  const armed = onFirstControl({ serviceWorker, onTakeOver: () => (takenOver += 1) });
+
+  assert.equal(armed, false);
+  serviceWorker.fire('controllerchange');
+  assert.equal(takenOver, 0);
+});
+
+test('taking over never reloads anything', () => {
+  /* Deliberately separate from applyUpdate: that listener is armed by a click because it
+     reloads, this one must fire on its own because it does not. */
+  const serviceWorker = fakeServiceWorker({ registration: fakeRegistration(), controller: null });
+  const source = readFileSync(new URL('../../src/js/sw-register.js', import.meta.url), 'utf8');
+  const body = source.slice(source.indexOf('export function onFirstControl'), source.indexOf('export async function registerServiceWorker'));
+
+  assert.doesNotMatch(body, /reload/);
+  onFirstControl({ serviceWorker, onTakeOver: () => {} });
 });
