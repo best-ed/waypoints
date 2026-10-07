@@ -104,6 +104,11 @@
     width: 100%;
     max-width: none;
     border-right: none;
+    /* sidebar.css caps the sidebar at 40vh, which belonged to the old stacked layout where it
+       sat above the map. In List view it is the whole screen, and that cap cut the memory list
+       off below the filters with blank page under it - the list was unreachable on a phone. */
+    max-height: none;
+    flex: 1 1 auto;
   }
 
   /* The sidebar header carries the search, the chips, the dates, the timeline and the journey

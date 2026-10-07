@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "6d377f80ab12";
+self.PRECACHE_VERSION = "e04835b306c9";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -23,10 +23,10 @@ self.PRECACHE_FILES = [
   { url: "src/css/dialog.css", hash: "3eb268b8b137d9a1f93d9ffc9a5491706cdf51635813de1bccf9e89722a4a9bf" },
   { url: "src/css/forced-colors.css", hash: "3f159d209f17bd5f8c1a79bccf4395d0849cb5711f7aae9c6f4450052a107c27" },
   { url: "src/css/journey.css", hash: "a937bb890aadb42433abb1d2be422ed64a8e757e3726c4b06d73001e1c6d0d03" },
-  { url: "src/css/layout.css", hash: "c77da721744cb834a88768c91259538b932568d0f09c930721958b8886526244" },
+  { url: "src/css/layout.css", hash: "f6df23ec2fcbec2b4ff2acd47f1754763c106a9956ddb58f364147febaa5e3bc" },
   { url: "src/css/lightbox.css", hash: "489b5b777da4cca9521256a6f790a24b8eb7812cd35397393bbb301d9534a3fb" },
   { url: "src/css/map.css", hash: "6914c14320820e763ebab2036b9443315a6547a27f3c0e33fb9954d18d6a334f" },
-  { url: "src/css/mobile.css", hash: "4382d83a5d219bb9cc77e5e7faa7bffe98d4c55f6855f278e152dcf0dae1b78d" },
+  { url: "src/css/mobile.css", hash: "b7ae7cd83000e64324d544f8f54992ceb9fb6e2a872d3bc6a90b6f856af352c2" },
   { url: "src/css/offline.css", hash: "4872716544f7a7e501707f593fed4222984a1d09846f953cc1d152c79650b1d6" },
   { url: "src/css/place-search.css", hash: "cb610871a241dd726637d37a21669d873db3d80de1fa70dfa7f504987b3e1c93" },
   { url: "src/css/popup.css", hash: "3207f10062ca639a23bb672b7b0a993fe0bafa7e8eeb3133bf6e3b700e1f7a6b" },
