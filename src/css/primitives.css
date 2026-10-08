@@ -174,6 +174,159 @@
   }
 }
 
+/* -------------------------------------------------------------- form controls */
+
+/* One height, one border, one focus treatment, whatever the control is. Before this the
+   text inputs, the select and the two checkboxes each had their own answer, so a form read
+   as a stack of things from different places. */
+
+.field {
+  margin-bottom: var(--space-4);
+}
+
+.field-label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.field-input {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+
+.field-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.field-input:hover {
+  border-color: var(--color-text-muted);
+}
+
+/* The global focus ring does the work; this only strengthens the edge under it so the
+   control still reads as a control at the moment it is focused. */
+.field-input:focus-visible {
+  border-color: var(--color-accent);
+}
+
+.field-input[aria-invalid='true'] {
+  border-color: var(--color-accent);
+}
+
+.field-textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+/* The native arrow is kept. Replacing it means appearance:none and a background image, and
+   the only way to draw one is a data URI with a colour written into it, which is the one
+   thing the palette rules forbid. The box around it is normalised instead. */
+.field-select {
+  padding-inline-end: var(--space-2);
+}
+
+/* --- checkbox ------------------------------------------------------------------ */
+
+.field-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+/* :not(.switch) rather than relying on source order. The plain rule is more specific than
+   .switch on its own, so without this it sets the switch to 1.25rem square and the thumb
+   fills the whole track: the control renders as a dot sitting on top of its own label. */
+.field-checkbox input[type='checkbox']:not(.switch) {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--color-accent);
+}
+
+.field-checkbox label {
+  font-size: var(--text-sm);
+  line-height: var(--line-base);
+}
+
+/* --- switch --------------------------------------------------------------------- */
+
+/* A real checkbox underneath, with role="switch" on it. Nothing here changes what it is:
+   it is still checked and unchecked, still reachable by Space, still reported by its label.
+   Only the drawing changes, because a setting that is on or off reads better as a thing in
+   one of two positions than as a box with a tick in it. */
+.switch {
+  position: relative;
+  flex: none;
+  appearance: none;
+  width: 2.5rem;
+  height: 1.5rem;
+  margin: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  background-color: var(--color-bg);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: var(--radius-full);
+  background-color: var(--color-text-muted);
+  transition: transform var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
+}
+
+.switch:hover {
+  border-color: var(--color-text-muted);
+}
+
+.switch:checked {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent);
+}
+
+.switch:checked::after {
+  transform: translateX(1rem);
+  background-color: var(--color-accent-contrast);
+}
+
+@media (forced-colors: active) {
+  /* appearance:none takes the control out of the user agent's hands entirely, and a forced
+     palette has no way to draw a track and a thumb that are both legible. Handed back: it
+     renders as the system's own checkbox, which is exactly right and needs no help. */
+  .switch {
+    appearance: auto;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: none;
+    background-color: transparent;
+  }
+
+  .switch::after {
+    content: none;
+  }
+
+  .field-input {
+    border-color: ButtonBorder;
+    background-color: Field;
+    color: FieldText;
+  }
+}
+
 /* ------------------------------------------------------------------ forced colours */
 
 /* Every property relied on here is one the user agent forces, so assigning a system keyword

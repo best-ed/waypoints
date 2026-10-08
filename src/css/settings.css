@@ -12,23 +12,7 @@
 
 /* The input comes before its label in the markup, so the checkbox sits on the left and a
    sibling selector can reach the label from the input's state. */
-.field-checkbox {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.field-checkbox input {
-  flex: 0 0 auto;
-  width: 1.1rem;
-  height: 1.1rem;
-  accent-color: var(--color-accent);
-}
-
-.field-checkbox label {
-  font-size: var(--text-sm);
-  line-height: var(--line-base);
-}
+/* The checkbox and switch primitives live in primitives.css. */
 
 /* The real input is hidden and the label is the button, as with the photo picker. The input
    comes first in the markup so a sibling selector can reach the label from its state. */

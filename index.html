@@ -385,9 +385,13 @@
         <h3 class="settings-heading">Place names</h3>
 
         <div class="field-checkbox">
+          <!-- A checkbox underneath, drawn as a switch. role="switch" is what tells a screen
+               reader to say "on" and "off" rather than "ticked", which is what a setting is. -->
           <input
             id="setting-suggest-place-names"
+            class="switch"
             type="checkbox"
+            role="switch"
             aria-describedby="setting-suggest-help"
           />
           <label for="setting-suggest-place-names">Suggest place names for new pins</label>
@@ -431,7 +435,7 @@
         <h3 class="settings-heading">Export</h3>
 
         <div class="field-checkbox">
-          <input id="export-include-photos" type="checkbox" checked />
+          <input id="export-include-photos" class="switch" type="checkbox" role="switch" checked />
           <label for="export-include-photos">Include photos</label>
         </div>
 
