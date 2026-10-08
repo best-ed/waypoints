@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "80786ec751cd";
+self.PRECACHE_VERSION = "07ab7c8795a4";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -19,22 +19,22 @@ self.PRECACHE_FILES = [
   { url: "manifest.webmanifest", hash: "36f0e64c3f0ae7309c1ab5db686939ccdaefe9162bda323bdde5c4b40c45a078" },
   { url: "src/css/base.css", hash: "4c8a18070b9b53a46ad14ce4482eb6630545dc8ebdb1ea063723c9612fce3799" },
   { url: "src/css/basemap.css", hash: "f549a6c2bc944c02c790c2160ccef3a8d5a5aeeed492e18b2c5918ca9604722a" },
-  { url: "src/css/cluster.css", hash: "64b4682913890b196ad085e6f90244e15e442c7a77e1b9704f5f7c83dd28b724" },
+  { url: "src/css/cluster.css", hash: "76aacce96f0f5233af3edab8255dc63949105b7821be85205973ab9e26b94159" },
   { url: "src/css/dialog.css", hash: "7e944801109454ee812ab75081ccbbe754b3e7c4f6df3661a80d6e9eb1172ee8" },
   { url: "src/css/forced-colors.css", hash: "3f159d209f17bd5f8c1a79bccf4395d0849cb5711f7aae9c6f4450052a107c27" },
   { url: "src/css/journey.css", hash: "7bf65be0389307bd19ba76ed4b034cc86ff0b84d9e4d5b226a3b83058de08074" },
   { url: "src/css/layout.css", hash: "98abffcc07f954345426ad554c4b86117005258ea0a120e79aa85ad97855659a" },
-  { url: "src/css/lightbox.css", hash: "489b5b777da4cca9521256a6f790a24b8eb7812cd35397393bbb301d9534a3fb" },
-  { url: "src/css/map.css", hash: "6914c14320820e763ebab2036b9443315a6547a27f3c0e33fb9954d18d6a334f" },
+  { url: "src/css/lightbox.css", hash: "68acee9697d02cd44424ce746fa39b3dc5cc03b73a622ed1c90348f3c032b695" },
+  { url: "src/css/map.css", hash: "633149dcd0aaa87c40a8a82989e0b14ce705e512d410ead53808363f17014161" },
   { url: "src/css/mobile.css", hash: "d87b0418431582b593828a0607158aeef0cecc11d307302b166faacd5e54f09a" },
   { url: "src/css/offline.css", hash: "4872716544f7a7e501707f593fed4222984a1d09846f953cc1d152c79650b1d6" },
   { url: "src/css/place-search.css", hash: "022ade986d3bc03cc316cb195f0b56ff6d0192811860e38024839b7854546c7d" },
   { url: "src/css/popup.css", hash: "1490454510908c72860e8992042ffc0e4380777781a12b5a25d4db9438c39153" },
   { url: "src/css/sandbox.css", hash: "adf83da6e52b818a2a351a03e3070b7c7cdf6da3ec67576b0750cd910106df3f" },
   { url: "src/css/settings.css", hash: "46eb2492b92d669a77316de40a1e50868f0034971326eb5be6458ace86931f42" },
-  { url: "src/css/sidebar.css", hash: "adc22f01c45cedd6d23b532d664cffe3ba7e3b76fa4c9028c1b049af69c49306" },
+  { url: "src/css/sidebar.css", hash: "eaa372ac6f361d4a3c51f21a5194e1043fb57a57b2e7d9e293b80dececdd939f" },
   { url: "src/css/toast.css", hash: "981b4310e72c4b3027f5a29c5635f4f59167cd3dbac219f14821ced5cd2c6192" },
-  { url: "src/css/tokens.css", hash: "dadc3b87f596640e17322c00fd7b695b4317a038d44e34576a00e511dc68de23" },
+  { url: "src/css/tokens.css", hash: "4936276389e301e825a606dc4091ee5c8a009c0a1d81de76f738a8656b7e95dc" },
   { url: "src/js/config.js", hash: "cb29c61d39ea18431730b49d219f786ca50a37f61078ba421e1224c0c9e8d486" },
   { url: "src/js/data/errors.js", hash: "cf37f88d48b6510f784f3ebbae55121fb426025080aff4f7f9901625ef285310" },
   { url: "src/js/data/make-id.js", hash: "540be621332cd51f8c6ecf66afe2a97e4b83a285d5ef42ab9416572bb348e70f" },

@@ -21,7 +21,8 @@
   fill: var(--color-accent);
   stroke: var(--color-accent-contrast);
   stroke-width: 1.5;
-  transition: fill 120ms ease, transform 120ms ease;
+  transition: fill var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
   transform-origin: 50% 100%;
 }
 
@@ -59,12 +60,6 @@
 .pin-moving .pin-body {
   fill: var(--color-text);
   opacity: 0.85;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pin-body {
-    transition: none;
-  }
 }
 
 /* A search result, not a saved memory: hollow and in the muted tone so the difference

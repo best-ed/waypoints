@@ -105,6 +105,15 @@
      by the browser, which smears a serif badly. */
   --weight-display: 600;
 
+  /* fast is a control answering a pointer, base is something changing size or position,
+     slow is a surface arriving. Easing is one curve for most things and an out-only curve for
+     something entering, which should arrive quickly and settle. */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+
   /* Leaflet's own panes and controls sit between 400 and 1000, so app chrome starts above that. */
   --sidebar-width: 20rem;
 
@@ -193,4 +202,21 @@
 
   --color-backdrop: rgb(0 0 0 / 0.6);
   --color-backdrop-strong: rgb(0 0 0 / 0.85);
+}
+
+/* Reduced motion, in one place.
+
+   Every duration in the app comes from these three tokens, so taking them to zero here is
+   what turns the animation off - no individual rule has to remember, and a rule added later
+   is covered the day it is written. A zero duration still applies the end state, which is the
+   point: the lightbox still changes photo, it just does not slide.
+
+   What this cannot reach is the cluster plugin's own transitions, which are declared in its
+   stylesheet with its own durations. Those are turned off where they are used, in map.css. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
 }

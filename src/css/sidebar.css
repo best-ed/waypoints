@@ -2,7 +2,7 @@
   /* Width rather than flex-basis so a single property animates on collapse. */
   flex: 0 0 auto;
   width: var(--sidebar-width);
-  transition: width 200ms ease;
+  transition: width var(--duration-base) var(--ease-standard);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -118,12 +118,6 @@
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   overflow-wrap: anywhere;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sidebar {
-    transition: none;
-  }
 }
 
 .search {
