@@ -21,17 +21,17 @@
 
 .memory-cluster-count {
   font-family: var(--font-sans);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
 .memory-cluster.is-small .memory-cluster-count {
-  font-size: 0.8125rem;
+  font-size: var(--text-sm);
 }
 
 .memory-cluster.is-medium .memory-cluster-count {
-  font-size: 0.875rem;
+  font-size: var(--text-base);
 }
 
 .memory-cluster.is-large .memory-cluster-count {

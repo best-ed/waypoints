@@ -40,7 +40,7 @@
   display: block;
   margin-bottom: var(--space-1);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 
 .field-input {
@@ -75,7 +75,7 @@
 
 .field-error {
   color: var(--color-accent);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 
 .dialog-actions {
@@ -98,7 +98,7 @@
   border-radius: var(--radius-sm);
   color: var(--color-accent);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 
 .photo-grid {

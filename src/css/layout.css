@@ -62,6 +62,9 @@ body {
 
 .app-header .app-title {
   margin-right: auto;
+  /* Tracked in slightly, because at this size Fraunces sets a touch open for a word that is
+     doing the job of a logotype. */
+  letter-spacing: -0.01em;
   /* The sidebar toggle sits immediately to its left and the two met with no gap at all, which
      read as the button overlapping the title. */
   margin-left: var(--space-3);

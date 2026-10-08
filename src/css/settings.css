@@ -8,8 +8,6 @@
 
 .settings-heading {
   margin: 0 0 var(--space-2);
-  font-size: var(--text-base);
-  line-height: var(--line-tight);
 }
 
 /* The input comes before its label in the markup, so the checkbox sits on the left and a

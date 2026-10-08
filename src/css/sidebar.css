@@ -25,8 +25,8 @@
 }
 
 .sidebar-heading {
-  font-size: var(--text-base);
-  line-height: var(--line-tight);
+  /* Size, weight and family come from the h2 rule in base.css. */
+  margin: 0;
 }
 
 .sidebar-count {
@@ -92,8 +92,12 @@
 
 .memory-title {
   display: block;
-  font-weight: 600;
-  line-height: var(--line-tight);
+  /* The one piece of the list that is the person's own words, so it takes the display face
+     while the date and place underneath stay on the system stack. */
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-display);
+  line-height: var(--line-snug);
   /* Titles are user text and can be one long unbroken word. */
   overflow-wrap: anywhere;
 }

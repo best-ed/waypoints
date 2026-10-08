@@ -65,7 +65,7 @@
 
 .place-search-name {
   display: block;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   overflow-wrap: anywhere;
 }
 

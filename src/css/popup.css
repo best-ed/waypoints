@@ -5,8 +5,10 @@
 
 .popup-title {
   margin-bottom: var(--space-1);
-  font-size: var(--text-base);
-  line-height: var(--line-tight);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-display);
+  line-height: var(--line-snug);
   /* User titles can be long single words; break rather than stretch the popup. */
   overflow-wrap: anywhere;
 }

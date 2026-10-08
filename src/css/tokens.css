@@ -53,11 +53,36 @@
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
-  --text-sm: 0.875rem;
+  /* The display face, for headings and the titles of memories, and nothing else. Fraunces is
+     self-hosted; the fallbacks are the serifs that ship with the three desktop platforms, so
+     a heading is still a heading while the font loads or if it never arrives. */
+  --font-display: Fraunces, Georgia, "Iowan Old Style", "Times New Roman", serif;
+
+  /* A modular scale at a ratio of 1.2, anchored at 1rem. Written out rather than computed so
+     the values can be read, and so nothing depends on calc() in a custom property resolving
+     the way you expect inside a media query. */
+  --text-2xs: 0.579rem;
+  --text-xs: 0.694rem;
+  --text-sm: 0.833rem;
   --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --line-tight: 1.2;
+  --text-md: 1.2rem;
+  --text-lg: 1.44rem;
+  --text-xl: 1.728rem;
+
+  /* Tighter as the type gets bigger: a line height that suits body copy leaves a heading
+     looking loose and unrelated to itself. */
+  --line-tight: 1.15;
+  --line-snug: 1.3;
   --line-base: 1.5;
+  --line-loose: 1.65;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  /* Fraunces is loaded at one weight, and this is it. A heavier heading would be synthesised
+     by the browser, which smears a serif badly. */
+  --weight-display: 600;
 
   /* Leaflet's own panes and controls sit between 400 and 1000, so app chrome starts above that. */
   --sidebar-width: 20rem;
