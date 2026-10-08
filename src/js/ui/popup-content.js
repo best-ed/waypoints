@@ -1,3 +1,4 @@
+import { createIcon } from './icons.js';
 import { formatMemoryDate } from './format-date.js';
 
 /* Every value that came from the user goes in through textContent. Nothing in this file
@@ -33,13 +34,14 @@ function buildTagList(tags, onToggleTag) {
 function buildActions({ onEdit, onMove, onDelete }) {
   const actions = element('div', 'popup-actions');
 
-  for (const [label, handler] of [
-    ['Edit', onEdit],
-    ['Move', onMove],
-    ['Delete', onDelete]
+  for (const [label, icon, handler] of [
+    ['Edit', 'settings', onEdit],
+    ['Move', 'pin', onMove],
+    ['Delete', 'close', onDelete]
   ]) {
-    const button = element('button', 'button popup-button', label);
+    const button = element('button', 'button popup-button');
     button.type = 'button';
+    button.append(createIcon(icon, { size: 16 }), element('span', 'button-label', label));
     button.addEventListener('click', handler);
     actions.append(button);
   }

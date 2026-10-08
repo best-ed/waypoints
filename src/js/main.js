@@ -38,6 +38,7 @@ import { createJourneyPanel } from './ui/journey-panel.js';
 import { createJourneyControls } from './ui/journey-controls.js';
 import { createMemoryList } from './ui/memory-list.js';
 import { createSidebarToggle } from './ui/sidebar-toggle.js';
+import { applyIcons } from './ui/icons.js';
 import { createViewSwitch, LIST_VIEW, MAP_VIEW } from './ui/view-switch.js';
 import { prefersReducedMotion } from './ui/motion.js';
 import { createMemoryForm } from './ui/memory-form.js';
@@ -85,6 +86,10 @@ const MOVE_FAILED_MESSAGE = 'That pin could not be moved.';
 const PHOTO_LOAD_FAILED_MESSAGE = 'The photos for that memory could not be opened.';
 
 function boot() {
+  /* Before anything else renders. The markup says which icon each control wants through a
+     data attribute, and this is the one place that turns that into a node. */
+  applyIcons(document);
+
   /* Decided once, before anything is read, so no code path can see one mode for the
      memories and another for the photos. */
   const sandbox = isSandbox(window.location.search);

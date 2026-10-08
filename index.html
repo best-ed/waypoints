@@ -125,7 +125,7 @@
 
       <!-- Empty on purpose: the text is written in when the connection drops, because a live
            region announces a change to its contents and not a change to its visibility. -->
-      <div id="offline-banner" class="offline-banner" hidden>
+      <div id="offline-banner" class="offline-banner" data-icon="offline" data-icon-size="18" hidden>
         <span id="offline-banner-text" class="offline-banner-text" role="status"></span>
         <button type="button" id="offline-banner-dismiss" class="offline-banner-dismiss">
           Dismiss
@@ -137,24 +137,25 @@
         id="sidebar-toggle"
         class="button icon-button"
         type="button"
+        data-icon="list"
         aria-expanded="true"
         aria-controls="sidebar"
       >
-        Hide list
+        <span class="button-label">Hide list</span>
       </button>
 
       <h1 class="app-title">waypoints</h1>
 
       <div id="view-switch" class="view-switch" role="group" aria-label="View" hidden>
-        <button id="view-map" class="button view-option" type="button" aria-pressed="true">
-          Map
+        <button id="view-map" class="button view-option" type="button" data-icon="map" aria-pressed="true">
+          <span class="button-label">Map</span>
         </button>
-        <button id="view-list" class="button view-option" type="button" aria-pressed="false">
-          List
+        <button id="view-list" class="button view-option" type="button" data-icon="list" aria-pressed="false">
+          <span class="button-label">List</span>
         </button>
       </div>
 
-      <button id="add-memory" class="button" type="button" aria-pressed="false">
+      <button id="add-memory" class="button button-primary" type="button" data-icon="add" aria-pressed="false">
         <span class="label-wide">Add memory</span>
         <span class="label-narrow">Add</span>
       </button>
@@ -163,22 +164,12 @@
         id="open-settings"
         class="button icon-button"
         type="button"
+        data-icon="settings"
         aria-haspopup="dialog"
         aria-label="Settings"
       >
-        <svg class="icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
-          <path
-            d="M1 4.5h7M12.5 4.5h2.5M1 11.5h2.5M8 11.5h7"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-          />
-          <circle cx="10.25" cy="4.5" r="2" fill="none" stroke="currentColor" stroke-width="1.6" />
-          <circle cx="5.75" cy="11.5" r="2" fill="none" stroke="currentColor" stroke-width="1.6" />
-        </svg>
-          <span class="label-wide">Settings</span>
-        </button>
+        <span class="label-wide">Settings</span>
+      </button>
       </div>
     </header>
 
@@ -200,9 +191,15 @@
               autocomplete="off"
               placeholder="Search memories"
             />
-            <button id="memory-search-clear" class="search-clear" type="button" hidden>
-              Clear
-            </button>
+            <button
+              id="memory-search-clear"
+              class="search-clear"
+              type="button"
+              data-icon="close"
+              data-icon-size="16"
+              aria-label="Clear the search"
+              hidden
+            ></button>
           </div>
 
           <div id="tag-bar" class="tag-bar" hidden>
@@ -245,8 +242,8 @@
 
           <p id="memory-count" class="sidebar-count"></p>
 
-          <button id="filter-reset" class="filter-reset" type="button" hidden>
-            Reset filters
+          <button id="filter-reset" class="filter-reset" type="button" data-icon="undo" data-icon-size="16" hidden>
+            <span class="button-label">Reset filters</span>
           </button>
 
           <div class="journey">
@@ -255,9 +252,10 @@
               class="button journey-toggle"
               type="button"
               aria-pressed="false"
+              data-icon="route"
               aria-describedby="journey-hint"
             >
-              Journey
+              <span class="button-label">Journey</span>
             </button>
 
             <p id="journey-hint" class="journey-hint" hidden>
@@ -267,11 +265,21 @@
             <p id="journey-summary" class="journey-summary" hidden></p>
 
             <div id="journey-controls" class="journey-controls" role="group" aria-label="Journey playback" hidden>
-              <button id="journey-previous" class="button journey-step" type="button">Previous</button>
-              <button id="journey-play" class="button journey-play" type="button" aria-label="Play journey">
-                Play
+              <button id="journey-previous" class="button journey-step" type="button" data-icon="previous">
+                <span class="button-label">Previous</span>
               </button>
-              <button id="journey-next" class="button journey-step" type="button">Next</button>
+              <button
+                id="journey-play"
+                class="button journey-play"
+                type="button"
+                data-icon="play"
+                aria-label="Play journey"
+              >
+                <span class="button-label">Play</span>
+              </button>
+              <button id="journey-next" class="button journey-step" type="button" data-icon="next">
+                <span class="button-label">Next</span>
+              </button>
 
               <p id="journey-progress" class="journey-progress" aria-live="polite"></p>
             </div>
@@ -355,11 +363,15 @@
             accept="image/*"
             multiple
           />
-          <label class="button photo-add" for="memory-photo-input">Add photos</label>
+          <label class="button photo-add" for="memory-photo-input" data-icon="photo">
+            <span class="button-label">Add photos</span>
+          </label>
         </div>
 
         <div class="dialog-actions">
-          <button id="memory-cancel" class="button" type="button">Cancel</button>
+          <button id="memory-cancel" class="button" type="button" data-icon="close">
+            <span class="button-label">Cancel</span>
+          </button>
           <button id="memory-save" class="button button-primary" type="submit">Save memory</button>
         </div>
       </form>
@@ -427,7 +439,9 @@
           match them to photos already here.
         </p>
 
-        <button id="export-button" class="button" type="button">Export memories</button>
+        <button id="export-button" class="button" type="button" data-icon="export">
+          <span class="button-label">Export memories</span>
+        </button>
 
         <p id="export-status" class="field-hint" role="status"></p>
       </section>
@@ -445,7 +459,9 @@
           type="file"
           accept="application/json,.json"
         />
-        <label class="button import-pick" for="import-input">Choose a file</label>
+        <label class="button import-pick" for="import-input" data-icon="import">
+          <span class="button-label">Choose a file</span>
+        </label>
 
         <p id="import-status" class="field-hint" role="status"></p>
       </section>
@@ -459,7 +475,9 @@
       <div class="dialog-actions">
         <p id="app-version" class="app-version"></p>
 
-        <button id="settings-close" class="button" type="button">Close</button>
+        <button id="settings-close" class="button" type="button" data-icon="close">
+          <span class="button-label">Close</span>
+        </button>
       </div>
     </dialog>
 
@@ -480,8 +498,12 @@
       <p id="import-error" class="form-error" role="alert" hidden></p>
 
       <div class="dialog-actions">
-        <button id="import-cancel" class="button" type="button">Cancel</button>
-        <button id="import-confirm" class="button button-primary" type="button">Import</button>
+        <button id="import-cancel" class="button" type="button" data-icon="close">
+          <span class="button-label">Cancel</span>
+        </button>
+        <button id="import-confirm" class="button button-primary" type="button" data-icon="import">
+          <span class="button-label">Import</span>
+        </button>
       </div>
     </dialog>
 
@@ -493,9 +515,15 @@
       <p id="lightbox-position" class="lightbox-position" aria-live="polite"></p>
 
       <div class="lightbox-controls">
-        <button id="lightbox-previous" class="button" type="button">Previous</button>
-        <button id="lightbox-next" class="button" type="button">Next</button>
-        <button id="lightbox-close" class="button" type="button">Close</button>
+        <button id="lightbox-previous" class="button" type="button" data-icon="previous">
+          <span class="button-label">Previous</span>
+        </button>
+        <button id="lightbox-next" class="button" type="button" data-icon="next">
+          <span class="button-label">Next</span>
+        </button>
+        <button id="lightbox-close" class="button" type="button" data-icon="close">
+          <span class="button-label">Close</span>
+        </button>
       </div>
     </dialog>
 

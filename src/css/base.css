@@ -64,6 +64,14 @@ textarea {
 }
 
 .button {
+  /* inline-flex, not inline: a label styled as a button was still an inline box, so its
+     vertical padding did not affect line height and it printed straight over the paragraph
+     above it. That was the Import hint in Settings being struck through by its own button.
+     It also lays the icon out beside the label, which is what every control wants. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-full);
@@ -88,6 +96,19 @@ textarea {
    later rule setting display wins and the element stays on screen while marked hidden. Both
    .date-range and .journey-controls are flex containers toggled by the attribute, so this has
    to outrank them. */
+/* An icon never shrinks and never grows: the label wraps or ellipses, the picture does not
+   distort. */
+.icon {
+  flex: none;
+}
+
+/* A control with no visible words. Square, so the icon sits in the middle of it rather than
+   inside the padding meant for text. */
+.icon-only {
+  gap: var(--space-0);
+  padding: var(--space-2);
+}
+
 [hidden] {
   display: none !important;
 }

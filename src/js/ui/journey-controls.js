@@ -1,4 +1,5 @@
 import { PLAYING } from '../journey/playback.js';
+import { setButtonIcon } from './icons.js';
 
 /* aria-disabled rather than the disabled attribute: stepping to the last stop would otherwise
    disable the button that was just activated, and focus would fall to the body. The handlers
@@ -34,7 +35,9 @@ export function createJourneyControls({
 
     /* The name carries the state, which is why there is no aria-pressed here as well: both
        together would announce the button twice over. */
-    playElement.textContent = isPlaying ? 'Pause' : 'Play';
+    const playLabel = playElement.querySelector('.button-label') ?? playElement;
+    playLabel.textContent = isPlaying ? 'Pause' : 'Play';
+    setButtonIcon(playElement, isPlaying ? 'pause' : 'play');
     playElement.setAttribute('aria-label', isPlaying ? 'Pause journey' : 'Play journey');
 
     setAvailable(previousElement, index > 0);
