@@ -6,7 +6,7 @@ function buildChip(entry, isSelected, onToggle) {
 
   const button = document.createElement('button');
   button.type = 'button';
-  button.className = 'tag-chip';
+  button.className = 'chip chip-filter tag-chip';
   button.setAttribute('aria-pressed', String(isSelected));
 
   const label = document.createElement('span');
@@ -15,7 +15,7 @@ function buildChip(entry, isSelected, onToggle) {
   button.append(label);
 
   const count = document.createElement('span');
-  count.className = 'tag-chip-count';
+  count.className = 'chip-count';
   count.textContent = String(entry.count);
   button.append(count);
 

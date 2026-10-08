@@ -155,39 +155,13 @@
 .tag-list {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1);
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.tag-chip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--space-1);
-  padding: 2px var(--space-2);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-full);
-  background-color: var(--color-bg);
-  font-size: var(--text-sm);
-  cursor: pointer;
-  overflow-wrap: anywhere;
-}
-
-.tag-chip:hover {
-  border-color: var(--color-text-muted);
-}
-
-.tag-chip[aria-pressed='true'] {
-  background-color: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-accent-contrast);
-}
-
-.tag-chip-count {
-  font-variant-numeric: tabular-nums;
-  opacity: 0.7;
-}
+/* Shape, state and the count badge come from .chip and .chip-filter in primitives.css. */
 
 /* Was an underlined link, which is what a link is for. It is a button, so it looks like
    the quietest button rather than like a different kind of thing. */

@@ -79,18 +79,22 @@
   cursor: not-allowed;
 }
 
-.journey-hint,
-.journey-summary {
+/* The hint is body copy explaining why a control is unavailable, so it stays on the system
+   stack. Only the summary is a title for something. */
+.journey-hint {
   margin: 0;
-  font-family: var(--font-display);
-  font-size: var(--text-base);
-  line-height: var(--line-snug);
+  font-size: var(--text-sm);
+  line-height: var(--line-base);
   color: var(--color-text-muted);
 }
 
 .journey-summary {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: var(--weight-display);
+  line-height: var(--line-snug);
   color: var(--color-journey);
-  font-weight: var(--weight-semibold);
 }
 
 .journey-controls {

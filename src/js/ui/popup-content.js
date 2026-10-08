@@ -20,7 +20,7 @@ function buildTagList(tags, onToggleTag) {
 
   for (const tag of tags) {
     const item = element('li');
-    const button = element('button', 'popup-tag', tag);
+    const button = element('button', 'chip chip-tag popup-tag', tag);
     button.type = 'button';
     button.setAttribute('aria-label', 'Filter by tag ' + tag);
     button.addEventListener('click', () => onToggleTag(tag));

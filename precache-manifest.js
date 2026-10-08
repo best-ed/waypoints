@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "711e040557ea";
+self.PRECACHE_VERSION = "5e478b746285";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -22,18 +22,18 @@ self.PRECACHE_FILES = [
   { url: "src/css/cluster.css", hash: "76aacce96f0f5233af3edab8255dc63949105b7821be85205973ab9e26b94159" },
   { url: "src/css/dialog.css", hash: "0591f7910a1eb39855ffb45157c406886ebe9da347781185e89a3d9fd1fb9d72" },
   { url: "src/css/forced-colors.css", hash: "3f159d209f17bd5f8c1a79bccf4395d0849cb5711f7aae9c6f4450052a107c27" },
-  { url: "src/css/journey.css", hash: "9c41da45f6d19c34eb6a9e27799ca1019003833c1782a950d50b35b48c1d38dd" },
+  { url: "src/css/journey.css", hash: "df2412360a375c03cfd7f8616947309ecd562788b2f80e7fc51bc6deaa5b3a23" },
   { url: "src/css/layout.css", hash: "98abffcc07f954345426ad554c4b86117005258ea0a120e79aa85ad97855659a" },
   { url: "src/css/lightbox.css", hash: "68acee9697d02cd44424ce746fa39b3dc5cc03b73a622ed1c90348f3c032b695" },
   { url: "src/css/map.css", hash: "633149dcd0aaa87c40a8a82989e0b14ce705e512d410ead53808363f17014161" },
   { url: "src/css/mobile.css", hash: "869ef5b9bc80e91e34042ff4ab982664a4607859f4515a8f29289a8d3e8707f1" },
   { url: "src/css/offline.css", hash: "4872716544f7a7e501707f593fed4222984a1d09846f953cc1d152c79650b1d6" },
   { url: "src/css/place-search.css", hash: "022ade986d3bc03cc316cb195f0b56ff6d0192811860e38024839b7854546c7d" },
-  { url: "src/css/popup.css", hash: "bd880d7cc467bda47da9fdf3341ae54349fca5e3b01fb50d5a1211a2e6efde29" },
-  { url: "src/css/primitives.css", hash: "6c868be8f1af11959a2efcec34f4391b87f1df1b4c1a23a094448d60558133de" },
+  { url: "src/css/popup.css", hash: "6b437f261a1af8e631cd32b1598b544abcacd1ccbdc8fcac68777465d793d802" },
+  { url: "src/css/primitives.css", hash: "bbe2549cfa1345537369fb551d347c52d1990998cf256105991ce3bfeab80719" },
   { url: "src/css/sandbox.css", hash: "adf83da6e52b818a2a351a03e3070b7c7cdf6da3ec67576b0750cd910106df3f" },
   { url: "src/css/settings.css", hash: "db0014b2ec7b324d4b0687d54918b914527634f6961859717771c83ea192ba9b" },
-  { url: "src/css/sidebar.css", hash: "a31bd011a25f40be933b7ed76563a707aeaaeecbf640907c4df1804034e06835" },
+  { url: "src/css/sidebar.css", hash: "a1a14e29c2073ca31a13c136680d27cca03854f0ff43ddd2660184010935e1ed" },
   { url: "src/css/toast.css", hash: "0e9490511b42cb4dfc14e085bfa70536e59a9cc4e45972623aafc5260905f92e" },
   { url: "src/css/tokens.css", hash: "0f6e93d7ca5fac48cec319cb893ddc7f7366e2190acbff3daaf1a4d5510ae868" },
   { url: "src/fonts/fraunces-600-latin.woff2", hash: "4b3f47b6e04b00a61545f0f51415af6097e04cc9bf8abe36634a1daf400c88ad" },
@@ -107,14 +107,14 @@ self.PRECACHE_FILES = [
   { url: "src/js/ui/object-urls.js", hash: "bd262bf69375cc135a2e2a037669c48f394cbf476f7e9d3c08b31136a3e6d2f6" },
   { url: "src/js/ui/offline-banner.js", hash: "a2e5a720f4b3b7ac93b8fe4d82c825e32644d4d371931ba647d42f2e6660f5c3" },
   { url: "src/js/ui/photo-picker.js", hash: "061fe01289a3fb4c34c66128533fad4a6100bce529560b51ec949ca5e8dcf6f3" },
-  { url: "src/js/ui/popup-content.js", hash: "e53d17d395b4d39185099f787320a6a8e65c79ce33efadec813d340cd461cf4a" },
+  { url: "src/js/ui/popup-content.js", hash: "483f6188ed01128172bc6880d575441cf59680dd97e29ef2a1fd810be17d5ffd" },
   { url: "src/js/ui/popup-photos.js", hash: "8f584a91e6d876a964ce686d790c82fe063ce626a9037de0716b7835a6a317c1" },
   { url: "src/js/ui/search-input.js", hash: "28857975ccb7fd36d27a9dc21678cfc15801123a4ccd529e42ccd164ce1ac8f1" },
   { url: "src/js/ui/selection.js", hash: "f626ab2f21081782cebf90f6060302daa6ffe94558db439836e078d64caf8ea4" },
   { url: "src/js/ui/settings-dialog.js", hash: "631a261abd92290711c58c48d083576ad2390b604f5144dcb56b03e0fd37d957" },
   { url: "src/js/ui/sidebar-toggle.js", hash: "c6c6f2339451020f9f6bb194fa02001ad908dfca93bf17a29818f502e44151a7" },
   { url: "src/js/ui/sort-for-list.js", hash: "8693721d3afe17821ae1b023adad7a03f523dbaa238711ffd41b07152fd87f4d" },
-  { url: "src/js/ui/tag-bar.js", hash: "62a064c2e2deb48db28c8270bc4e260bf3c4be38c0857007957bb738a4cf4e6b" },
+  { url: "src/js/ui/tag-bar.js", hash: "7f0827a5524341c9c560e615f1b4c1d2f5e809e8ea2f32fcaf6ae998da74cdcf" },
   { url: "src/js/ui/theme.js", hash: "6e41ef0b72d07ee5e2158143b4654358c2361786e77390c270c031d701e98b50" },
   { url: "src/js/ui/timeline-view.js", hash: "65ab98b946172b207bf63f9f4df53845b0c6fad26b51d1f65b393f120ece4f53" },
   { url: "src/js/ui/toast.js", hash: "a70abfd1ebe58dace7b6e721f0032c31841b5b8c8bd861c91e3f17d90c54f890" },
