@@ -63,8 +63,6 @@
 
 .popup-button {
   flex: 1;
-  padding: var(--space-1) var(--space-2);
-  font-size: var(--text-sm);
 }
 
 /* Leaflet's own sheet sets `margin: 1.3em 0` on every paragraph inside popup content, at a

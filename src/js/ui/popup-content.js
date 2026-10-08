@@ -39,7 +39,7 @@ function buildActions({ onEdit, onMove, onDelete }) {
     ['Move', 'pin', onMove],
     ['Delete', 'close', onDelete]
   ]) {
-    const button = element('button', 'button popup-button');
+    const button = element('button', 'button button-sm popup-button');
     button.type = 'button';
     button.append(createIcon(icon, { size: 16 }), element('span', 'button-label', label));
     button.addEventListener('click', handler);

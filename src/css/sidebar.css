@@ -141,12 +141,6 @@
 
 .search-clear {
   flex: 0 0 auto;
-  padding: 0 var(--space-2);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-surface);
-  font-size: var(--text-sm);
-  cursor: pointer;
 }
 
 .empty-clear {
@@ -195,15 +189,11 @@
   opacity: 0.7;
 }
 
+/* Was an underlined link, which is what a link is for. It is a button, so it looks like
+   the quietest button rather than like a different kind of thing. */
 .tag-toggle {
   margin-top: var(--space-2);
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--color-accent);
-  font-size: var(--text-sm);
-  text-decoration: underline;
-  cursor: pointer;
+  align-self: flex-start;
 }
 
 .date-range {
@@ -234,13 +224,7 @@
 
 .filter-reset {
   margin-top: var(--space-2);
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--color-accent);
-  font-size: var(--text-sm);
-  text-decoration: underline;
-  cursor: pointer;
+  align-self: flex-start;
 }
 
 .timeline {

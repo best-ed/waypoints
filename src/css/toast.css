@@ -25,15 +25,18 @@
   overflow-wrap: anywhere;
 }
 
+/* The toast is the one inverted surface in the app, so its action cannot take the ordinary
+   secondary colours: they are drawn for a light panel and would vanish here. */
 .toast-action {
   flex-shrink: 0;
-  padding: var(--space-1) var(--space-3);
   background-color: transparent;
   border-color: var(--color-bg);
   color: var(--color-bg);
 }
 
-.toast-action:hover {
+.toast-action:hover,
+.toast-action:active {
   background-color: var(--color-bg);
+  border-color: var(--color-bg);
   color: var(--color-text);
 }

@@ -125,12 +125,16 @@
   object-fit: cover;
 }
 
+/* A small round button in the corner rather than a full pill across the picture. The pill
+   covered about half of an 80px thumbnail, which left no way to tell which photo you were
+   about to remove by looking at it. */
 .photo-remove {
   position: absolute;
   top: var(--space-1);
   right: var(--space-1);
-  padding: 0 var(--space-2);
-  font-size: var(--text-sm);
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  padding: var(--space-0);
   background-color: var(--color-surface);
 }
 
@@ -147,8 +151,9 @@
   white-space: nowrap;
 }
 
+/* No display of its own: .button is inline-flex, and an inline-block here would win on
+   source order and stack the icon above the label. */
 .photo-add {
-  display: inline-block;
   cursor: pointer;
 }
 

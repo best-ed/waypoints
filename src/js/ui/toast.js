@@ -46,7 +46,7 @@ export function createToast({ container, dismissAfterMs = DISMISS_AFTER_MS }) {
     if (actionLabel) {
       const action = document.createElement('button');
       action.type = 'button';
-      action.className = 'button toast-action';
+      action.className = 'button button-sm toast-action';
       action.textContent = actionLabel;
       action.addEventListener('click', () => {
         expire = null;

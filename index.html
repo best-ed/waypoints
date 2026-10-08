@@ -88,6 +88,7 @@
 
     <link rel="stylesheet" href="src/css/tokens.css" />
     <link rel="stylesheet" href="src/css/base.css" />
+    <link rel="stylesheet" href="src/css/primitives.css" />
     <link rel="stylesheet" href="src/css/layout.css" />
     <link rel="stylesheet" href="src/css/map.css" />
     <link rel="stylesheet" href="src/css/popup.css" />
@@ -193,7 +194,7 @@
             />
             <button
               id="memory-search-clear"
-              class="search-clear"
+              class="button button-sm button-ghost icon-only search-clear"
               type="button"
               data-icon="close"
               data-icon-size="16"
@@ -204,7 +205,7 @@
 
           <div id="tag-bar" class="tag-bar" hidden>
             <ul id="tag-list" class="tag-list" aria-label="Filter by tag"></ul>
-            <button id="tag-toggle" class="tag-toggle" type="button" hidden></button>
+            <button id="tag-toggle" class="button button-sm button-ghost tag-toggle" type="button" hidden></button>
           </div>
 
           <div id="date-range" class="date-range" hidden>
@@ -242,7 +243,7 @@
 
           <p id="memory-count" class="sidebar-count"></p>
 
-          <button id="filter-reset" class="filter-reset" type="button" data-icon="undo" data-icon-size="16" hidden>
+          <button id="filter-reset" class="button button-sm button-ghost filter-reset" type="button" data-icon="undo" data-icon-size="16" hidden>
             <span class="button-label">Reset filters</span>
           </button>
 
@@ -369,7 +370,7 @@
         </div>
 
         <div class="dialog-actions">
-          <button id="memory-cancel" class="button" type="button" data-icon="close">
+          <button id="memory-cancel" class="button button-ghost" type="button" data-icon="close">
             <span class="button-label">Cancel</span>
           </button>
           <button id="memory-save" class="button button-primary" type="submit">Save memory</button>
@@ -498,7 +499,7 @@
       <p id="import-error" class="form-error" role="alert" hidden></p>
 
       <div class="dialog-actions">
-        <button id="import-cancel" class="button" type="button" data-icon="close">
+        <button id="import-cancel" class="button button-ghost" type="button" data-icon="close">
           <span class="button-label">Cancel</span>
         </button>
         <button id="import-confirm" class="button button-primary" type="button" data-icon="import">

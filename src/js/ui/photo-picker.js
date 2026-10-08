@@ -1,3 +1,4 @@
+import { createIcon } from './icons.js';
 import { MAX_PHOTOS } from '../data/schema.js';
 import { createObjectUrlPool } from './object-urls.js';
 
@@ -50,8 +51,11 @@ export function createPhotoPicker({ gridElement, inputElement, countElement, err
     image.alt = '';
     item.append(image);
 
-    const remove = element('button', 'button photo-remove', 'Remove');
+    const remove = element('button', 'button button-sm icon-only photo-remove');
     remove.type = 'button';
+    remove.append(createIcon('close', { size: 14 }));
+    /* Icon only, so the name has to come from here. The pill that used to say "Remove"
+       covered the photo it was about to remove. */
     remove.setAttribute('aria-label', 'Remove photo ' + (index + 1));
     remove.addEventListener('click', () => removeAt(index));
     item.append(remove);

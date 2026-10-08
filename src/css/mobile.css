@@ -1,17 +1,6 @@
 /* Narrow-screen layout. 720px is where the sidebar and a usable map stop fitting side by
    side on the same screen. */
 
-.icon-button {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.icon {
-  display: block;
-  flex: 0 0 auto;
-}
-
 /* One label per width. display, not visibility or aria-hidden, so the hidden one leaves the
    accessibility tree too and the button's name is whichever label is showing. */
 .label-narrow {

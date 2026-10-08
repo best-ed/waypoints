@@ -63,34 +63,7 @@ textarea {
   outline-offset: 2px;
 }
 
-.button {
-  /* inline-flex, not inline: a label styled as a button was still an inline box, so its
-     vertical padding did not affect line height and it printed straight over the paragraph
-     above it. That was the Import hint in Settings being struck through by its own button.
-     It also lays the icon out beside the label, which is what every control wants. */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-full);
-  background-color: var(--color-surface);
-  color: var(--color-text);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  cursor: pointer;
-}
-
-.button:hover {
-  border-color: var(--color-text-muted);
-}
-
-.button[aria-pressed='true'] {
-  background-color: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-accent-contrast);
-}
+/* The button lives in primitives.css now, with its variants, sizes and states. */
 
 /* The user agent's [hidden] rule is display:none at the same specificity as a class, so any
    later rule setting display wins and the element stays on screen while marked hidden. Both
@@ -99,14 +72,8 @@ textarea {
 /* An icon never shrinks and never grows: the label wraps or ellipses, the picture does not
    distort. */
 .icon {
+  display: block;
   flex: none;
-}
-
-/* A control with no visible words. Square, so the icon sits in the middle of it rather than
-   inside the padding meant for text. */
-.icon-only {
-  gap: var(--space-0);
-  padding: var(--space-2);
 }
 
 [hidden] {

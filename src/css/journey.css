@@ -107,11 +107,8 @@
   min-width: 4.5rem;
 }
 
-.journey-step.is-disabled,
-.journey-play.is-disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
+/* aria-disabled carries this now, from the primitives. The class is still set by the
+   controls module and is left as a hook for anything that needs to find them. */
 
 .journey-progress {
   margin: 0 0 0 auto;
