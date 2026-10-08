@@ -14,7 +14,10 @@ import { join, relative, sep } from 'node:path';
 const TREES = [
   { dir: 'src/css', extensions: ['.css'] },
   { dir: 'src/js', extensions: ['.js'] },
-  { dir: 'icons', extensions: ['.png', '.svg'] }
+  { dir: 'icons', extensions: ['.png', '.svg'] },
+  /* The display face. OFL.txt sits beside it and is deliberately not listed: the licence has
+     to travel with the font in the repository, and the browser never asks for it. */
+  { dir: 'src/fonts', extensions: ['.woff2'] }
 ];
 
 const ROOT_FILES = ['index.html', 'manifest.webmanifest'];

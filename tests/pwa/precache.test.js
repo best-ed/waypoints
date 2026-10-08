@@ -59,7 +59,8 @@ test('no shipped file is missing from the manifest', () => {
     'manifest.webmanifest',
     ...walkIndependently('src/css', (name) => name.endsWith('.css')),
     ...walkIndependently('src/js', (name) => name.endsWith('.js')),
-    ...walkIndependently('icons', (name) => name.endsWith('.png') || name.endsWith('.svg'))
+    ...walkIndependently('icons', (name) => name.endsWith('.png') || name.endsWith('.svg')),
+    ...walkIndependently('src/fonts', (name) => name.endsWith('.woff2'))
   ];
 
   const missing = shipped.filter((file) => !listed.has(file));

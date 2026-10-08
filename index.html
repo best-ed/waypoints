@@ -13,6 +13,18 @@
          770ms of render blocking for leaflet.css alone on a throttled phone. -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 
+    <!-- The display face. A font referenced from a stylesheet is not discovered until that
+         sheet has been fetched and parsed, which on a cold connection puts it a long way down
+         the queue; crossorigin is required on a font preload even from our own origin, because
+         fonts are always fetched in CORS mode. -->
+    <link
+      rel="preload"
+      href="src/fonts/fraunces-600-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
     <!-- iOS ignores the manifest icons and takes this one, which is why it is the full-bleed

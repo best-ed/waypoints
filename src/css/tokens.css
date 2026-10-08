@@ -1,3 +1,23 @@
+/* Fraunces, by the Fraunces Project Authors, under the SIL Open Font License 1.1. The
+   licence text ships beside the file in src/fonts/OFL.txt.
+
+   Self-hosted rather than loaded from a font service: it is one request to our own origin
+   under our own CSP, and nothing about which pages a person reads leaves the device.
+
+   One instance of a four-axis variable font: weight 600, optical size 24, soft 0 and wonk 0,
+   subset to Latin. 358KB of variable font becomes 17.9KB of woff2, because the app asks for
+   exactly one of the weights it carries.
+
+   swap, not block: the heading is readable in the platform serif from the first paint and
+   changes when the face arrives. A heading nobody can read is worse than one that reflows. */
+@font-face {
+  font-family: Fraunces;
+  src: url('../fonts/fraunces-600-latin.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* Tells the browser which scheme its own widgets should use: native selects, date pickers,
      scrollbars and form controls. WebKit otherwise paints a select light while our CSS puts
