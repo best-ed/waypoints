@@ -104,11 +104,28 @@
   flex-wrap: wrap;
 }
 
+/* The transport row has to fit a 20rem sidebar. Previous and Next are icon only; their
+   names come from aria-label, and the icons are the two least ambiguous in the set. */
+.journey-step {
+  flex: none;
+}
+
 .journey-play {
   background: var(--color-journey);
   border-color: var(--color-journey);
   color: var(--color-journey-contrast);
-  min-width: 4.5rem;
+}
+
+/* Its own hover and active, because without them the generic secondary hover wins on
+   specificity - a class plus a pseudo-class beats a class - and paints --color-bg under text
+   that is still the journey contrast colour. Dark on dark: the label disappeared the moment
+   the pointer was over it. */
+.journey-play:hover,
+.journey-play:active {
+  background: var(--color-journey);
+  border-color: var(--color-journey);
+  color: var(--color-journey-contrast);
+  box-shadow: inset 0 0 0 100vmax rgb(0 0 0 / 0.12);
 }
 
 /* aria-disabled carries this now, from the primitives. The class is still set by the

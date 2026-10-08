@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+### The map in dark mode
+
+- **The map is dimmed in dark mode.** The tile colours are turned over so the map sits inside
+  the dark interface instead of glaring out of it. Pins, photos, popups and the journey line
+  are untouched, and **Settings -> Dim the map in dark mode** turns it off. It is off entirely
+  under forced colours, where the palette has already been decided.
+- The map popup took its surface from Leaflet rather than from the theme, so in dark mode it
+  was near-white text on a white panel: the title, date, place and note were all unreadable.
+
+### Design
+
+- A warm palette: paper in light, charcoal in dark, with the rust accent unchanged.
+- Fraunces, self-hosted and subset, for headings and the titles of memories.
+- A type scale, a spacing scale, three elevation levels and motion tokens, with reduced motion
+  handled once rather than per rule.
+- An icon set drawn for the app, on every control that has room for one.
+- Buttons, form controls and chips as primitives, so a filter chip and a tag in a popup no
+  longer look identical, and a photo's Remove button no longer covers the photo.
+- Boolean settings are switches.
+- Dialog actions stay on screen when the form is taller than the window.
+
 ## 1.0.0 (2026-10-07)
 
 The first release.

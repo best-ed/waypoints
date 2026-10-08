@@ -1,3 +1,47 @@
+/* Dimming the map in the dark.
+
+   There is no keyless dark basemap, so this turns the light one over instead: invert it,
+   rotate the hue back 180 degrees so blues stay blue rather than becoming orange, then pull
+   the brightness and saturation down because an inverted map is otherwise glaring in a
+   different way. The numbers were chosen by looking at Nairobi at zoom 12 and checking that
+   water reads dark blue, parks read muted green and motorways stay distinguishable from
+   minor roads, not by reasoning about them.
+
+   It is applied to the tile pane alone. Markers, popups, the journey path and the draft pin
+   live in their own Leaflet panes and are untouched, which is what keeps the rust pins and
+   the teal route reading as themselves over it.
+
+   The dark theme is declared two ways, so this is too: the media query for a system
+   preference that an explicit light choice can beat, and the attribute for an explicit dark
+   choice on a light system. */
+:root {
+  --map-dim: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light'])[data-dim-map] {
+    --map-dim: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.88) saturate(0.78);
+  }
+}
+
+:root[data-theme='dark'][data-dim-map] {
+  --map-dim: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.88) saturate(0.78);
+}
+
+/* A forced palette has already decided what everything looks like, and inverting on top of
+   that produces a map nobody asked for. Same selectors as the two above so this wins on
+   source order rather than on a specificity trick. */
+@media (forced-colors: active) {
+  :root[data-theme='dark'][data-dim-map],
+  :root:not([data-theme='light'])[data-dim-map] {
+    --map-dim: none;
+  }
+}
+
+.leaflet-tile-pane {
+  filter: var(--map-dim);
+}
+
 /* Outranks Leaflet's own .leaflet-grab cursor without needing !important. */
 .map.is-placing,
 .map.is-placing .leaflet-grab,

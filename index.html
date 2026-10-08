@@ -266,21 +266,29 @@
             <p id="journey-summary" class="journey-summary" hidden></p>
 
             <div id="journey-controls" class="journey-controls" role="group" aria-label="Journey playback" hidden>
-              <button id="journey-previous" class="button journey-step" type="button" data-icon="previous">
-                <span class="button-label">Previous</span>
-              </button>
+              <button
+                id="journey-previous"
+                class="button button-sm icon-only journey-step"
+                type="button"
+                data-icon="previous"
+                aria-label="Previous stop"
+              ></button>
               <button
                 id="journey-play"
-                class="button journey-play"
+                class="button button-sm journey-play"
                 type="button"
                 data-icon="play"
                 aria-label="Play journey"
               >
                 <span class="button-label">Play</span>
               </button>
-              <button id="journey-next" class="button journey-step" type="button" data-icon="next">
-                <span class="button-label">Next</span>
-              </button>
+              <button
+                id="journey-next"
+                class="button button-sm icon-only journey-step"
+                type="button"
+                data-icon="next"
+                aria-label="Next stop"
+              ></button>
 
               <p id="journey-progress" class="journey-progress" aria-live="polite"></p>
             </div>
@@ -413,6 +421,22 @@
             <option value="dark">Dark</option>
           </select>
         </div>
+
+        <div class="field-checkbox">
+          <input
+            id="setting-dim-map"
+            class="switch"
+            type="checkbox"
+            role="switch"
+            aria-describedby="setting-dim-map-help"
+          />
+          <label for="setting-dim-map">Dim the map in dark mode</label>
+        </div>
+
+        <p id="setting-dim-map-help" class="field-hint">
+          Turns the tile colours over so the map sits in the dark interface instead of
+          glaring out of it. Pins, photos and the journey line are left alone.
+        </p>
       </section>
 
       <!--

@@ -13,9 +13,11 @@ browser on your own device. There is no account, no server of ours, and nothing 
 > The screenshots are taken in sandbox mode from invented data, which is why they carry the
 > sandbox banner.
 
-**The map itself stays light in dark mode.** The interface goes dark around it, but no keyless
-provider offers a dark raster basemap (the one that did now requires an API key), so the tiles
-are the same either way. That is the trade, not a bug.
+**The map is dimmed in dark mode rather than drawn dark.** No keyless provider offers a dark
+raster basemap (the one that did now requires an API key), so the light tiles have their
+colours turned over instead: water stays blue, parks stay green, and pins, photos and the
+journey line are left alone. It is an approximation of a dark map, not a dark map, and
+**Settings -> Dim the map in dark mode** turns it off.
 
 ---
 

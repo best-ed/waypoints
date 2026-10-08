@@ -44,7 +44,7 @@ import { prefersReducedMotion } from './ui/motion.js';
 import { createMemoryForm } from './ui/memory-form.js';
 import { createSettingsDialog } from './ui/settings-dialog.js';
 import { createSettingsStore } from './data/settings-store.js';
-import { applyTheme, effectiveTheme, watchSystemTheme } from './ui/theme.js';
+import { applyMapDimming, applyTheme, effectiveTheme, watchSystemTheme } from './ui/theme.js';
 import { buildExport, exportFilename } from './io/export-format.js';
 import { downloadText } from './io/download.js';
 import { checkFileSize, readImport, ImportError } from './io/parse-import.js';
@@ -111,6 +111,10 @@ function boot() {
     storage: window.localStorage,
     key: names.settingsKey
   });
+
+  /* Before the map draws, so the tiles are never painted bright and then turned over. The
+     stylesheet decides whether the attribute means anything, which is only in dark. */
+  applyMapDimming(settings.get().dimMapInDark);
 
   /* Declared before the basemap control, which assigns it: a let assigned above its own
      declaration would throw on boot. Replaced once the control exists. */
@@ -1051,9 +1055,11 @@ function boot() {
     toggleElement: document.getElementById('setting-suggest-place-names'),
     usageElement: document.getElementById('storage-usage'),
     themeElement: document.getElementById('setting-theme'),
+    dimMapElement: document.getElementById('setting-dim-map'),
     persistedElement: document.getElementById('storage-persisted'),
     settings,
     onThemeChange: (theme) => changeTheme(theme),
+    onDimMapChange: (enabled) => applyMapDimming(enabled),
     /* A status line from a previous export should not still be sitting there next time. */
     onOpen: () => {
       exportStatus.textContent = '';
