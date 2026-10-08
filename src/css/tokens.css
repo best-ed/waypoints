@@ -30,11 +30,24 @@
   --color-sandbox: #7c2d12;
   --color-sandbox-contrast: #ffffff;
 
-  /* Shadows and scrims are tokens as a whole rather than just their colour, so a theme can
+  /* Three levels, and what each one is for:
+
+     1  something that floats over the map and stays there - the basemap chooser, the place
+        search panel, a cluster badge
+     2  something that has taken over - a map popup or a dialog
+     3  something that arrives over everything and then leaves - a toast
+
+     Shadows and scrims are tokens as a whole rather than just their colour, so a theme can
      change their weight as well as their tint. */
-  --shadow-control: 0 1px 6px rgb(0 0 0 / 0.3);
-  --shadow-cluster: 0 1px 4px rgb(0 0 0 / 0.35);
-  --shadow-toast: 0 4px 16px rgb(0 0 0 / 0.25);
+  --elevation-1: 0 1px 2px rgb(0 0 0 / 0.08), 0 2px 6px rgb(0 0 0 / 0.1);
+  --elevation-2: 0 2px 4px rgb(0 0 0 / 0.08), 0 8px 24px rgb(0 0 0 / 0.14);
+  --elevation-3: 0 4px 8px rgb(0 0 0 / 0.1), 0 14px 36px rgb(0 0 0 / 0.2);
+
+  /* On paper, height is carried by the shadow and the surface does not change. The two
+     tokens exist so a component can name the level it is at in both themes. */
+  --color-surface-raised: #ffffff;
+  --color-surface-overlay: #ffffff;
+
   --color-backdrop: rgb(0 0 0 / 0.45);
   --color-backdrop-strong: rgb(0 0 0 / 0.8);
 
@@ -121,7 +134,7 @@
   --color-text: #ececf0;
   --color-text-muted: #9b9ba5;
   --color-border: #2e2e36;
-  --color-border-strong: #6e6e79;
+  --color-border-strong: #7d7d8a;
   --color-accent: #f97316;
   --color-accent-contrast: #1b1b19;
 
@@ -132,11 +145,17 @@
   --color-sandbox: #b4401a;
   --color-sandbox-contrast: #ffffff;
 
-  /* Heavier than the light ones: a black shadow has far less to work with on a dark surface,
-     and the controls still have to lift off the map. */
-  --shadow-control: 0 1px 6px rgb(0 0 0 / 0.6);
-  --shadow-cluster: 0 1px 4px rgb(0 0 0 / 0.6);
-  --shadow-toast: 0 4px 16px rgb(0 0 0 / 0.6);
+  /* 1.0 made the shadows heavier here and it bought nothing: black on near-black has nothing
+     to work with, which is why the dialogs read as flat. Height in the dark is carried by the
+     surface getting lighter as it rises; the shadow is left to soften the edge and to separate
+     a panel from the bright map underneath it. */
+  --color-surface-raised: #26262e;
+  --color-surface-overlay: #2e2e38;
+
+  --elevation-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 2px 6px rgb(0 0 0 / 0.35);
+  --elevation-2: 0 2px 4px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.45);
+  --elevation-3: 0 4px 8px rgb(0 0 0 / 0.4), 0 14px 36px rgb(0 0 0 / 0.5);
+
   --color-backdrop: rgb(0 0 0 / 0.6);
   --color-backdrop-strong: rgb(0 0 0 / 0.85);
   }
@@ -150,7 +169,7 @@
   --color-text: #ececf0;
   --color-text-muted: #9b9ba5;
   --color-border: #2e2e36;
-  --color-border-strong: #6e6e79;
+  --color-border-strong: #7d7d8a;
   --color-accent: #f97316;
   --color-accent-contrast: #1b1b19;
 
@@ -161,11 +180,17 @@
   --color-sandbox: #b4401a;
   --color-sandbox-contrast: #ffffff;
 
-  /* Heavier than the light ones: a black shadow has far less to work with on a dark surface,
-     and the controls still have to lift off the map. */
-  --shadow-control: 0 1px 6px rgb(0 0 0 / 0.6);
-  --shadow-cluster: 0 1px 4px rgb(0 0 0 / 0.6);
-  --shadow-toast: 0 4px 16px rgb(0 0 0 / 0.6);
+  /* 1.0 made the shadows heavier here and it bought nothing: black on near-black has nothing
+     to work with, which is why the dialogs read as flat. Height in the dark is carried by the
+     surface getting lighter as it rises; the shadow is left to soften the edge and to separate
+     a panel from the bright map underneath it. */
+  --color-surface-raised: #26262e;
+  --color-surface-overlay: #2e2e38;
+
+  --elevation-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 2px 6px rgb(0 0 0 / 0.35);
+  --elevation-2: 0 2px 4px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.45);
+  --elevation-3: 0 4px 8px rgb(0 0 0 / 0.4), 0 14px 36px rgb(0 0 0 / 0.5);
+
   --color-backdrop: rgb(0 0 0 / 0.6);
   --color-backdrop-strong: rgb(0 0 0 / 0.85);
 }

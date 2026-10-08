@@ -7,7 +7,7 @@
   background-color: var(--color-accent);
   color: var(--color-accent-contrast);
   border: 2px solid var(--color-accent-contrast);
-  box-shadow: var(--shadow-cluster);
+  box-shadow: var(--elevation-1);
   cursor: pointer;
   transition: transform 120ms ease, background-color 120ms ease;
 }

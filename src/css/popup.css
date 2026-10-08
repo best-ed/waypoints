@@ -91,6 +91,17 @@
   color: var(--color-text);
 }
 
+/* Leaflet paints the wrapper and the tip white from its own sheet. In the dark theme that
+   left near-white body text on a white popup, at about 1.2:1, so the note was effectively
+   invisible while the tags and buttons - which carry their own colours - looked fine. The
+   surface has to come from the theme like every other panel. */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background-color: var(--color-surface-overlay);
+  color: var(--color-text);
+  box-shadow: var(--elevation-2);
+}
+
 .leaflet-popup-content-wrapper {
   border-radius: var(--radius-md);
 }

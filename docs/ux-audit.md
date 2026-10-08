@@ -174,7 +174,20 @@ The date inputs show `mm/dd/yyyy` and `10/08/2026` with the browser's own calend
 layout that otherwise has a consistent control style. They are the least designed thing on the
 screen and they appear twice in the sidebar and once in every dialog.
 
-## 14. Smaller things worth collecting
+## 14. The map popup is a white Leaflet panel in dark mode, and its text is unreadable
+
+**Where:** `popup-photos.1280.dark`. Found while building the elevation tokens, after the first
+pass through the screenshots, so it is numbered out of rank order. On impact it belongs at 4.
+
+Leaflet paints `.leaflet-popup-content-wrapper` and the tip white from its own stylesheet and
+nothing overrides it. In the dark theme the popup therefore has the theme's near-white body
+text on a white panel: the title, the date, the place and the whole note sit at roughly 1.2:1.
+The tags and the action buttons carry their own colours, so they look completely normal, which
+is what kept this hidden.
+
+Dark mode is the only place it bites, and in dark mode a memory's note is simply not there.
+
+## 15. Smaller things worth collecting
 
 - **Elevation is inconsistent.** The popup, the dialogs, the toast and the floating map controls
   all use variations of the same two shadow tokens. In dark mode the shadows are simply made

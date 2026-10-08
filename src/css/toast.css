@@ -17,7 +17,7 @@
   background-color: var(--color-text);
   color: var(--color-bg);
   font-size: var(--text-sm);
-  box-shadow: var(--shadow-toast);
+  box-shadow: var(--elevation-3);
   pointer-events: auto;
 }
 
