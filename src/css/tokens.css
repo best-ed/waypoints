@@ -4,17 +4,19 @@
      light text on it, which is light on light. */
   color-scheme: light;
 
-  --color-bg: #f7f7f5;
-  --color-surface: #ffffff;
-  --color-text: #1b1b19;
-  --color-text-muted: #6b6b66;
+  /* Warm paper rather than a neutral grey: every neutral here carries a little yellow and
+     red, so the interface sits under the rust accent instead of beside it. */
+  --color-bg: #f4efe6;
+  --color-surface: #fffcf7;
+  --color-text: #241d15;
+  --color-text-muted: #6a5d4d;
   /* Dividers and panel edges. Decorative: it separates areas that are already distinguishable
      by their background, so it carries no contrast requirement. */
-  --color-border: #e0e0da;
+  --color-border: #e3d9c9;
 
   /* The boundary of anything interactive - inputs, buttons, chips. This one is what tells a
      control from the page around it, so it has to clear 3:1. */
-  --color-border-strong: #8b8b85;
+  --color-border-strong: #897c69;
 
   --color-accent: #c2410c;
   --color-accent-contrast: #ffffff;
@@ -138,17 +140,19 @@
   :root:not([data-theme='light']) {
   color-scheme: dark;
 
-  --color-bg: #15151a;
-  --color-surface: #1e1e24;
-  --color-text: #ececf0;
-  --color-text-muted: #9b9ba5;
-  --color-border: #2e2e36;
-  --color-border-strong: #7d7d8a;
+  /* Warm charcoal, not blue-black. The 1.0 neutrals ran cold enough that the rust accent
+     read as an intrusion on them rather than as the one warm thing in a warm room. */
+  --color-bg: #1a1612;
+  --color-surface: #231e18;
+  --color-text: #f1e9dd;
+  --color-text-muted: #ab9d8b;
+  --color-border: #362f27;
+  --color-border-strong: #8c7f6e;
   --color-accent: #f97316;
-  --color-accent-contrast: #1b1b19;
+  --color-accent-contrast: #1f1810;
 
   --color-journey: #2dd4bf;
-  --color-journey-muted: #5a8480;
+  --color-journey-muted: #66968f;
   --color-journey-contrast: #0b1b1a;
 
   --color-sandbox: #b4401a;
@@ -158,8 +162,8 @@
      to work with, which is why the dialogs read as flat. Height in the dark is carried by the
      surface getting lighter as it rises; the shadow is left to soften the edge and to separate
      a panel from the bright map underneath it. */
-  --color-surface-raised: #26262e;
-  --color-surface-overlay: #2e2e38;
+  --color-surface-raised: #2c2620;
+  --color-surface-overlay: #363029;
 
   --elevation-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 2px 6px rgb(0 0 0 / 0.35);
   --elevation-2: 0 2px 4px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.45);
@@ -173,17 +177,19 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --color-bg: #15151a;
-  --color-surface: #1e1e24;
-  --color-text: #ececf0;
-  --color-text-muted: #9b9ba5;
-  --color-border: #2e2e36;
-  --color-border-strong: #7d7d8a;
+  /* Warm charcoal, not blue-black. The 1.0 neutrals ran cold enough that the rust accent
+     read as an intrusion on them rather than as the one warm thing in a warm room. */
+  --color-bg: #1a1612;
+  --color-surface: #231e18;
+  --color-text: #f1e9dd;
+  --color-text-muted: #ab9d8b;
+  --color-border: #362f27;
+  --color-border-strong: #8c7f6e;
   --color-accent: #f97316;
-  --color-accent-contrast: #1b1b19;
+  --color-accent-contrast: #1f1810;
 
   --color-journey: #2dd4bf;
-  --color-journey-muted: #5a8480;
+  --color-journey-muted: #66968f;
   --color-journey-contrast: #0b1b1a;
 
   --color-sandbox: #b4401a;
@@ -193,8 +199,8 @@
      to work with, which is why the dialogs read as flat. Height in the dark is carried by the
      surface getting lighter as it rises; the shadow is left to soften the edge and to separate
      a panel from the bright map underneath it. */
-  --color-surface-raised: #26262e;
-  --color-surface-overlay: #2e2e38;
+  --color-surface-raised: #2c2620;
+  --color-surface-overlay: #363029;
 
   --elevation-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 2px 6px rgb(0 0 0 / 0.35);
   --elevation-2: 0 2px 4px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.45);
