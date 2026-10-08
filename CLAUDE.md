@@ -84,6 +84,12 @@ The boundaries matter for testing:
   requirement, a non-obvious ordering constraint
 - No magic numbers. Use named constants, and keep shared ones in `src/js/config.js`
 - No `console.log` left in committed code
+- **No em dashes in anything a reader sees.** Not in UI copy, not in a label, a hint, a toast
+  or an error, and not in the README, the changelog or `docs/`. Rewrite rather than swapping
+  in a hyphen: a colon where what follows explains what came before, a comma or a full stop
+  where the clauses stand alone, parentheses for an aside. En dashes are fine in a range.
+  `tests/meta/em-dash.test.js` walks the precache manifest plus the documents and fails on
+  one, so new copy cannot reintroduce them. This file and `tests/` are exempt.
 
 ---
 
