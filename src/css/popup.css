@@ -67,6 +67,21 @@
   font-size: var(--text-sm);
 }
 
+/* Leaflet's own sheet sets `margin: 1.3em 0` on every paragraph inside popup content, at a
+   specificity the reset in base.css cannot reach. That is where the popup's loose and uneven
+   vertical rhythm came from: the date, the place and the note each carried 21px above and
+   below, collapsed unpredictably against the margins we set. Zeroed here so the spacing below
+   is the spacing that applies. */
+.leaflet-popup-content p {
+  margin: var(--space-0);
+}
+
+/* The rhythm, stated once rather than per element: a tight pair at the top, then one step
+   between blocks, then a bigger step before the actions. */
+.popup-place {
+  margin-top: var(--space-1);
+}
+
 /* Leaflet sets its own font stack and sizing on popup content. */
 .leaflet-popup-content {
   margin: var(--space-4);

@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "6eb028947607";
+self.PRECACHE_VERSION = "7eeeea708a9d";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -29,12 +29,12 @@ self.PRECACHE_FILES = [
   { url: "src/css/mobile.css", hash: "d87b0418431582b593828a0607158aeef0cecc11d307302b166faacd5e54f09a" },
   { url: "src/css/offline.css", hash: "4872716544f7a7e501707f593fed4222984a1d09846f953cc1d152c79650b1d6" },
   { url: "src/css/place-search.css", hash: "d235091d38fd52b0ceb531893a8cd3c2a7a7a87eb040eb882be4308639256359" },
-  { url: "src/css/popup.css", hash: "0ed823c6d471456378d450cad0962b81a75e272dfeb4ed21a97db465f8f462cc" },
+  { url: "src/css/popup.css", hash: "c71d9ea50021c95ed6af03addc29df396ef66b812ca9d1dc59be5e8e803b682f" },
   { url: "src/css/sandbox.css", hash: "adf83da6e52b818a2a351a03e3070b7c7cdf6da3ec67576b0750cd910106df3f" },
   { url: "src/css/settings.css", hash: "46eb2492b92d669a77316de40a1e50868f0034971326eb5be6458ace86931f42" },
   { url: "src/css/sidebar.css", hash: "adc22f01c45cedd6d23b532d664cffe3ba7e3b76fa4c9028c1b049af69c49306" },
   { url: "src/css/toast.css", hash: "e83344bff53a8385046c212132737df2ed7d422e3b298b5c0045941a9418b4ff" },
-  { url: "src/css/tokens.css", hash: "b5c0c71ad02d1e53e09e4e33a1bdb5fb9fb262ee889aa27517364d5433f20447" },
+  { url: "src/css/tokens.css", hash: "af746b32027e76612930cab3d38e14376e95d82db5874c4220d841434b878515" },
   { url: "src/js/config.js", hash: "cb29c61d39ea18431730b49d219f786ca50a37f61078ba421e1224c0c9e8d486" },
   { url: "src/js/data/errors.js", hash: "cf37f88d48b6510f784f3ebbae55121fb426025080aff4f7f9901625ef285310" },
   { url: "src/js/data/make-id.js", hash: "540be621332cd51f8c6ecf66afe2a97e4b83a285d5ef42ab9416572bb348e70f" },
