@@ -45,7 +45,8 @@ The first release.
 ### Appearance and access
 
 - Light and dark, following the system or set explicitly, and a forced-colours mode.
-- Keyboard and screen reader support throughout, checked with axe-core in CI.
+- Keyboard and screen reader support throughout, checked with axe-core in the end-to-end
+  suite.
 - A layout that works down to 375px, with the map and the list as separate panes.
 
 ### Known limits
@@ -53,7 +54,9 @@ The first release.
 - **One basemap.** CARTO's Voyager and Dark Matter were dropped before release: they now need
   an API key and serve a watermark without one. There is no keyless dark basemap, so dark mode
   draws a light map.
-- **Photos are per device.** They are not in the export unless you ask for them, and never
-  leave the browser otherwise.
+- **Photos live only on the device they were added on.** They are in an export by default,
+  so moving a collection moves the photos with it; the Include photos option leaves them out
+  for a far smaller file, keeping the references so an import can match them to photos
+  already there.
 - **Storage is per origin.** Memories made on `localhost` are not visible on the deployed site;
   move them with an export and an import.

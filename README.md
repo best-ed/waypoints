@@ -13,6 +13,10 @@ browser on your own device — there is no account, no server of ours, and nothi
 > The screenshots are taken in sandbox mode from invented data, which is why they carry the
 > sandbox banner.
 
+**The map itself stays light in dark mode.** The interface goes dark around it, but no keyless
+provider offers a dark raster basemap — the one that did now requires an API key — so the tiles
+are the same either way. That is the trade, not a bug.
+
 ---
 
 ## What it does
@@ -33,7 +37,7 @@ browser on your own device — there is no account, no server of ours, and nothi
 - **Installable** as an app on Chromium-based browsers and from Safari's share sheet.
 - **Light and dark**, following your system or set explicitly, plus a forced-colours mode.
 - **Keyboard and screen reader** throughout: markers are real buttons with real names, every
-  dialog traps focus, and axe-core runs over the main states in CI.
+  dialog traps focus, and axe-core runs over the main states in the end-to-end suite.
 
 ## Running it
 
