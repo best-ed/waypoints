@@ -36,6 +36,7 @@ e2e/              Playwright specs and their fixtures
 vercel.json       the deployment's cache and security headers
 .vercelignore     what the deployment leaves behind
 src/css/          stylesheets
+src/fonts/        the display face and its licence
 src/js/           ES modules
 src/js/data/      schema, normalization, validation, storage, the memory store
 src/js/map/       everything that touches Leaflet
@@ -699,6 +700,95 @@ nothing writes nothing and notifies nobody, since a re-render would be pure chur
 
 ---
 
+## Design System
+
+The direction is a field journal: warm, calm, personal. Restraint over decoration - no
+gradients, no glass, and a shadow only where something is genuinely above something else.
+
+Everything below lives in `src/css/tokens.css` and `src/css/primitives.css`. A component
+stylesheet should be layout and nothing else; the moment it states a colour, a size or a
+duration of its own, there are two answers to the same question.
+
+### The scales
+
+- **Type.** A modular scale at 1.2 anchored at 1rem, from `--text-2xs` to `--text-xl`, with
+  line heights that tighten as the type gets bigger and named weights. No `font-size` or
+  `font-weight` literal appears anywhere else.
+- **Display face.** Fraunces 600, self-hosted and subset to Latin, on `--font-display`. It is
+  for **headings and the titles of memories only** - the app title, dialog and section
+  headings, a memory's title in the list and in its popup, and the journey summary. Body copy,
+  controls, hints, dates and anything numeric stay on the system stack. A serif at 13px in a
+  button costs legibility and buys nothing.
+- **Space.** A 4px scale, `--space-0` to `--space-8`. The only literals left are below the
+  base step: two visually-hidden clips, a segmented control's collapsed border, the hairline
+  between histogram bars, a 1px cap on a 3px bar, and the device safe-area insets.
+- **Radius.** Three steps and a pill: `sm` for something small and boxy, `md` for panels and
+  inputs, `lg` for a surface that floats.
+
+### Elevation
+
+Three levels, and each means something: `--elevation-1` floats over the map and stays there,
+`--elevation-2` has taken over, `--elevation-3` arrives and then leaves.
+
+**In the dark the shadow is not the mechanism.** Black on near-black has no contrast to spend,
+which is why 1.0 made the shadows heavier and the dialogs still read flat. Height there comes
+from the surface getting lighter as it rises - `--color-surface`, then `--color-surface-raised`,
+then `--color-surface-overlay` - and the shadow only softens the edge.
+
+### Motion
+
+`--duration-fast` for a control answering a pointer, `--duration-base` for something changing
+size or position, `--duration-slow` for a surface arriving, plus two easing curves.
+
+**Reduced motion is handled once**, by taking the three duration tokens to zero on `:root`. No
+individual rule remembers, and a rule written later is covered the day it is written. A zero
+duration still applies the end state, which is the point. Two overrides remain and neither is
+about duration: the cluster's hover scale is a state change that would still snap, and the
+plugin's own transitions are declared in its stylesheet with its own numbers.
+
+### Icons
+
+`src/js/ui/icons.js`. Twenty-one icons on a 24px grid, strokes only at 2px with round caps and
+joins, `currentColor`, no fills and no colour of their own. Built with `createElementNS` from
+shape data, so there is no markup template for a value to be interpolated into.
+
+**An icon is decoration.** It is `aria-hidden`, and the accessible name stays on the control.
+That is what lets the header show an icon and a label where there is room and the icon alone
+where there is not, without the button's name changing. The markup names the icon it wants
+through `data-icon` and `applyIcons` turns that into a node once, at boot.
+
+A button whose label changes under it writes to its `.button-label` span. Setting `textContent`
+on the button itself would take the icon with it.
+
+Draw a new one against the set at 40, 24, 18 and 14px before keeping it. Two of these were
+redrawn after doing that: the settings faders ran together into a smudge below 20px laid out
+horizontally, and the offline cloud needed one bump rather than two.
+
+### Primitives
+
+- **Buttons.** `primary`, `secondary` (what a plain `.button` is), `ghost` and `icon-only`, in
+  two sizes, with one answer each for hover, active, focus-visible, `aria-disabled`, pressed
+  and busy. `.button` is `inline-flex`, which is also what lets a `<label class="button">`
+  have a line box its padding can affect.
+- **Form controls.** One height, one border, one focus treatment for text, textarea, select,
+  date and checkbox. The select keeps its native arrow: replacing it needs `appearance: none`
+  and a background image, and the only way to draw one is a data URI with a colour written
+  into it.
+- **Switch.** A real checkbox with `role="switch"`, drawn as a track and a thumb. Under forced
+  colours the drawing is handed back to the user agent, because a forced palette has no way to
+  make a custom track and thumb both legible.
+- **Chips.** One family, two roles, and the point is telling them apart without clicking.
+  `.chip-filter` is a control holding state: an edge, a fill when on, a count badge.
+  `.chip-tag` is a label: no edge, a tinted bed, quieter and smaller.
+
+**A component rule that fights a primitive usually loses in a way nobody notices.** Three did:
+`.photo-add` set `display: inline-block` and stacked the icon on the label, the plain checkbox
+rule was more specific than `.switch` and squashed it to a dot, and `.journey-play` had no
+hover so the generic one painted the page background under text coloured for a teal fill. Give
+the component the states it needs, or exclude it from the generic rule by name.
+
+---
+
 ## Colour and Theme
 
 **No colour literal appears anywhere outside `tokens.css`.** No hex, no `rgb()`, no named
@@ -752,9 +842,22 @@ never computes contrast at runtime and `src/` is what ships.
 
 ### Dark basemap
 
-**There isn't one.** No keyless provider offers a dark raster basemap, and the one that did now
-wants an API key (see **Basemaps**), so dark mode draws the light map. The interface is dark
-around it.
+**There isn't one**, so the light one is dimmed instead. No keyless provider offers a dark
+raster basemap and the one that did now wants an API key (see **Basemaps**).
+
+`map.css` applies `invert(1) hue-rotate(180deg)` with brightness, contrast and saturation
+pulled down, **to the tile pane alone**. Markers, popups, the journey path and the draft pin
+live in their own Leaflet panes and are untouched, which is what keeps the rust pins and the
+teal route reading as themselves over it. The numbers were chosen by looking at Nairobi at
+zoom 12 until water read dark blue and parks read muted green, not by reasoning about them.
+
+Three things gate it, and all three are in the stylesheet rather than in script: the dark
+theme, declared both ways as everything else is; the `data-dim-map` attribute, which carries
+the `dimMapInDark` setting and defaults to on; and forced colours, where it is off entirely
+because the palette has already been decided. The filter is a custom property so the forced
+colours case can override it on the same selectors rather than through a specificity trick.
+
+It is an approximation of a dark map and not a dark map, which is why it is a setting.
 
 The swap itself still works and is one `if`: a basemap with a `darkUrl` has it applied through
 `setUrl` on the **existing** layer, never by rebuilding it - a rebuild makes Leaflet's
