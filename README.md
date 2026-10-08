@@ -1,7 +1,7 @@
 # waypoints
 
 Pin your memories on a map: a place, a date, a note, a few photos. Everything stays in your
-browser on your own device — there is no account, no server of ours, and nothing to sign up for.
+browser on your own device. There is no account, no server of ours, and nothing to sign up for.
 
 ![The map and the memory list, light theme](docs/screenshot-light.png)
 
@@ -14,7 +14,7 @@ browser on your own device — there is no account, no server of ours, and nothi
 > sandbox banner.
 
 **The map itself stays light in dark mode.** The interface goes dark around it, but no keyless
-provider offers a dark raster basemap — the one that did now requires an API key — so the tiles
+provider offers a dark raster basemap (the one that did now requires an API key), so the tiles
 are the same either way. That is the trade, not a bug.
 
 ---
@@ -24,7 +24,7 @@ are the same either way. That is the trade, not a bug.
 - **Pin a memory** anywhere on the map, with a title, a date, a note, tags and up to six photos.
 - **Photos** are resized and re-encoded in the browser, with EXIF rotation applied, and stored
   on your device. They never leave it.
-- **Find things again** by text, by tag, or by date range. Tags are a union — picking a second
+- **Find things again** by text, by tag, or by date range. Tags are a union: picking a second
   one widens the result. Every filter lives in the URL, so a filtered view can be bookmarked.
 - **A timeline** under the filters shows when your memories happened, and doubles as a range
   slider.
@@ -74,7 +74,7 @@ There are 850 unit tests and 82 end-to-end tests across the two engines.
 - Memories are kept in `localStorage`; photos are kept in IndexedDB.
 - **Clearing your browser's site data deletes your memories.** So does "clear cookies and site
   data" for this site, and so can a browser cleaning up storage for a site you rarely visit.
-  **Export regularly** — Settings → Export memories writes one JSON file.
+  **Export regularly**: Settings → Export memories writes one JSON file.
 - Each site origin has its own storage. `localhost` and the deployed address are different
   origins, so memories made in one are not visible in the other. To move them, export from one
   and import into the other.
@@ -132,8 +132,8 @@ and the only module with side effects at the top level.
 **Dependencies are injected, everywhere.** Stores take their `storage`, `now` and `makeId`; the
 photo repository takes its backend; the playback machine takes `setTimeout` and `clearTimeout`;
 the Nominatim client takes `fetch`. That is what lets the pure modules be tested under `node`
-with no browser and no mocking framework — a fake clock is a function, and a fake database is a
-`Map`.
+with no browser and no mocking framework: a fake clock is a function, and a fake database is
+a `Map`.
 
 More detail, including the reasoning behind particular decisions, is in
 [CLAUDE.md](CLAUDE.md). The export file format is specified in

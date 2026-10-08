@@ -107,9 +107,9 @@ something else entirely.
 
 | In the file | Here | Result |
 |---|---|---|
-| id not present here | — | added |
+| id not present here | nothing | added |
 | id present, file's `updatedAt` newer | older | replaced |
-| id present, file's `updatedAt` older or equal | — | left alone |
+| id present, file's `updatedAt` older or equal | newer or equal | left alone |
 
 There is no mode that replaces the collection wholesale. Nothing is written until the preview
 has been confirmed. Photos are written first, so a memory never references a blob that is not
