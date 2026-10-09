@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "a83d060f2dea";
+self.PRECACHE_VERSION = "3713a1bd0375";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -33,7 +33,7 @@ self.PRECACHE_FILES = [
   { url: "src/css/primitives.css", hash: "bbe2549cfa1345537369fb551d347c52d1990998cf256105991ce3bfeab80719" },
   { url: "src/css/sandbox.css", hash: "adf83da6e52b818a2a351a03e3070b7c7cdf6da3ec67576b0750cd910106df3f" },
   { url: "src/css/settings.css", hash: "db0014b2ec7b324d4b0687d54918b914527634f6961859717771c83ea192ba9b" },
-  { url: "src/css/sidebar.css", hash: "3e96b001ae63d6c8b615c945717623d8b9149fb0c20603983763d62c5dfce0bf" },
+  { url: "src/css/sidebar.css", hash: "ca0ad070415e37382a240061b449f84ae9a1bd7be43a09bc38115635ca8b1413" },
   { url: "src/css/toast.css", hash: "0e9490511b42cb4dfc14e085bfa70536e59a9cc4e45972623aafc5260905f92e" },
   { url: "src/css/tokens.css", hash: "0f6e93d7ca5fac48cec319cb893ddc7f7366e2190acbff3daaf1a4d5510ae868" },
   { url: "src/fonts/fraunces-600-latin.woff2", hash: "4b3f47b6e04b00a61545f0f51415af6097e04cc9bf8abe36634a1daf400c88ad" },
@@ -67,7 +67,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/journey/journey-order.js", hash: "27cfd981a5c7984aa7a6ed70ac45bcc608b215f8528b25ac83c5cd84d545058b" },
   { url: "src/js/journey/journey-summary.js", hash: "29d2a44ebbd0be72b7faeae8978b8c4ae594fa344d1bd2047be144abe122e25c" },
   { url: "src/js/journey/playback.js", hash: "17c3477b8c72aafe38f837dbce44200494a1fe44104791520727a5779fe5b6b0" },
-  { url: "src/js/main.js", hash: "71668dbf0542aabec5567b41afcf35d85adb602a55f843010664b07f38551d12" },
+  { url: "src/js/main.js", hash: "778aeded2a0f555cd065370de3ebeda08e5103a595b0b289c441172f351f2e30" },
   { url: "src/js/map/basemap-control.js", hash: "34f9d047896b722472fec9b78a8ec7d366697b13c47252ac8f79879ea75e7959" },
   { url: "src/js/map/basemap-preference.js", hash: "19e95114e821d4e1c12a8c167e99a435da65639ab41f03eb05c1df0f68868436" },
   { url: "src/js/map/cluster-icon.js", hash: "4413a2377a9bcf88c137cde42d0e537a777756c32d9e883fee42e41314fe966a" },
@@ -106,7 +106,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/ui/journey-panel.js", hash: "2f6ab9e7a0c137e309c1d5ccc1a4bb6e29b9818cdb6d610aa60b7b59626e352f" },
   { url: "src/js/ui/lightbox.js", hash: "9d5c8fdd78162b6f70ee1b41ccf3f025211c679d53b0502d45f8c3503ba78650" },
   { url: "src/js/ui/memory-form.js", hash: "535c2f5e1e27d67bddcfd99d1256704eb445cc1c1e5bd60cd80caccda4311cb4" },
-  { url: "src/js/ui/memory-list.js", hash: "19373ad9c9cd0a4d08754a38e06fd5b01f59b85a496a11286d06f1ca160e318f" },
+  { url: "src/js/ui/memory-list.js", hash: "4d48dc00e8add5d72bf4af21859f464cfe575c7550abf839a0b45ae6a4d6ec0a" },
   { url: "src/js/ui/motion.js", hash: "4e44bcf163a2da5979f4fecb9fcad37ec49dba53b8e498a580b41741fc015307" },
   { url: "src/js/ui/object-urls.js", hash: "bd262bf69375cc135a2e2a037669c48f394cbf476f7e9d3c08b31136a3e6d2f6" },
   { url: "src/js/ui/offline-banner.js", hash: "a2e5a720f4b3b7ac93b8fe4d82c825e32644d4d371931ba647d42f2e6660f5c3" },
@@ -120,6 +120,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/ui/sort-for-list.js", hash: "8693721d3afe17821ae1b023adad7a03f523dbaa238711ffd41b07152fd87f4d" },
   { url: "src/js/ui/tag-bar.js", hash: "7f0827a5524341c9c560e615f1b4c1d2f5e809e8ea2f32fcaf6ae998da74cdcf" },
   { url: "src/js/ui/theme.js", hash: "2f76d862c714ec79317a1ef3dbcf8c70098fc4a68ca8d6a6380d136ee391e896" },
+  { url: "src/js/ui/thumbnail-owner.js", hash: "33b3e845ea66451a68a16d20e172fff7966c55329cabbc4da6bbf9f7916de361" },
   { url: "src/js/ui/timeline-scale.js", hash: "cfd84adefd12da9cbf36dc921e94dd78450f8ccc416d4c352a9922f5c777d2b9" },
   { url: "src/js/ui/timeline-view.js", hash: "219d59eaf62ab7480cda9eca3c0a1dd2969994a87472f67b140a90f3a628e1cb" },
   { url: "src/js/ui/toast.js", hash: "a70abfd1ebe58dace7b6e721f0032c31841b5b8c8bd861c91e3f17d90c54f890" },

@@ -39,6 +39,7 @@ import { createJourneyChevrons } from './map/journey-chevrons.js';
 import { createJourneyPanel } from './ui/journey-panel.js';
 import { createJourneyControls } from './ui/journey-controls.js';
 import { createMemoryList } from './ui/memory-list.js';
+import { createThumbnailOwner } from './ui/thumbnail-owner.js';
 import { createSidebarToggle } from './ui/sidebar-toggle.js';
 import { applyIcons, createIcon } from './ui/icons.js';
 import { createViewSwitch, LIST_VIEW, MAP_VIEW } from './ui/view-switch.js';
@@ -239,7 +240,17 @@ function boot() {
 
   const draftMarker = createDraftMarker(map);
 
+  /* Every object URL the list creates belongs to this, and it is the only thing that
+     revokes one. Bounded in both directions: a capped number held at once, and a capped
+     number of reads in flight, so flinging a long list cannot queue a thousand reads or
+     hold a thousand blobs. */
+  const listThumbnails = createThumbnailOwner({
+    loadThumb: async (photoId) => (await photos.get(photoId))?.thumb ?? null,
+    onError: (error) => console.error(error)
+  });
+
   const list = createMemoryList({
+    thumbnails: listThumbnails,
     listElement: document.getElementById('memory-list'),
     emptyElement: document.getElementById('memory-empty'),
     countElement: document.getElementById('memory-count'),

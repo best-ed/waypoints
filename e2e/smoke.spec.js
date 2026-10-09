@@ -181,6 +181,12 @@ test('a tag filter is a union and comes back from the url', async ({ page }) => 
   await seedLibrary(page);
   await openApp(page);
 
+  /* The tag chips live behind the Filters disclosure, which is closed when nothing is
+     filtering. Restoring from the url below needs no click: a url carrying filters opens
+     the panel itself, which is the point of it doing so. */
+  await page.locator('#filters-toggle').click();
+  await expect(page.locator('#filters-panel')).toBeVisible();
+
   await page.locator('.tag-chip', { hasText: 'trail' }).click();
   await expect(page.locator('.memory-list li')).toHaveCount(2);
 
@@ -192,7 +198,11 @@ test('a tag filter is a union and comes back from the url', async ({ page }) => 
   const restored = page.url();
   await page.goto(restored);
   await expect(page.locator('.memory-list li')).toHaveCount(4);
+  /* Open on arrival, because the url said something was filtering. */
+  await expect(page.locator('#filters-toggle')).toHaveAttribute('aria-expanded', 'true');
   await expect(page.locator('.tag-chip[aria-pressed="true"]')).toHaveCount(2);
+  /* And one removable chip per tag above it. */
+  await expect(page.locator('#active-filters .chip-removable')).toHaveCount(2);
 });
 
 test('a date range filters inclusively and comes back from the url', async ({ page }) => {
@@ -203,6 +213,9 @@ test('a date range filters inclusively and comes back from the url', async ({ pa
      picker fires when a date is chosen. Playwright's WebKit has no native date control and
      falls back to a text input, where change only arrives on blur; real Safari has supported
      type="date" for years, so this is the harness, not the app. */
+  await page.locator('#filters-toggle').click();
+  await expect(page.locator('#filters-panel')).toBeVisible();
+
   await page.locator('#filter-from').fill('2024-01-20');
   await page.locator('#filter-from').blur();
   await page.locator('#filter-to').fill('2024-06-15');
@@ -399,8 +412,11 @@ test('a hostile import file pollutes nothing and raises no dialog', async ({ pag
   const state = await page.evaluate(() => ({
     polluted: {}.polluted,
     objectPolluted: Object.prototype.polluted,
-    /* The title must be text, not markup. */
-    injected: document.querySelectorAll('.memory-list img').length,
+    /* The title must be text, not markup. Every card carries a cover image of its own now,
+       so the count is of images the list did not put there itself. */
+    injected: [...document.querySelectorAll('.memory-list img')].filter(
+      (image) => !image.classList.contains('memory-cover-image')
+    ).length,
     scripts: document.querySelectorAll('.memory-list script').length
   }));
 

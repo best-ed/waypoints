@@ -1,11 +1,22 @@
 import { formatMemoryDate } from './format-date.js';
 import { sortForList } from './sort-for-list.js';
+import { groupMemoriesByYear } from './group-by-year.js';
+import { createIcon } from './icons.js';
 
-/* The fields a list item actually shows. Anything else changing on a memory leaves the
-   item's DOM untouched. */
+/* The fields a card actually shows. Anything else changing on a memory leaves its DOM
+   untouched. The first photo id is in here because it is the cover: changing which photo
+   comes first changes the picture, and nothing else would notice. */
 function itemSignature(memory) {
-  return JSON.stringify([memory.title, memory.date, memory.placeName]);
+  return JSON.stringify([
+    memory.title,
+    memory.date,
+    memory.placeName,
+    memory.tags?.length ?? 0,
+    memory.photoIds?.[0] ?? null
+  ]);
 }
+
+const coverIdOf = (memory) => memory.photoIds?.[0] ?? null;
 
 function element(tag, className) {
   const node = document.createElement(tag);
@@ -42,25 +53,115 @@ function countLabel(shown, total) {
   return total === 1 ? '1 memory' : total + ' memories';
 }
 
-export function createMemoryList({ listElement, emptyElement, countElement, onSelect, onClearSearch }) {
+export function createMemoryList({
+  listElement,
+  emptyElement,
+  countElement,
+  onSelect,
+  onClearSearch,
+  /* The owner of every object URL this list creates. Absent in tests and wherever photos are
+     not wanted, in which case every card shows its placeholder and nothing is read. */
+  thumbnails = null,
+  /* Injected so the list can be rendered under node, where there is no observer at all. */
+  IntersectionObserverImpl = typeof IntersectionObserver === 'function' ? IntersectionObserver : null
+}) {
   const itemsById = new Map();
+  const groupsByYear = new Map();
   let order = [];
   let selectedId = null;
 
+  /* A margin of roughly one screen, so a row's picture is already there by the time it is
+     scrolled to rather than arriving after it. */
+  const observer =
+    IntersectionObserverImpl && thumbnails
+      ? new IntersectionObserverImpl(
+          (entries) => {
+            for (const entry of entries) {
+              const item = itemsById.get(entry.target.dataset.memoryId);
+              if (item) setShown(item, entry.isIntersecting);
+            }
+          },
+          { root: listElement, rootMargin: '400px 0px' }
+        )
+      : null;
+
+  function observe(item) {
+    if (!observer || item.observed) return;
+    item.listItem.dataset.memoryId = item.id;
+    observer.observe(item.listItem);
+    item.observed = true;
+  }
+
+  function unobserve(item) {
+    if (!observer || !item.observed) return;
+    observer.unobserve(item.listItem);
+    item.observed = false;
+  }
+
+  /* One button for the whole card, named by the title alone. The date, the place and the
+     tag count are description rather than name: a screen reader reads the title to identify
+     the row and the rest only when it wants the detail, which is why they are referenced
+     through aria-describedby instead of being concatenated into the name. */
   function createItem(memory) {
     const listItem = element('li', 'memory-item');
     const button = element('button', 'memory-button');
     button.type = 'button';
 
+    const cover = element('span', 'memory-cover');
+    /* The placeholder is what a card without a picture shows. It is not a missing image, so
+       it is drawn rather than left as a gap. */
+    cover.append(createIcon('photo', { size: 20, className: 'icon memory-cover-placeholder' }));
+
+    const image = document.createElement('img');
+    image.className = 'memory-cover-image';
+    image.alt = '';
+    image.decoding = 'async';
+    image.hidden = true;
+    cover.append(image);
+
+    const body = element('span', 'memory-body');
     const title = element('span', 'memory-title');
     const meta = element('span', 'memory-meta');
-    const place = element('span', 'memory-place');
 
-    button.append(title, meta, place);
+    const describedBy = 'memory-meta-' + memory.id;
+    meta.id = describedBy;
+    button.setAttribute('aria-describedby', describedBy);
+
+    body.append(title, meta);
+    button.append(cover, body);
     listItem.append(button);
     button.addEventListener('click', () => onSelect(memory.id));
 
-    return { listItem, button, title, meta, place, signature: null };
+    return {
+      id: memory.id,
+      listItem,
+      button,
+      cover,
+      image,
+      title,
+      meta,
+      signature: null,
+      coverId: null,
+      shown: false,
+      observed: false
+    };
+  }
+
+  /* Date, place and tag count on one line. Separated by a middot rather than by three
+     elements with their own margins, so the line has one rhythm however much of it there is. */
+  function metaLine(memory) {
+    const parts = [formatMemoryDate(memory.date)];
+
+    if (memory.placeName) {
+      parts.push(memory.placeName);
+    }
+
+    const tags = memory.tags?.length ?? 0;
+    if (tags > 0) {
+      parts.push(tags === 1 ? '1 tag' : tags + ' tags');
+    }
+
+    return parts.join(' \u00b7 ');
   }
 
   function updateItem(item, memory) {
@@ -70,10 +171,61 @@ export function createMemoryList({ listElement, emptyElement, countElement, onSe
     }
 
     item.title.textContent = memory.title;
-    item.meta.textContent = formatMemoryDate(memory.date);
-    item.place.textContent = memory.placeName;
-    item.place.hidden = memory.placeName === '';
+    item.meta.textContent = metaLine(memory);
     item.signature = signature;
+
+    const cover = coverIdOf(memory);
+
+    /* The cover changed under a row that may already be showing the old one. */
+    if (cover !== item.coverId) {
+      hideCover(item);
+      if (item.coverId) thumbnails?.release(item.coverId);
+      item.coverId = cover;
+      if (item.shown) showCover(item);
+    }
+  }
+
+  function hideCover(item) {
+    item.image.hidden = true;
+    item.image.removeAttribute('src');
+    item.cover.classList.remove('has-image');
+  }
+
+  async function showCover(item) {
+    if (!thumbnails || !item.coverId) {
+      return;
+    }
+
+    const wanted = item.coverId;
+    const url = await thumbnails.request(wanted);
+
+    /* The row may have scrolled away, or been reused for another memory, while the read was
+       in flight. Checked before touching the DOM, or a card shows someone else's picture. */
+    if (!url || item.coverId !== wanted || !item.shown) {
+      return;
+    }
+
+    item.image.src = url;
+    item.image.hidden = false;
+    item.cover.classList.add('has-image');
+  }
+
+  /* Driven by the observer below: a row that is on screen, or nearly, asks for its cover;
+     one that has left gives it back. */
+  function setShown(item, shown) {
+    if (item.shown === shown) {
+      return;
+    }
+
+    item.shown = shown;
+
+    if (shown) {
+      showCover(item);
+      return;
+    }
+
+    hideCover(item);
+    if (item.coverId) thumbnails?.release(item.coverId);
   }
 
   function focusedId() {
@@ -88,23 +240,70 @@ export function createMemoryList({ listElement, emptyElement, countElement, onSe
   function removeMissing(liveIds) {
     for (const [id, item] of itemsById) {
       if (!liveIds.has(id)) {
+        unobserve(item);
+        setShown(item, false);
         item.listItem.remove();
         itemsById.delete(id);
       }
     }
   }
 
-  /* Walks the desired order against the children already in place and only moves a node
-     when it is genuinely out of position, so an unchanged list touches nothing. */
-  function applyOrder(ordered) {
-    let cursor = listElement.firstChild;
+  /* A year: a real heading and the list of cards under it, cached so both are reused rather
+     than rebuilt. The scroller is a div holding alternating headings and lists, so a card is
+     an li inside a ul as it should be, and `.memory-list li` still means a memory.
 
-    for (const memory of ordered) {
-      const item = itemsById.get(memory.id);
-      if (item.listItem === cursor) {
+     The keyed guarantee covers these too: a group that stays put is never torn out from
+     under anything that has focus inside it. */
+  function groupFor(year) {
+    let group = groupsByYear.get(year);
+
+    if (!group) {
+      const heading = element('h3', 'year-heading');
+      heading.textContent = year;
+
+      const cards = element('ul', 'memory-group');
+      cards.setAttribute('aria-label', year);
+
+      group = { heading, cards };
+      groupsByYear.set(year, group);
+    }
+
+    return group;
+  }
+
+  /* Walks the desired order against what is already in place and only moves a node when it is
+     genuinely out of position, so an unchanged list touches nothing. Done twice over: the
+     headings and lists within the scroller, and the cards within each list. */
+  function place(parent, wanted) {
+    let cursor = parent.firstChild;
+
+    for (const node of wanted) {
+      if (node === cursor) {
         cursor = cursor.nextSibling;
       } else {
-        listElement.insertBefore(item.listItem, cursor);
+        parent.insertBefore(node, cursor);
+      }
+    }
+  }
+
+  function applyOrder(groups) {
+    const top = [];
+
+    for (const { year, memories } of groups) {
+      const group = groupFor(year);
+      top.push(group.heading, group.cards);
+      place(group.cards, memories.map((memory) => itemsById.get(memory.id).listItem));
+    }
+
+    place(listElement, top);
+
+    /* Years that no longer have any cards. */
+    const live = new Set(groups.map((group) => group.year));
+    for (const [year, group] of groupsByYear) {
+      if (!live.has(year)) {
+        group.heading.remove();
+        group.cards.remove();
+        groupsByYear.delete(year);
       }
     }
   }
@@ -160,8 +359,11 @@ export function createMemoryList({ listElement, emptyElement, countElement, onSe
       updateItem(item, memory);
     }
 
-    applyOrder(ordered);
+    applyOrder(groupMemoriesByYear(ordered));
     order = ordered.map((memory) => memory.id);
+
+    /* Rows that have gone are no longer observed, and rows that arrived are. */
+    for (const item of itemsById.values()) observe(item);
 
     for (const [itemId, item] of itemsById) {
       applySelectionTo(item, itemId === selectedId);
@@ -195,7 +397,29 @@ export function createMemoryList({ listElement, emptyElement, countElement, onSe
 
     const selected = id === null ? null : itemsById.get(id);
     if (selected) {
-      selected.button.scrollIntoView({ block: 'nearest' });
+      revealCard(selected);
+    }
+  }
+
+  /* block: nearest on its own puts the card flush with the top of the scroller, which is
+     exactly where the sticky year heading is, so the selected card lands underneath it. The
+     heading's height is taken off by scrolling the extra amount by hand. */
+  function revealCard(item) {
+    item.button.scrollIntoView({ block: 'nearest' });
+
+    const sticky = listElement.querySelector('.year-heading');
+
+    if (!sticky) {
+      return;
+    }
+
+    const headerHeight = sticky.getBoundingClientRect().height;
+    const cardTop = item.listItem.getBoundingClientRect().top;
+    const listTop = listElement.getBoundingClientRect().top;
+    const hiddenBehindHeader = listTop + headerHeight - cardTop;
+
+    if (hiddenBehindHeader > 0) {
+      listElement.scrollTop -= hiddenBehindHeader;
     }
   }
 
@@ -226,8 +450,14 @@ export function createMemoryList({ listElement, emptyElement, countElement, onSe
     focusItem(order[safeIndex]);
   }
 
+  function dispose() {
+    if (observer) observer.disconnect();
+    for (const item of itemsById.values()) setShown(item, false);
+  }
+
   return {
     render,
+    dispose,
     setSelected,
     focusItem,
     focusEmptyState,

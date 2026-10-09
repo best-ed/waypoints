@@ -19,7 +19,9 @@
 .sidebar-header {
   position: sticky;
   top: 0;
-  padding: var(--space-4);
+  /* Tighter at the bottom than the top: what follows is the list, and the gap between the
+     controls and the first card was doing nothing but pushing the memories down. */
+  padding: var(--space-4) var(--space-4) var(--space-3);
   background-color: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
 }
@@ -44,6 +46,9 @@
   margin: 0;
   padding: 0;
   list-style: none;
+  /* Its own scroller, which is what the thumbnail observer watches and what the sticky year
+     headings stick to. */
+  overflow-y: auto;
 }
 
 @media (max-width: 40rem) {
@@ -65,7 +70,9 @@
 }
 
 .memory-button {
-  display: block;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
   width: 100%;
   padding: var(--space-3) var(--space-4);
   border: none;
@@ -106,11 +113,88 @@
   color: var(--color-accent);
 }
 
+/* One line, cut rather than wrapped. The parts are in priority order - date, then place,
+   then the tag count - so what gets cut is what matters least, and every card is the same
+   height however long someone's place name is. */
 .memory-meta {
   display: block;
   margin-top: var(--space-1);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-size: var(--text-sm);
+  line-height: var(--line-base);
   color: var(--color-text-muted);
+}
+
+/* --------------------------------------------------------------- the card */
+
+/* The cover sits at a fixed size whether or not there is a picture, so a list of cards with
+   and without photos keeps one left edge for its titles. */
+.memory-cover {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.memory-cover-placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.6;
+}
+
+.memory-cover.has-image .memory-cover-placeholder {
+  visibility: hidden;
+}
+
+.memory-cover-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* min-width: 0 so a long unbroken title can shrink rather than pushing the cover out. */
+.memory-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* ---------------------------------------------------------- the year header */
+
+/* role="presentation" on the li and the heading inside it: a list of cards grouped by year
+   should read as years and cards, not as a list item that happens to contain a heading. */
+/* A real heading between real lists: the scroller is a div, each year is an h3 followed by
+   its own ul, so a card is an li inside a list as it should be. */
+.year-heading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: var(--space-1) var(--space-4);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  /* The years are numbers, so they stay on the system stack with the rest of the data. */
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.memory-group {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .memory-place {
