@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "2430cc0740ee";
+self.PRECACHE_VERSION = "f9c742d34ac5";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -50,6 +50,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/dev/sandbox.js", hash: "8a2b4d08cc6f5e0427a08cd569f433316af78cb7f5ef01bb2176046baa40d432" },
   { url: "src/js/dev/seed-memories.js", hash: "69baa746fd6fbd3203cb5d18d63ea76498961f72128cce419a11016ad65da33f" },
   { url: "src/js/filters/apply-filters.js", hash: "660ff437259579cdd306ec351d4f0567af184ab0a2e8b61244e31a5d5e1813e6" },
+  { url: "src/js/filters/describe-filters.js", hash: "07116458dc79bc317056de3f46b25494c68488ee0633fb04f1c688cc0d00d644" },
   { url: "src/js/filters/filter-state.js", hash: "330d8cf8c167a8971c72b4c23a70e92e664eb25957188111ec235ca25728457f" },
   { url: "src/js/filters/filter-url.js", hash: "fae86eccda28c67f1cd675392902497f39a5ab58b8decf3713263cb37064b4a7" },
   { url: "src/js/filters/match-memory.js", hash: "d12af7c8029d6a47fc7d16d916fd76da93d98a3a2df92baa7bec5bb18c52210e" },
@@ -95,6 +96,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/ui/filter-summary.js", hash: "b3ddd0d1fe78357a18762eaa281c7d9c29bd5cb528d2bd81ceca97f898612d38" },
   { url: "src/js/ui/form-values.js", hash: "6cf62731f06a8763c69480b7f3f9dca738cc3c271bf38117c0d33d2fbd661bd7" },
   { url: "src/js/ui/format-date.js", hash: "0f2fb6967dfe67c4a2684e9eff6f94c6d4933f8e2067661d1cc9562a9996dbcd" },
+  { url: "src/js/ui/group-by-year.js", hash: "5b3b3bcddc0a0881510d03ec04d5adf2bffc47760709acd1b9c27b403492e283" },
   { url: "src/js/ui/icons.js", hash: "5cfe3a46043938c5b351ef427cefa65705565f11ef9bfb083b242a1760ab4465" },
   { url: "src/js/ui/import-dialog.js", hash: "13a51a9a04a0cdf4dd2e13b0a8e3cc3f5e8e637088a16a62b9b199f35a211f9c" },
   { url: "src/js/ui/install-prompt.js", hash: "a4537deba1f3eaafdb7318a39d3046d415be61ebb082a5f66ea6de44802ae98b" },
