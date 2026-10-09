@@ -9,6 +9,22 @@
   are untouched, and **Settings -> Dim the map in dark mode** turns it off. It is off entirely
   under forced colours, where the palette has already been decided.
 
+### The sidebar and the list
+
+- **The memories come first.** The filter controls live behind one Filters button with a count
+  badge, so the first memory's title moves from 618px down the viewport to 341px and eight
+  cards are visible instead of three.
+- Removable chips above the list say what is narrowing it, with one Clear all. There used to
+  be two clear-filters controls, visible at once, doing the same thing.
+- The list is grouped by year with sticky headings, and each row is a card with the memory's
+  first photo on it.
+- A first run shows a welcome rather than a search box, a filter panel and a journey control
+  that cannot be used.
+- Placing a pin says so, over the map.
+- A no-results message names what excluded everything rather than saying "the current
+  filters".
+- The timeline no longer renders as a solid block when one memory matches.
+
 ### Design
 
 - A warm palette: paper in light, charcoal in dark, with the rust accent unchanged.

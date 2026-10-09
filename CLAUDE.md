@@ -292,6 +292,94 @@ own pool and one teardown.
 
 ---
 
+## The Sidebar
+
+The sidebar is for finding memories. It is not the thing anyone came to look at, and in 1.0
+it behaved as though it were: at 1280 the first memory's title sat 618px down an 860px
+viewport, with three cards visible under a heading, a search box, thirteen tag chips, two date
+fields, a histogram, a count and a journey control. **Sixty-eight percent of it was controls
+before a single memory.** It is 341px now, and eight cards.
+
+The order, top to bottom, and why:
+
+1. **Search.** Always visible. It is the one control people reach for without being prompted.
+2. **Active filter chips.** One per tag, one for the date range, each removing itself, plus
+   Clear all when there is more than one. **Above the disclosure on purpose**: what is
+   narrowing the list has to be visible whether or not the panel is open, or a collapsed panel
+   hides the reason the list is short.
+3. **The Filters disclosure**, with a badge counting active dimensions. Tag chips, date inputs
+   and the timeline live inside. Closed by default, open when the URL arrived carrying
+   filters, and the state is remembered per viewer under its own key.
+4. **The count**, which says how many and nothing else.
+5. **Journey**, hidden entirely below two memories in the library.
+
+**There is exactly one clear-filters control.** There were two - a "Reset filters" link in the
+header and a "Clear filters" button in the empty state - visible at the same time, doing the
+same thing, with different labels and different shapes. The no-results state uses the same
+label and shape as the chips row, because it is the same action. The search box had the same
+problem in miniature, with `type="search"` drawing its own cross beside ours; the native one is
+suppressed, since ours can be named and reached by keyboard.
+
+`filters/describe-filters.js` is pure and turns a filter state into chip descriptors. **Each
+descriptor carries the patch that removes it** rather than a kind the caller switches on, so
+nothing else has to know that a date chip clears both ends while a tag chip clears only itself.
+
+### The list
+
+Grouped by year, newest first, with a sticky heading. The scroller is a `div` holding an `h3`
+and a `ul` per year, so **a card is an `li` inside a list**. The first attempt made the
+headings `li`s in a flat list, which is invalid inside a `div` and quietly broke every
+`.memory-list li` selector in the suite by counting headings as memories.
+
+A card is a cover thumbnail or a drawn placeholder, the title in the display face, and one
+muted line of date, place and tag count, cut rather than wrapped so every card is the same
+height whatever someone's place name is. It is still **one button named by the title alone**;
+the meta line is reached through `aria-describedby`, because it is description and not name.
+
+Headings, lists and cards all go through the same keyed walk, so a group that stays put is
+never torn out from under anything with focus inside it. Selecting a card scrolls it clear of
+the sticky heading: `block: nearest` alone puts it flush with the top of the scroller, which is
+exactly where the heading is.
+
+### Thumbnails, and the one owner rule
+
+Every other surface has a pool with one place that revokes it. The list cannot work that way,
+because rows come and go and there is no moment when they are all finished with, so
+`ui/thumbnail-owner.js` owns them instead and is **bounded in two directions**:
+
+- **At most four reads in flight.** Flinging a thousand rows would otherwise queue a thousand
+  IndexedDB reads, and the rows you actually stopped on would be behind all of them.
+- **At most forty-eight URLs held**, least recently asked for evicted first. A URL that is
+  never revoked keeps its blob alive.
+
+A read whose row left before it landed **never becomes a URL at all**, which is the case that
+leaks: created with nothing left to revoke it. Rows ask when they enter an `IntersectionObserver`
+with about a screen of margin, and give the URL back when they leave.
+
+Measured on 1000 seeded memories with a distinct photo each: a fast scroll of the whole 94,000
+pixels peaked at **17 live URLs** and settled to 10. The cap is never reached, because
+releasing on exit does the work. Measuring this with a handful of shared photo ids proves
+nothing - the owner keys on the photo id, so twenty ids can never produce more than twenty URLs
+whatever the scroll does.
+
+### The first run
+
+An empty library hides the search, the filters, the chips, the timeline and the journey, and
+shows a welcome instead: a heading, one sentence, a primary "Add your first memory" that starts
+placement, and "Import a backup" that opens Settings at the import control.
+
+**This is about the library being empty, never about a filter excluding everything.** Swapping
+the search box for a welcome the moment someone mistypes would be a good way to lose what they
+were looking for. At 375 the app opens on the List pane when there is nothing saved, because
+the welcome is in that pane and the map has nothing on it; at boot only, so it never overrides
+a choice made during the session.
+
+Journey is not shown at all below two memories in the library, rather than shown unavailable
+with a reason. **A reason only helps once the thing is reachable.** Above two it keeps the
+existing disabled-with-reason behaviour when a filter leaves fewer than two in view.
+
+---
+
 ## Selection Flow
 
 The sidebar list and the map never call each other. Both talk to `ui/selection.js`, which
