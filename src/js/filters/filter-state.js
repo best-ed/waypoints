@@ -113,6 +113,10 @@ export function createFilterState({ onListenerError = rethrowAsync } = {}) {
 
   return {
     getFilters,
+    /* Applies a partial change by name, which is what a removable chip carries. Everything
+       goes through the same update(), so normalising, the no-change check and the
+       notification are the same as for every other setter. */
+    patch: (changes) => update(changes !== null && typeof changes === 'object' ? changes : {}),
     setQuery,
     setTags,
     toggleTag,

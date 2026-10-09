@@ -295,3 +295,87 @@
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
+
+/* ------------------------------------------------- the filters disclosure */
+
+/* The tag chips, the timeline and the date inputs took two thirds of the sidebar before
+   anything a person came to look at. They live behind this now. */
+.filters-toggle {
+  align-self: flex-start;
+  margin-top: var(--space-2);
+}
+
+.filters-badge {
+  /* Not hidden when zero by CSS: the module hides it, because a badge showing nothing and a
+     badge that is not there are different things to a screen reader. */
+  background-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.filters-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Inside the panel these sit on the panel's own rhythm rather than each carrying a margin. */
+.filters-panel .tag-bar,
+.filters-panel .timeline {
+  margin-top: var(--space-0);
+}
+
+/* ------------------------------------------------- the active filter row */
+
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 var(--space-0);
+  padding: 0;
+  list-style: none;
+}
+
+/* A chip that removes itself. The cross is the affordance, so the label can stay quiet. */
+.chip-removable .icon {
+  opacity: 0.7;
+}
+
+.chip-removable:hover .icon {
+  opacity: 1;
+}
+
+.chip-removable:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* ------------------------------------------------------------- first run */
+
+.welcome {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.welcome-heading {
+  margin: 0;
+}
+
+.welcome-text {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--line-base);
+  color: var(--color-text-muted);
+}
+
+.welcome-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: stretch;
+}

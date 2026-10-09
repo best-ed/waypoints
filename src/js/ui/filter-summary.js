@@ -21,49 +21,30 @@ function datePart({ from, to }) {
   return null;
 }
 
-/* Says what is being filtered on rather than repeating the query back, so the line is
-   short regardless of how long the search text is. */
+/* How many, in words. It used to also list the dimensions - "0 of 60 · search · 1 tag" -
+   which read as a machine's summary and now duplicates the chips above it, where each
+   dimension is named and can be taken off. */
 export function buildSummary(shown, total, filters) {
+  if (total === 0) {
+    return 'None yet';
+  }
+
   if (!isFilterActive(filters)) {
-    return '';
-  }
-
-  const parts = [shown + ' of ' + total];
-
-  if (filters.query.trim() !== '') {
-    parts.push('search');
-  }
-
-  const tags = tagPart(filters.tags);
-  if (tags) {
-    parts.push(tags);
-  }
-
-  const dates = datePart(filters);
-  if (dates) {
-    parts.push(dates);
-  }
-
-  return parts.join(' · ');
-}
-
-export function createFilterSummary({ summaryElement, resetElement, onReset }) {
-  function render(shown, total, filters) {
-    const text = buildSummary(shown, total, filters);
-    const active = text !== '';
-
-    summaryElement.textContent = active ? text : countOnly(shown, total);
-    resetElement.hidden = !active;
-  }
-
-  function countOnly(shown, total) {
-    if (total === 0) {
-      return 'None yet';
-    }
     return total === 1 ? '1 memory' : total + ' memories';
   }
 
-  resetElement.addEventListener('click', () => onReset());
+  return shown + ' of ' + total + (total === 1 ? ' memory' : ' memories');
+}
+
+/* Kept because the chip labels want the same date wording, and so the two cannot drift. */
+export function describeFilterParts(filters) {
+  return [tagPart(filters.tags), datePart(filters)].filter(Boolean);
+}
+
+export function createFilterSummary({ summaryElement }) {
+  function render(shown, total, filters) {
+    summaryElement.textContent = buildSummary(shown, total, filters);
+  }
 
   return { render };
 }

@@ -183,6 +183,7 @@
         <div class="sidebar-header">
           <h2 id="sidebar-heading" class="sidebar-heading">Memories</h2>
 
+          <div id="sidebar-controls" class="sidebar-controls">
           <div class="search">
             <label class="visually-hidden" for="memory-search">Search memories</label>
             <input
@@ -203,6 +204,25 @@
             ></button>
           </div>
 
+          <!-- The chips for what is currently narrowing the list. Above the disclosure on
+               purpose: what is filtering has to be visible whether or not the panel is open,
+               or a collapsed panel would hide the reason the list is short. -->
+          <ul id="active-filters" class="active-filters" aria-label="Active filters" hidden></ul>
+
+          <button
+            id="filters-toggle"
+            class="button button-sm button-ghost filters-toggle"
+            type="button"
+            data-icon="filter"
+            data-icon-size="16"
+            aria-expanded="false"
+            aria-controls="filters-panel"
+          >
+            <span class="button-label">Filters</span>
+            <span id="filters-badge" class="chip-count filters-badge" hidden></span>
+          </button>
+
+          <div id="filters-panel" class="filters-panel" hidden>
           <div id="tag-bar" class="tag-bar" hidden>
             <ul id="tag-list" class="tag-list" aria-label="Filter by tag"></ul>
             <button id="tag-toggle" class="button button-sm button-ghost tag-toggle" type="button" hidden></button>
@@ -240,12 +260,9 @@
 
             <p id="timeline-range" class="visually-hidden" aria-live="polite"></p>
           </div>
+          </div>
 
           <p id="memory-count" class="sidebar-count"></p>
-
-          <button id="filter-reset" class="button button-sm button-ghost filter-reset" type="button" data-icon="undo" data-icon-size="16" hidden>
-            <span class="button-label">Reset filters</span>
-          </button>
 
           <div class="journey">
             <button
@@ -293,12 +310,32 @@
               <p id="journey-progress" class="journey-progress" aria-live="polite"></p>
             </div>
           </div>
+          </div>
+
+          <!-- Shown only when nothing has ever been saved. Everything above is hidden then:
+               a search box, a filter panel and a journey control are all answers to questions
+               nobody with an empty library is asking. -->
+          <div id="welcome" class="welcome" hidden>
+            <h3 class="welcome-heading">Start your map</h3>
+            <p class="welcome-text">
+              Pin a place you want to remember, with a date, a note and a few photos. It all
+              stays on this device.
+            </p>
+            <div class="welcome-actions">
+              <button id="welcome-add" class="button button-primary" type="button" data-icon="pin">
+                <span class="button-label">Add your first memory</span>
+              </button>
+              <button id="welcome-import" class="button" type="button" data-icon="import">
+                <span class="button-label">Import a backup</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <p id="memory-empty" class="sidebar-empty" tabindex="-1" hidden></p>
 
         <!-- tabindex="-1" so the skip link can actually land focus on it. -->
-      <ul id="memory-list" class="memory-list" tabindex="-1"></ul>
+      <div id="memory-list" class="memory-list" tabindex="-1"></div>
       </aside>
 
       <div class="app-main">
@@ -309,6 +346,10 @@
           without taking that away.
         -->
         <div id="map" class="map" role="region" aria-label="Map"></div>
+
+        <!-- Written in when placement starts rather than once at boot: a live region
+             announces a change to its contents, not a change to its visibility. -->
+        <p id="placement-hint" class="placement-hint" role="status" hidden></p>
       </div>
     </main>
 

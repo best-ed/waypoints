@@ -27,6 +27,8 @@ import { createTagBar } from './ui/tag-bar.js';
 import { createDateRange } from './ui/date-range.js';
 import { createTimelineView } from './ui/timeline-view.js';
 import { createFilterSummary } from './ui/filter-summary.js';
+import { createFiltersPanel } from './ui/filters-panel.js';
+import { createActiveFilters } from './ui/active-filters.js';
 import { tagCounts, allTags } from './filters/tag-counts.js';
 import { timelineBuckets, distinctDateCount } from './filters/timeline.js';
 import { journeyOrder } from './journey/journey-order.js';
@@ -38,7 +40,7 @@ import { createJourneyPanel } from './ui/journey-panel.js';
 import { createJourneyControls } from './ui/journey-controls.js';
 import { createMemoryList } from './ui/memory-list.js';
 import { createSidebarToggle } from './ui/sidebar-toggle.js';
-import { applyIcons } from './ui/icons.js';
+import { applyIcons, createIcon } from './ui/icons.js';
 import { createViewSwitch, LIST_VIEW, MAP_VIEW } from './ui/view-switch.js';
 import { prefersReducedMotion } from './ui/motion.js';
 import { createMemoryForm } from './ui/memory-form.js';
@@ -242,10 +244,7 @@ function boot() {
     emptyElement: document.getElementById('memory-empty'),
     countElement: document.getElementById('memory-count'),
     onSelect: (id) => selectFromList(id),
-    onClearSearch: () => {
-      search.clear({ focus: false });
-      filters.clear();
-    }
+    onClearSearch: () => clearEveryFilter()
   });
 
   const moveMode = createMoveMode({
@@ -300,6 +299,8 @@ function boot() {
     markers.sync(visible);
     list.render(visible, { total: memories.length, query: current.query, filters: current });
 
+    activeFilters.render(current);
+    filtersPanel.render(current);
     tagBar.render(tagCounts(memories, current), current.tags);
     dateRange.render(current, { visible: memories.length > 0 });
     timeline.render(timelineBuckets(memories, current), current, distinctDateCount(memories));
@@ -344,12 +345,29 @@ function boot() {
   });
 
   const summary = createFilterSummary({
-    summaryElement: document.getElementById('memory-count'),
-    resetElement: document.getElementById('filter-reset'),
-    onReset: () => {
-      search.clear({ focus: false });
-      filters.clear();
-    }
+    summaryElement: document.getElementById('memory-count')
+  });
+
+  function clearEveryFilter() {
+    search.clear({ focus: false });
+    filters.clear();
+  }
+
+  const filtersPanel = createFiltersPanel({
+    toggleElement: document.getElementById('filters-toggle'),
+    panelElement: document.getElementById('filters-panel'),
+    badgeElement: document.getElementById('filters-badge'),
+    storage: window.localStorage,
+    /* Its own key, and the sandbox gets its own too: remembering a panel is a convenience,
+       but a session on seeded data should not change how the real one opens. */
+    storageKey: names.settingsKey + ':filters-open'
+  });
+
+  const activeFilters = createActiveFilters({
+    listElement: document.getElementById('active-filters'),
+    onRemove: (change) => filters.patch(change),
+    onClearAll: () => clearEveryFilter(),
+    createIcon
   });
 
   const journeyPath = createJourneyPath(map);
@@ -510,6 +528,10 @@ function boot() {
   filters.setTags(fromUrl.tags);
   filters.setDateRange({ from: fromUrl.from, to: fromUrl.to });
   search.setValue(fromUrl.query);
+
+  /* After the filters are restored and before the first render: a filtered view arriving from
+     a bookmark with the panel shut would show a short list and no reason for it. */
+  filtersPanel.start(filters.getFilters());
 
   rerender();
   store.subscribe(renderAll);

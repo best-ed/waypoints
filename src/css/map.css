@@ -146,3 +146,27 @@
   text-decoration: underline;
   color: inherit;
 }
+
+/* The hint while a pin is being placed. Pinned to the top of the map rather than shown in the
+   sidebar, because the instruction is about where to click and the map is where that happens.
+
+   Above Leaflet's own controls, which top out at 1000, and below the app header. */
+.placement-hint {
+  position: absolute;
+  top: var(--space-3);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-panel);
+  max-width: calc(100% - var(--space-6));
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-overlay);
+  color: var(--color-text);
+  box-shadow: var(--elevation-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-align: center;
+  /* It is an instruction, not a target: clicking it would be clicking the map. */
+  pointer-events: none;
+}
