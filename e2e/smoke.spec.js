@@ -462,6 +462,90 @@ test('a hostile import file pollutes nothing and raises no dialog', async ({ pag
   expect(dialogs).toBe(0);
 });
 
+test('a card shows its photo, and the list does not hoard object URLs', async ({ page }) => {
+  /* The list is the one surface with no single moment when every URL it made is finished
+     with, so it has an owner that releases on exit and caps what it holds. This is the
+     guarantee that matters: scrolling a long list cannot grow without limit. */
+  await page.addInitScript(() => {
+    window.__live = 0;
+    window.__peak = 0;
+    const create = URL.createObjectURL.bind(URL);
+    const revoke = URL.revokeObjectURL.bind(URL);
+    URL.createObjectURL = (blob) => {
+      window.__live += 1;
+      if (window.__live > window.__peak) window.__peak = window.__live;
+      return create(blob);
+    };
+    URL.revokeObjectURL = (url) => {
+      window.__live -= 1;
+      return revoke(url);
+    };
+  });
+
+  await seedLibrary(page, [memory('a', 'Has a photo', '2025-01-01', -1.29, 36.82, ['x'])]);
+  await openApp(page);
+
+  const jpeg = await generatePhotoBytes(page);
+  await page.locator('.memory-list li button').first().click();
+  await page.locator('.leaflet-popup button', { hasText: 'Edit' }).click();
+  await page.locator('#memory-photo-input').setInputFiles({
+    name: 'generated.jpg',
+    mimeType: 'image/jpeg',
+    buffer: Buffer.from(jpeg, 'base64')
+  });
+  await expect(page.locator('#memory-photos img')).toHaveCount(1);
+  await page.locator('#memory-save').click();
+  await expect(page.locator('#memory-dialog')).toBeHidden();
+
+  /* The card picks the cover up without a reload. */
+  const cover = page.locator('.memory-cover-image').first();
+  await expect(cover).toBeVisible();
+  await expect(cover).toHaveAttribute('src', /^blob:/);
+
+  /* A memory with no photos keeps its placeholder rather than a broken image. */
+  const stats = await page.evaluate(() => ({ live: window.__live, peak: window.__peak }));
+  expect(stats.peak).toBeLessThan(20);
+  expect(stats.live).toBeLessThanOrEqual(stats.peak);
+});
+
+test('the year headings group the list and stick to the top', async ({ page }) => {
+  await seedLibrary(page);
+  await openApp(page);
+
+  /* The seeded library spans 2023 to 2025, newest first. */
+  const years = await page.locator('.memory-list .year-heading').allTextContents();
+
+  expect(years.length).toBeGreaterThan(1);
+  expect(years).toEqual([...years].sort().reverse());
+
+  /* Every card is an li inside a list, not a loose li in a div. */
+  const stray = await page.evaluate(
+    () => [...document.querySelectorAll('.memory-list li')].filter((li) => li.parentElement.tagName !== 'UL').length
+  );
+  expect(stray).toBe(0);
+
+  const position = await page.evaluate(
+    () => getComputedStyle(document.querySelector('.year-heading')).position
+  );
+  expect(position).toBe('sticky');
+});
+
+test('the placement hint appears while placing and leaves with the mode', async ({ page }) => {
+  await mockNominatim(page);
+  await seedLibrary(page);
+  await openApp(page);
+
+  const hint = page.locator('#placement-hint');
+  await expect(hint).toBeHidden();
+
+  await page.locator('#add-memory').click();
+  await expect(hint).toBeVisible();
+  await expect(hint).toContainText('where it happened');
+
+  await page.keyboard.press('Escape');
+  await expect(hint).toBeHidden();
+});
+
 test('an explicit theme is applied before the first paint', async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem(

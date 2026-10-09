@@ -565,6 +565,13 @@ function boot() {
   filtersPanel.start(filters.getFilters());
 
   rerender();
+
+  /* On a phone with nothing saved, the map is empty and the welcome is in the other pane, so
+     the first thing a new person sees is a blank map and no explanation. Only at boot, so it
+     never overrides a choice made during the session. */
+  if (store.list().length === 0 && viewSwitch.isNarrow()) {
+    viewSwitch.setView(LIST_VIEW);
+  }
   store.subscribe(renderAll);
 
   function selectFromList(id) {

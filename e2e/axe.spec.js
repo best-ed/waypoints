@@ -46,7 +46,7 @@ const STATES = {
     await openApp(page);
   },
 
-  async 'add dialog'(page) {
+  async 'add dialog'(page, { narrow }) {
     /* Placing a pin reverse geocodes it, so the response is mocked rather than the feature
        being switched off: the hint and the filled place name are part of what is audited. */
     await mockNominatim(page);
@@ -54,10 +54,34 @@ const STATES = {
        opened a marker popup instead of placing anything. The dialog is what is being audited. */
     await seedLibrary(page, []);
     await page.goto(BASE);
+    /* An empty library opens on the List pane at narrow, because that is where the welcome
+       is. Placing a pin means being on the map. */
+    if (narrow) await page.locator('#view-map').click();
     await page.locator('#add-memory').click();
     const box = await page.locator('#map').boundingBox();
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
     await expect(page.locator('#memory-dialog')).toBeVisible();
+  },
+
+  /* Nothing saved yet: the welcome block, with the search, the filters and the journey all
+     gone. A state nobody reaches twice, and the one that decides whether they come back. */
+  async 'first run'(page) {
+    await seedLibrary(page, []);
+    await page.goto(BASE);
+    await expect(page.locator('#welcome')).toBeVisible();
+  },
+
+  /* The filter controls are behind a disclosure now, so axe never saw them unless something
+     opened it. */
+  async 'filters expanded'(page, { narrow }) {
+    await seedLibrary(page);
+    await openApp(page);
+    if (narrow) await page.locator('#view-list').click();
+    await page.locator('#filters-toggle').click();
+    await expect(page.locator('#filters-panel')).toBeVisible();
+    /* With a tag on there is also a removable chip and a Clear all to audit. */
+    await page.locator('.tag-chip').first().click();
+    await expect(page.locator('#active-filters .chip-removable')).toHaveCount(1);
   },
 
   async settings(page) {
