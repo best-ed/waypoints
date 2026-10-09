@@ -140,6 +140,7 @@ export async function openApp(page, search = '') {
   await page.waitForFunction(
     () =>
       document.querySelectorAll('.memory-list li').length > 0 ||
+      document.getElementById('welcome')?.hidden === false ||
       document.getElementById('memory-empty')?.hidden === false
   );
 }

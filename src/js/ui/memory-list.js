@@ -24,8 +24,6 @@ function element(tag, className) {
   return node;
 }
 
-const EMPTY_MESSAGE = 'No memories yet. Click Add memory, then click the map.';
-
 function describeNoMatch(filters) {
   const reasons = [];
 
@@ -318,9 +316,10 @@ export function createMemoryList({
       return;
     }
 
+    /* An empty library is the welcome block's state, not this one's. Saying "No memories yet"
+       underneath a panel that already says "Start your map" is the same sentence twice. */
     if (total === 0) {
-      emptyElement.append(element('span', 'empty-message'));
-      emptyElement.firstChild.textContent = EMPTY_MESSAGE;
+      emptyElement.hidden = true;
       return;
     }
 

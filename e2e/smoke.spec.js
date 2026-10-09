@@ -14,13 +14,48 @@ import {
    paths that only break once a real browser, real storage and the production headers are all
    involved at once. Each one seeds its own state and shares nothing. */
 
-test('boots with an empty library and says so', async ({ page }) => {
+test('boots with an empty library and offers somewhere to start', async ({ page }) => {
   await page.goto(BASE);
 
-  await expect(page.locator('#memory-empty')).toBeVisible();
+  await expect(page.locator('#welcome')).toBeVisible();
+  await expect(page.locator('#welcome-add')).toBeVisible();
+  await expect(page.locator('#welcome-import')).toBeVisible();
+
+  /* Everything that is an answer to a question nobody with an empty library is asking. */
+  await expect(page.locator('#sidebar-controls')).toBeHidden();
+  await expect(page.locator('#memory-search')).toBeHidden();
+  await expect(page.locator('#filters-toggle')).toBeHidden();
+  await expect(page.locator('.journey')).toBeHidden();
+  await expect(page.locator('#memory-empty')).toBeHidden();
+
   await expect(page.locator('.memory-list li')).toHaveCount(0);
   await expect(page.locator('.leaflet-container')).toBeVisible();
   await expect(page.locator('#add-memory')).toBeEnabled();
+});
+
+test('the first memory brings the whole sidebar back', async ({ page }) => {
+  /* Placing a pin reverse geocodes it, so the response is mocked rather than the feature
+     being switched off: the guard route is what caught this. */
+  await mockNominatim(page);
+  await page.goto(BASE);
+  await expect(page.locator('#welcome')).toBeVisible();
+
+  await page.locator('#welcome-add').click();
+  const box = await page.locator('#map').boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+
+  await expect(page.locator('#memory-dialog')).toBeVisible();
+  await page.locator('#memory-title').fill('The first one');
+  await page.locator('#memory-date').fill('2025-05-05');
+  await page.locator('#memory-save').click();
+
+  await expect(page.locator('#welcome')).toBeHidden();
+  await expect(page.locator('#sidebar-controls')).toBeVisible();
+  await expect(page.locator('#memory-search')).toBeVisible();
+  await expect(page.locator('.memory-list li')).toHaveCount(1);
+
+  /* One memory is a dot, not a journey, so the control is not there to be explained. */
+  await expect(page.locator('.journey')).toBeHidden();
 });
 
 test('adds a memory by placing a pin', async ({ page }) => {

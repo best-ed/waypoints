@@ -40,6 +40,7 @@ import { createJourneyPanel } from './ui/journey-panel.js';
 import { createJourneyControls } from './ui/journey-controls.js';
 import { createMemoryList } from './ui/memory-list.js';
 import { createThumbnailOwner } from './ui/thumbnail-owner.js';
+import { createEmptyLibrary } from './ui/empty-library.js';
 import { createSidebarToggle } from './ui/sidebar-toggle.js';
 import { applyIcons, createIcon } from './ui/icons.js';
 import { createViewSwitch, LIST_VIEW, MAP_VIEW } from './ui/view-switch.js';
@@ -297,7 +298,12 @@ function boot() {
     selection.clear();
   }
 
+  let totalMemories = 0;
+
   function renderAll(memories) {
+    totalMemories = memories.length;
+    emptyLibrary.render(memories.length);
+
     /* Pruned before anything reads the filters, so a tag whose last memory just went
        does not keep narrowing the list from a chip that no longer exists. */
     filters.pruneTags(allTags(memories));
@@ -392,7 +398,20 @@ function boot() {
   let journeyActive = false;
   let journeyStops = [];
 
+  const emptyLibrary = createEmptyLibrary({
+    controlsElement: document.getElementById('sidebar-controls'),
+    welcomeElement: document.getElementById('welcome'),
+    addButton: document.getElementById('welcome-add'),
+    importButton: document.getElementById('welcome-import'),
+    onAdd: () => {
+      placement.toggle();
+      syncButton();
+    },
+    onImport: () => openSettingsAtImport()
+  });
+
   const journeyPanel = createJourneyPanel({
+    containerElement: document.querySelector('.journey'),
     toggleElement: document.getElementById('journey-toggle'),
     hintElement: document.getElementById('journey-hint'),
     summaryElement: document.getElementById('journey-summary'),
@@ -438,7 +457,7 @@ function boot() {
       highlightProgress(playback.getState());
     }
 
-    journeyPanel.render({ summary: journeySummary(visible), isActive: journeyActive });
+    journeyPanel.render({ summary: journeySummary(visible), isActive: journeyActive, total: totalMemories });
     journeyControls.render(playback.getState(), { isActive: journeyActive });
   }
 
@@ -1081,7 +1100,7 @@ function boot() {
     }
   });
 
-  createSettingsDialog({
+  const settingsDialog = createSettingsDialog({
     dialog: document.getElementById('settings-dialog'),
     openButton: document.getElementById('open-settings'),
     closeButton: document.getElementById('settings-close'),
@@ -1099,6 +1118,16 @@ function boot() {
       importStatus.textContent = '';
     }
   });
+
+  /* Opens Settings and takes the viewer to the import section, rather than to the top of a
+     panel and a hunt for it. The section is not focusable, so focus goes to the control that
+     does the thing. */
+  function openSettingsAtImport() {
+    settingsDialog.open();
+    const pick = document.querySelector('.import-pick');
+    pick?.scrollIntoView({ block: 'center' });
+    document.getElementById('import-input')?.focus();
+  }
 
   sweepOrphanedPhotos().catch((error) => console.error(error));
 
