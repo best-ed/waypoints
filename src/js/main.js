@@ -41,6 +41,7 @@ import { createJourneyControls } from './ui/journey-controls.js';
 import { createMemoryList } from './ui/memory-list.js';
 import { createThumbnailOwner } from './ui/thumbnail-owner.js';
 import { createEmptyLibrary } from './ui/empty-library.js';
+import { createPlacementHint } from './ui/placement-hint.js';
 import { createSidebarToggle } from './ui/sidebar-toggle.js';
 import { applyIcons, createIcon } from './ui/icons.js';
 import { createViewSwitch, LIST_VIEW, MAP_VIEW } from './ui/view-switch.js';
@@ -649,8 +650,16 @@ function boot() {
     onCancel: () => syncButton()
   });
 
+  const placementHint = createPlacementHint({
+    element: document.getElementById('placement-hint')
+  });
+
+  /* Every path in and out of placement goes through here, which is what keeps the hint from
+     outliving the mode: the toggle, a placed pin, Escape, and the add dialog closing. */
   function syncButton() {
-    addButton.setAttribute('aria-pressed', String(placement.isActive()));
+    const active = placement.isActive();
+    addButton.setAttribute('aria-pressed', String(active));
+    placementHint.render(active);
   }
 
   function markerElement(id) {
