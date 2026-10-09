@@ -213,10 +213,21 @@
 .search-input {
   flex: 1 1 auto;
   min-width: 0;
+  min-height: 2.5rem;
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-bg);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}
+
+/* type="search" draws its own clear button in WebKit and Chromium, so there were two crosses
+   side by side doing the same thing. The input keeps type="search" for the semantics and the
+   keyboard it brings up on a phone; the control beside it is the one that stays, because it
+   can be given a name and reached by keyboard. */
+.search-input::-webkit-search-cancel-button,
+.search-input::-webkit-search-decoration {
+  appearance: none;
+  display: none;
 }
 
 .search-input:focus-visible {
@@ -227,8 +238,14 @@
   flex: 0 0 auto;
 }
 
-.empty-clear {
+.empty-message {
   display: block;
+  line-height: var(--line-base);
+}
+
+/* No display of its own: .button is inline-flex, and a block here would stack the icon on
+   the label, which is the mistake .photo-add made. */
+.empty-clear {
   margin-top: var(--space-3);
 }
 

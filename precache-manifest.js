@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "9798865228e7";
+self.PRECACHE_VERSION = "dd5b9088ceaf";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -33,7 +33,7 @@ self.PRECACHE_FILES = [
   { url: "src/css/primitives.css", hash: "bbe2549cfa1345537369fb551d347c52d1990998cf256105991ce3bfeab80719" },
   { url: "src/css/sandbox.css", hash: "adf83da6e52b818a2a351a03e3070b7c7cdf6da3ec67576b0750cd910106df3f" },
   { url: "src/css/settings.css", hash: "db0014b2ec7b324d4b0687d54918b914527634f6961859717771c83ea192ba9b" },
-  { url: "src/css/sidebar.css", hash: "ca0ad070415e37382a240061b449f84ae9a1bd7be43a09bc38115635ca8b1413" },
+  { url: "src/css/sidebar.css", hash: "b641eea68e20a1d4ef8b6309d0cbd565b4e0845110df568f28754510d203e5af" },
   { url: "src/css/toast.css", hash: "0e9490511b42cb4dfc14e085bfa70536e59a9cc4e45972623aafc5260905f92e" },
   { url: "src/css/tokens.css", hash: "0f6e93d7ca5fac48cec319cb893ddc7f7366e2190acbff3daaf1a4d5510ae868" },
   { url: "src/fonts/fraunces-600-latin.woff2", hash: "4b3f47b6e04b00a61545f0f51415af6097e04cc9bf8abe36634a1daf400c88ad" },
@@ -107,7 +107,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/ui/journey-panel.js", hash: "7d2389d5d31f2a34810f507c8f5e629b2e3ca374f393de008df54560a9da2cd8" },
   { url: "src/js/ui/lightbox.js", hash: "9d5c8fdd78162b6f70ee1b41ccf3f025211c679d53b0502d45f8c3503ba78650" },
   { url: "src/js/ui/memory-form.js", hash: "535c2f5e1e27d67bddcfd99d1256704eb445cc1c1e5bd60cd80caccda4311cb4" },
-  { url: "src/js/ui/memory-list.js", hash: "6c255711484742e2cb2be747cc9e511558f85edb67c76a8966a1ee73b584635b" },
+  { url: "src/js/ui/memory-list.js", hash: "f993564912affe6fd43ed84aad439857343376e454ed1f7fbb85b72410a74b7b" },
   { url: "src/js/ui/motion.js", hash: "4e44bcf163a2da5979f4fecb9fcad37ec49dba53b8e498a580b41741fc015307" },
   { url: "src/js/ui/object-urls.js", hash: "bd262bf69375cc135a2e2a037669c48f394cbf476f7e9d3c08b31136a3e6d2f6" },
   { url: "src/js/ui/offline-banner.js", hash: "a2e5a720f4b3b7ac93b8fe4d82c825e32644d4d371931ba647d42f2e6660f5c3" },

@@ -1,6 +1,7 @@
 import { formatMemoryDate } from './format-date.js';
 import { sortForList } from './sort-for-list.js';
 import { groupMemoriesByYear } from './group-by-year.js';
+import { dateRangeLabel } from '../filters/describe-filters.js';
 import { createIcon } from './icons.js';
 
 /* The fields a card actually shows. Anything else changing on a memory leaves its DOM
@@ -24,21 +25,37 @@ function element(tag, className) {
   return node;
 }
 
+/* Names what is excluding everything, in the words the chips use, so the message and the
+   chips above it describe the same thing. "the current filters" is true and useless: the
+   whole question is which of them. */
 function describeNoMatch(filters) {
   const reasons = [];
+  const query = filters?.query?.trim() ?? '';
 
-  if (filters?.tags?.length > 0) {
-    reasons.push(filters.tags.length === 1 ? 'that tag' : 'those tags');
+  if (query !== '') {
+    reasons.push('your search');
   }
-  if (filters?.from || filters?.to) {
-    reasons.push('that date range');
+
+  const tags = filters?.tags?.length ?? 0;
+  if (tags > 0) {
+    reasons.push(tags === 1 ? 'that tag' : 'those tags');
+  }
+
+  const range = dateRangeLabel(filters?.from, filters?.to);
+  if (range) {
+    reasons.push(range);
   }
 
   if (reasons.length === 0) {
-    return 'No memories match the current filters';
+    return 'Nothing matches the current filters.';
   }
 
-  return 'No memories match ' + reasons.join(' and ');
+  if (reasons.length === 1) {
+    return 'Nothing matches ' + reasons[0] + '.';
+  }
+
+  const last = reasons.pop();
+  return 'Nothing matches ' + reasons.join(', ') + ' and ' + last + ' together.';
 }
 
 function countLabel(shown, total) {
@@ -324,17 +341,19 @@ export function createMemoryList({
     }
 
     const message = element('span', 'empty-message');
-    /* The cause is not always the text box, so the message says which filters are in
-       play rather than quoting an empty query back at the user. */
-    message.textContent =
-      query.trim() === ''
-        ? describeNoMatch(filters)
-        : 'No memories match "' + query + '"';
+    /* The cause is named rather than the query quoted back: with a tag and a date range also
+       on, the text box is often not what emptied the list. */
+    message.textContent = describeNoMatch(filters);
     emptyElement.append(message);
 
-    const clear = element('button', 'button empty-clear');
+    /* The same label and the same shape as the one in the chips row, because it is the same
+       action. There used to be two, "Reset filters" and "Clear filters", visible together. */
+    const clear = element('button', 'button button-sm button-ghost empty-clear');
     clear.type = 'button';
-    clear.textContent = 'Clear filters';
+    clear.append(createIcon('undo', { size: 16 }));
+    const label = element('span', 'button-label');
+    label.textContent = 'Clear all';
+    clear.append(label);
     clear.addEventListener('click', () => onClearSearch());
     emptyElement.append(clear);
   }
