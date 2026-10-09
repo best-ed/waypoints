@@ -1195,6 +1195,27 @@ the earlier deletion simply stands; there is no undo stack. The toast region is
 
 ---
 
+## Branches
+
+**`main` is production.** It is what the live site serves and what real data lives against, so
+it only ever moves forward and it is never rewritten.
+
+| Branch | What it is | Pushes to |
+| --- | --- | --- |
+| `main` | production, and the only thing released | hotfixes only |
+| `ui-1.1` | the whole UI and UX run, merged into `main` at the 1.1.0 release | every commit of the run |
+
+- **A production hotfix goes on `main`**, is released from there, and is then merged **into**
+  `ui-1.1` so the branch carries the fix too.
+- **`ui-1.1` merges into `main` once**, at the release. Never the other way round as a rebase:
+  the branch is pushed, so rewriting it would break anyone who has it.
+- A merge, not a rebase, in both directions, for the same reason.
+- Conflicts between a hotfix and the run are resolved **in favour of the run's token system**.
+  A hotfix is written against whatever production has; the branch has moved past that, and the
+  branch is where the design decisions live.
+
+---
+
 ## Commit Rules
 
 **Non-negotiable:**
