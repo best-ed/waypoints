@@ -78,10 +78,12 @@
   color: var(--color-text);
 }
 
-/* Leaflet paints the wrapper and the tip white from its own sheet. In the dark theme that
-   left near-white body text on a white popup, at about 1.2:1, so the note was effectively
-   invisible while the tags and buttons - which carry their own colours - looked fine. The
-   surface has to come from the theme like every other panel. */
+/* Leaflet paints the wrapper and the tip white from its own stylesheet, and nothing here
+   overrode it. In the dark theme that left the theme's near-white body text on a white panel:
+   the title and the note measured 1.18:1 and the date 2.75:1 against the rendered pixels, so
+   a memory's note was effectively invisible. The tags and the action buttons carry their own
+   colours, which is what kept it hidden. Shipped in 1.0.1 against --color-surface; here it
+   takes the overlay surface and the elevation this branch gives every floating panel. */
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
   background-color: var(--color-surface-overlay);

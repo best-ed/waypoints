@@ -8,8 +8,6 @@
   the dark interface instead of glaring out of it. Pins, photos, popups and the journey line
   are untouched, and **Settings -> Dim the map in dark mode** turns it off. It is off entirely
   under forced colours, where the palette has already been decided.
-- The map popup took its surface from Leaflet rather than from the theme, so in dark mode it
-  was near-white text on a white panel: the title, date, place and note were all unreadable.
 
 ### Design
 
@@ -22,6 +20,20 @@
   longer look identical, and a photo's Remove button no longer covers the photo.
 - Boolean settings are switches.
 - Dialog actions stay on screen when the form is taller than the window.
+
+## 1.0.1 (2026-10-09)
+
+### Fixed
+
+- **A memory's popup was unreadable in dark mode.** Leaflet paints the popup's panel white
+  from its own stylesheet and nothing overrode it, so the theme's near-white text sat on
+  white: the title and the note measured 1.18:1 and the date 2.75:1. The tags and the
+  buttons carry their own colours and looked normal, which is what kept it from being
+  noticed. The popup takes its surface from the theme now, like every other panel.
+
+  The end-to-end suite measures the popup's text against the colour actually painted behind
+  it, in both themes. axe alone does not catch this: the popup floats over the map, so it
+  reports the contrast as incomplete rather than as a violation and the state passes clean.
 
 ## 1.0.0 (2026-10-07)
 
