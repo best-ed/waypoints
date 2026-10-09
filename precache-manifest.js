@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "bcc330ef3042";
+self.PRECACHE_VERSION = "2430cc0740ee";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -116,7 +116,8 @@ self.PRECACHE_FILES = [
   { url: "src/js/ui/sort-for-list.js", hash: "8693721d3afe17821ae1b023adad7a03f523dbaa238711ffd41b07152fd87f4d" },
   { url: "src/js/ui/tag-bar.js", hash: "7f0827a5524341c9c560e615f1b4c1d2f5e809e8ea2f32fcaf6ae998da74cdcf" },
   { url: "src/js/ui/theme.js", hash: "2f76d862c714ec79317a1ef3dbcf8c70098fc4a68ca8d6a6380d136ee391e896" },
-  { url: "src/js/ui/timeline-view.js", hash: "65ab98b946172b207bf63f9f4df53845b0c6fad26b51d1f65b393f120ece4f53" },
+  { url: "src/js/ui/timeline-scale.js", hash: "cfd84adefd12da9cbf36dc921e94dd78450f8ccc416d4c352a9922f5c777d2b9" },
+  { url: "src/js/ui/timeline-view.js", hash: "219d59eaf62ab7480cda9eca3c0a1dd2969994a87472f67b140a90f3a628e1cb" },
   { url: "src/js/ui/toast.js", hash: "a70abfd1ebe58dace7b6e721f0032c31841b5b8c8bd861c91e3f17d90c54f890" },
   { url: "src/js/ui/view-switch.js", hash: "14df1d56535dfed1144ea05058dddac539177f67ed00564ca7fd21892df9a02a" }
 ];
