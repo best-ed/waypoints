@@ -87,6 +87,40 @@ const STATES = {
     await expect(page.locator('#lightbox')).toBeVisible();
   },
 
+  /* The state that shipped broken in 1.0.0. Leaflet paints the popup wrapper white from its
+     own stylesheet, so in the dark theme the title and the note sat at 1.18:1 and the date at
+     2.75:1. axe's colour-contrast rule reads the painted background, which is what makes this
+     the right place to catch it: nothing about the tokens was wrong. */
+  async 'open popup'(page, { narrow }) {
+    await seedLibrary(page, [
+      memory('p', 'Ridge trail at the long rains', '2025-01-01', -1.29, 36.82, ['trail', 'rain'], {
+        note: 'Walked up from the gate in the afternoon and the cloud came in about an hour later.',
+        placeName: 'Ngong Hills, Kajiado'
+      })
+    ]);
+    await openApp(page);
+
+    const jpeg = await generatePhotoBytes(page);
+    if (narrow) await page.locator('#view-list').click();
+    await page.locator('.memory-list li button').first().click();
+    await page.locator('.leaflet-popup button', { hasText: 'Edit' }).click();
+    await page.locator('#memory-photo-input').setInputFiles({
+      name: 'generated.jpg',
+      mimeType: 'image/jpeg',
+      buffer: Buffer.from(jpeg, 'base64')
+    });
+    await expect(page.locator('#memory-photos img')).toHaveCount(1);
+    await page.locator('#memory-save').click();
+    await expect(page.locator('#memory-dialog')).toBeHidden();
+
+    if (narrow) await page.locator('#view-list').click();
+    await page.locator('.memory-list li button').first().click();
+    await expect(page.locator('.leaflet-popup')).toBeVisible();
+    /* The strip is filled lazily from Leaflet's contentupdate, so the popup is not finished
+       the moment it appears. */
+    await expect(page.locator('.popup-photo-button img')).toHaveCount(1);
+  },
+
   async journey(page, { narrow }) {
     await seedLibrary(page);
     await openApp(page);
@@ -112,6 +146,72 @@ for (const [name, reach] of Object.entries(STATES)) {
       });
     }
   }
+}
+
+/* axe is not enough for this one, and that is worth stating.
+
+   The popup floats over the map, so axe cannot be sure what is painted behind the text and
+   reports colour-contrast as *incomplete* rather than as a violation. Run against the broken
+   1.0.0 stylesheet the open-popup state above passes clean. So the contrast is measured here
+   directly: walk up for the first ancestor that actually paints a background, and compare.
+   That is what a reader sees, and it is what 1.0.0 got wrong. */
+for (const theme of THEMES) {
+  test(`the popup's own text is readable against what is painted behind it, ${theme}`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.emulateMedia({ colorScheme: theme });
+
+    await seedLibrary(page, [
+      memory('p', 'Ridge trail at the long rains', '2025-01-01', -1.29, 36.82, ['trail'], {
+        note: 'Walked up from the gate in the afternoon and the cloud came in about an hour later.',
+        placeName: 'Ngong Hills, Kajiado'
+      })
+    ]);
+    await openApp(page);
+    await page.locator('.memory-list li button').first().click();
+    await expect(page.locator('.leaflet-popup')).toBeVisible();
+
+    const measured = await page.evaluate(() => {
+      const channel = (value) => {
+        const c = value / 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+      };
+      const luminance = ([r, g, b]) => 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+      const parse = (value) => value.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number);
+      const ratio = (a, b) => {
+        const [x, y] = [luminance(parse(a)), luminance(parse(b))].sort((p, q) => q - p);
+        return (x + 0.05) / (y + 0.05);
+      };
+
+      const painted = (node) => {
+        for (let el = node; el && el !== document.documentElement; el = el.parentElement) {
+          const background = getComputedStyle(el).backgroundColor;
+          if (background && !background.startsWith('rgba(0, 0, 0, 0)') && background !== 'transparent') {
+            return background;
+          }
+        }
+        return null;
+      };
+
+      return ['.popup-title', '.popup-date', '.popup-place', '.popup-note'].map((selector) => {
+        const node = document.querySelector(selector);
+        if (!node) return { selector, missing: true };
+        const background = painted(node);
+        const colour = getComputedStyle(node).color;
+        return {
+          selector,
+          colour,
+          background,
+          ratio: background ? Number(ratio(colour, background).toFixed(2)) : null
+        };
+      });
+    });
+
+    for (const entry of measured) {
+      expect(entry.missing, entry.selector + ' is not in the popup').toBeFalsy();
+      expect(entry.background, entry.selector + ' sits on nothing painted').toBeTruthy();
+      expect(entry.ratio, JSON.stringify(entry)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
 }
 
 test('the page keeps exactly one main landmark however it is laid out', async ({ page }) => {

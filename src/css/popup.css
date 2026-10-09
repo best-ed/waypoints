@@ -74,6 +74,17 @@
   color: var(--color-text);
 }
 
+/* Leaflet paints the wrapper and the tip white from its own stylesheet, and nothing here
+   overrode it. In the dark theme that left the theme's near-white body text on a white panel:
+   the title and the note measured 1.18:1 and the date 2.75:1, so a memory's note was
+   effectively invisible. The tags and the action buttons carry their own colours, which is
+   what kept it hidden. The surface has to come from the theme like every other panel. */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
 .leaflet-popup-content-wrapper {
   border-radius: var(--radius-md);
 }

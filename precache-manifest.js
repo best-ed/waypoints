@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "9aba9c3e694b";
+self.PRECACHE_VERSION = "9ec7b8cd5a51";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -29,13 +29,13 @@ self.PRECACHE_FILES = [
   { url: "src/css/mobile.css", hash: "b7ae7cd83000e64324d544f8f54992ceb9fb6e2a872d3bc6a90b6f856af352c2" },
   { url: "src/css/offline.css", hash: "4872716544f7a7e501707f593fed4222984a1d09846f953cc1d152c79650b1d6" },
   { url: "src/css/place-search.css", hash: "cb610871a241dd726637d37a21669d873db3d80de1fa70dfa7f504987b3e1c93" },
-  { url: "src/css/popup.css", hash: "3207f10062ca639a23bb672b7b0a993fe0bafa7e8eeb3133bf6e3b700e1f7a6b" },
+  { url: "src/css/popup.css", hash: "f6d4fba0b1668c3d2d66a61a9ad25e7d144c8ddcba186e761b173f50359af0f6" },
   { url: "src/css/sandbox.css", hash: "0c3917834f577b989675f3038167ef15b015d7dcd489b45add9356e9c4ea8974" },
   { url: "src/css/settings.css", hash: "4af67c9a6097302134a4702f6f657bd1de0b2ade82c00fdbc0b5f7d43ccc9db9" },
   { url: "src/css/sidebar.css", hash: "54453021a4181df7cc6633f909f8573dd0d1495904bedec9217bef7c9fba7c5d" },
   { url: "src/css/toast.css", hash: "e83344bff53a8385046c212132737df2ed7d422e3b298b5c0045941a9418b4ff" },
   { url: "src/css/tokens.css", hash: "c44ea327495fe8100c1ef8e7a554bd4b02b17e2ab61e24d27ddf0fa1fbf589e6" },
-  { url: "src/js/config.js", hash: "cb29c61d39ea18431730b49d219f786ca50a37f61078ba421e1224c0c9e8d486" },
+  { url: "src/js/config.js", hash: "6623c938209caf8d50d482ee6747b803796acf5c396f573ab201827bc7d79ce2" },
   { url: "src/js/data/errors.js", hash: "cf37f88d48b6510f784f3ebbae55121fb426025080aff4f7f9901625ef285310" },
   { url: "src/js/data/make-id.js", hash: "540be621332cd51f8c6ecf66afe2a97e4b83a285d5ef42ab9416572bb348e70f" },
   { url: "src/js/data/memory-store.js", hash: "7c3aa1f1eebf0ce8342d54297f4c2d7844f94b0c7039f7f55ec12bc360f66034" },
