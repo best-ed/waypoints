@@ -154,9 +154,19 @@ export async function openDetail(page, { narrow = false, index = 0 } = {}) {
   }
 
   await page.locator('.memory-list li button').nth(index).click();
-  await expect(page.locator('.leaflet-popup')).toBeVisible();
-  await page.locator('.popup-open').click();
   await expect(page.locator('#memory-detail')).toBeVisible();
+}
+
+/* A popup, which is now reached from the map rather than from the list. Seed one memory, or
+   two far enough apart not to cluster: a pin under a cluster is a slow and flaky way in to
+   something that is not what the test is about. */
+export async function openPopup(page, { narrow = false, index = 0 } = {}) {
+  if (narrow) {
+    await page.locator('#view-map').click();
+  }
+
+  await page.locator('.leaflet-marker-icon').nth(index).click();
+  await expect(page.locator('.leaflet-popup')).toBeVisible();
 }
 
 /* Mocks a place search. Added after the guard route in the fixture, so it wins. */

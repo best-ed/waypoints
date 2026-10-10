@@ -182,7 +182,9 @@
     <main class="app-body">
       <aside id="sidebar" class="sidebar" aria-labelledby="sidebar-heading">
         <div class="sidebar-header">
-          <h2 id="sidebar-heading" class="sidebar-heading">Memories</h2>
+          <!-- tabindex="-1" so closing the detail view has somewhere to put focus when the
+               card it was opened from is no longer in the list. -->
+          <h2 id="sidebar-heading" class="sidebar-heading" tabindex="-1">Memories</h2>
 
           <div id="sidebar-controls" class="sidebar-controls">
           <div class="search">

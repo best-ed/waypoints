@@ -46,7 +46,7 @@ import { createEmptyLibrary } from './ui/empty-library.js';
 import { createPlacementHint } from './ui/placement-hint.js';
 import { createSidebarToggle } from './ui/sidebar-toggle.js';
 import { applyIcons, createIcon } from './ui/icons.js';
-import { createViewSwitch, LIST_VIEW, MAP_VIEW } from './ui/view-switch.js';
+import { createViewSwitch, LIST_VIEW } from './ui/view-switch.js';
 import { prefersReducedMotion } from './ui/motion.js';
 import { createMemoryForm } from './ui/memory-form.js';
 import { createSettingsDialog } from './ui/settings-dialog.js';
@@ -200,7 +200,7 @@ function boot() {
     iconCreateFunction: createClusterIcon,
     renderPopup: (memory) =>
       buildPopupContent(memory, {
-        onOpen: () => openDetail(memory.id),
+        onOpen: () => openDetail(memory.id, { origin: 'map' }),
         onClose: () => closePopupFor(memory.id)
       }),
     /* The photo strip is filled from onPopupContent, not here: Leaflet rebuilds the content
@@ -287,6 +287,13 @@ function boot() {
       return;
     }
 
+    /* The detail view is reading a memory the list behind it no longer holds, so Previous and
+       Next have nowhere to go and Back would return to a list without it. Closed for the same
+       reason the selection is cleared. */
+    if (detail.openId() === id) {
+      closeDetail();
+    }
+
     const marker = markers.getMarker(id);
     if (marker) {
       marker.closePopup();
@@ -318,6 +325,12 @@ function boot() {
     dateRange.render(current, { visible: memories.length > 0 });
     timeline.render(timelineBuckets(memories, current), current, distinctDateCount(memories));
     summary.render(visible.length, memories.length, current);
+
+    /* The list has just been rebuilt, so the order Previous and Next step through is not the
+       one the view was opened with. */
+    if (detail.isOpen()) {
+      detail.setNeighbours(detailNeighbours(detail.openId()));
+    }
 
     /* After markers.sync, so every stop already has a marker to number and fly to. */
     renderJourney(visible);
@@ -425,11 +438,34 @@ function boot() {
     return findNeighbours(list.getOrder(), id);
   }
 
-  function openDetail(id) {
+  /* Where focus goes when the view closes. Held rather than worked out at the time, because
+     by then the only thing that knows where the reader came from is gone: a memory opened
+     from its pin should hand focus back to the pin, and one opened from the list to its card.
+     A card that a delete or a filter has taken away falls back to the list's own heading,
+     which is why that heading carries tabindex="-1". */
+  let detailOrigin = 'list';
+
+  function restoreFocusAfterDetail(id) {
+    if (detailOrigin === 'map') {
+      const element = markerElement(id);
+      if (element) {
+        element.focus();
+        return;
+      }
+    }
+
+    if (!list.focusItem(id)) {
+      document.getElementById('sidebar-heading').focus();
+    }
+  }
+
+  function openDetail(id, { origin = 'list' } = {}) {
     const memory = store.get(id);
     if (!memory) {
       return;
     }
+
+    detailOrigin = origin;
 
     /* The popup is a preview of what this view now shows in full, so it has done its job.
        Closed before the selection is set, never after: popupclose clears the selection if
@@ -444,7 +480,11 @@ function boot() {
   }
 
   function closeDetail() {
-    detail.close();
+    const closed = detail.close();
+
+    if (closed !== null) {
+      restoreFocusAfterDetail(closed);
+    }
   }
 
   /* Each action reads the open id rather than closing over one, so a row of four static
@@ -715,26 +755,20 @@ function boot() {
   }
   store.subscribe(renderAll);
 
-  function selectFromList(id) {
-    const marker = markers.getMarker(id);
-    if (!marker) {
-      return;
-    }
+  /* A card opens the memory. It used to fly the map and open a popup instead, which was the
+     only thing a click could do when the popup was the whole of a memory; now that there is
+     a view holding all of it, flying somewhere is one of the things that view offers rather
+     than the price of looking at anything. The map is left where it is, and Show on map is
+     there for when moving it is what was wanted.
 
-    /* Picking something in the list on a narrow screen means wanting to see it on the map, so
-       the view follows. The map is shown before focusMarker runs, because flying to a marker
-       on a map of the wrong size lands in the wrong place. */
-    if (viewSwitch.isNarrow() && viewSwitch.current() === LIST_VIEW) {
-      viewSwitch.showMap();
-    }
+     The pin still highlights, through the selection state openDetail sets, so the map says
+     which memory is open even though it has not moved. */
+  function selectFromList(id) {
     if (journeyActive && id !== currentStopId()) {
       pauseForInteraction();
     }
-    selection.select(id);
-    focusMarker(map, marker, {
-      reducedMotion: prefersReducedMotion(),
-      clusterGroup: markers.clusterGroup()
-    });
+
+    openDetail(id, { origin: 'list' });
   }
 
   const form = createMemoryForm({

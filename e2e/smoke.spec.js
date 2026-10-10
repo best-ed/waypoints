@@ -3,6 +3,7 @@ import {
   expect,
   openApp,
   openDetail,
+  openPopup,
   seedLibrary,
   mockNominatim,
   generatePhotoBytes,
@@ -144,7 +145,7 @@ test('a photo survives a reload, on whichever engine is running', async ({ page 
 
   /* The popup shows the thumb as a cover, and the detail view shows the photo itself. Both
      come out of the same record, so both are checked here. */
-  await page.locator('.memory-list li button').first().click();
+  await openPopup(page);
   const cover = page.locator('.popup-cover-image');
   await expect(cover).toBeVisible();
   expect(await cover.evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);

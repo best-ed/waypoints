@@ -5,6 +5,7 @@ import {
   expect,
   openApp,
   openDetail,
+  openPopup,
   seedLibrary,
   mockNominatim,
   generatePhotoBytes,
@@ -135,9 +136,7 @@ const STATES = {
     await expect(page.locator('#memory-dialog')).toBeHidden();
 
     await page.locator('#detail-back').click();
-    if (narrow) await page.locator('#view-list').click();
-    await page.locator('.memory-list li button').first().click();
-    await expect(page.locator('.leaflet-popup')).toBeVisible();
+    await openPopup(page, { narrow });
     /* The cover is filled lazily from Leaflet's contentupdate, so the popup is not finished
        the moment it appears. */
     await expect(page.locator('.popup-cover-image')).toBeVisible();
@@ -193,8 +192,7 @@ for (const theme of THEMES) {
       })
     ]);
     await openApp(page);
-    await page.locator('.memory-list li button').first().click();
-    await expect(page.locator('.leaflet-popup')).toBeVisible();
+    await openPopup(page);
 
     const measured = await page.evaluate(() => {
       const channel = (value) => {
