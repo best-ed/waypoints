@@ -165,7 +165,12 @@ export async function openPopup(page, { narrow = false, index = 0 } = {}) {
     await page.locator('#view-map').click();
   }
 
-  await page.locator('.leaflet-marker-icon').nth(index).click();
+  /* Dispatched rather than clicked at a point. Where a pin lands depends on where the map
+     centred itself on whatever was seeded, and at 1280 that is often underneath the sidebar;
+     a real click there is intercepted and the test fails for a reason that has nothing to do
+     with what it is testing. Leaflet binds an ordinary click listener to the icon element, so
+     this reaches it. */
+  await page.locator('.leaflet-marker-icon').nth(index).dispatchEvent('click');
   await expect(page.locator('.leaflet-popup')).toBeVisible();
 }
 

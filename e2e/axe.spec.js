@@ -142,6 +142,41 @@ const STATES = {
     await expect(page.locator('.popup-cover-image')).toBeVisible();
   },
 
+  /* The memory, in full, where the list was. Audited with photos because the hero and the
+     strip are the parts that carry images and buttons around them. */
+  async 'detail with photos'(page, { narrow }) {
+    await seedLibrary(page, [
+      memory('p', 'Ridge trail at the long rains', '2025-01-01', -1.29, 36.82, ['trail', 'rain'], {
+        note: 'Walked up from the gate in the afternoon and the cloud came in about an hour later.',
+        placeName: 'Ngong Hills, Kajiado'
+      })
+    ]);
+    await openApp(page);
+
+    const jpeg = await generatePhotoBytes(page);
+    await openDetail(page, { narrow });
+    await page.locator('#detail-edit').click();
+    await page.locator('#memory-photo-input').setInputFiles([
+      { name: 'one.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(jpeg, 'base64') },
+      { name: 'two.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(jpeg, 'base64') }
+    ]);
+    await expect(page.locator('#memory-photos img')).toHaveCount(2);
+    await page.locator('#memory-save').click();
+    await expect(page.locator('#memory-dialog')).toBeHidden();
+
+    await expect(page.locator('.detail-hero-button img')).toBeVisible();
+    await expect(page.locator('.detail-thumb-button')).toHaveCount(2);
+  },
+
+  /* And without, where there is no hero at all rather than a frame around nothing, and
+     Previous is aria-disabled at the top of the list. */
+  async 'detail without photos'(page, { narrow }) {
+    await seedLibrary(page);
+    await openApp(page);
+    await openDetail(page, { narrow });
+    await expect(page.locator('#detail-title')).toBeVisible();
+  },
+
   async journey(page, { narrow }) {
     await seedLibrary(page);
     await openApp(page);
