@@ -305,6 +305,28 @@ test('photos open the lightbox at the one that was pressed', async ({ page }) =>
   await expect(page.locator('#lightbox-position')).toHaveText('2 of 2');
 });
 
+test('Show on map gives the map back first on a narrow screen', async ({ page }) => {
+  /* The bug this guards: closing the view goes back through history, which is asynchronous,
+     while the map pane stays display:none until the view is actually gone. The fly ran against
+     a Leaflet map with no size, which prunes every marker and goes nowhere: no pin, no popup,
+     and a blank map where the memory should have been. */
+  await page.setViewportSize({ width: 375, height: 760 });
+  await seedLibrary(page, [memory('only', 'Somewhere worth seeing', '2025-01-01', -1.29, 36.82)]);
+  await openApp(page);
+
+  await openDetail(page, { narrow: true });
+  await page.locator('#detail-show').click();
+
+  await expect(page.locator('#memory-detail')).toBeHidden();
+  await expect(page.locator('#map')).toBeVisible();
+  await expect(page.locator('.leaflet-marker-icon')).toHaveCount(1);
+  await expect(page.locator('.leaflet-popup')).toBeVisible();
+  await expect(page.locator('.popup-title')).toHaveText('Somewhere worth seeing');
+
+  /* And it did not push the reader out of the app on the way: Back still has the list. */
+  expect(await page.evaluate(() => window.location.search)).toBe('');
+});
+
 test('stepping quickly through memories does not hoard object URLs', async ({ page }) => {
   /* Every render reads blobs out of IndexedDB, and a read that lands after Next has moved on
      belongs to a view that is no longer on screen. Without the guard it would still create a

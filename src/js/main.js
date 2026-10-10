@@ -495,7 +495,7 @@ function boot() {
 
   /* The close itself. Everything that actually takes the view off screen comes through here,
      whether the request came from a button, from Escape or from the browser's own Back. */
-  function finishCloseDetail() {
+  function finishCloseDetail({ restoreFocus = true } = {}) {
     const closed = detail.close();
 
     if (closed === null) {
@@ -507,7 +507,10 @@ function boot() {
        filter changed while the view was open was replaced onto this entry, not the one
        behind it, so the entry we have just returned to can be out of date. */
     writeUrl();
-    restoreFocusAfterDetail(closed);
+
+    if (restoreFocus) {
+      restoreFocusAfterDetail(closed);
+    }
   }
 
   /* A close request. If opening pushed an entry, the honest way out is back through it, so
@@ -540,12 +543,28 @@ function boot() {
 
   /* On a narrow screen the detail view is the whole screen, so anything that happens on the
      map has to give it back first. On a wide one the map is already there beside it and the
-     view stays open. */
+     view stays open.
+
+     Closed here rather than through closeDetail, because that one goes back through history
+     and history is asynchronous: the map pane is display:none until the view is gone, and a
+     Leaflet map with no size prunes every marker and flies nowhere. So the view comes off
+     first and the entry we pushed is dropped afterwards. Focus is left alone on this path -
+     it is about to go to the pin, and sending it to a card in a list that is on its way off
+     screen would only put it on the body. */
   function leaveDetailForMap() {
-    if (viewSwitch.isNarrow()) {
-      closeDetail();
-      viewSwitch.showMap();
+    if (!viewSwitch.isNarrow()) {
+      return;
     }
+
+    const pushed = detailPushed;
+
+    finishCloseDetail({ restoreFocus: false });
+
+    if (pushed) {
+      window.history.back();
+    }
+
+    viewSwitch.showMap();
   }
 
   function refreshDetail(id) {
@@ -590,6 +609,12 @@ function boot() {
         reducedMotion: prefersReducedMotion(),
         clusterGroup: markers.clusterGroup()
       });
+
+      /* The pin, if it has an element: on a narrow screen the control that was pressed has
+         just gone with the view, and focus would otherwise fall to the body. A clustered pin
+         has no element until the reveal finishes, in which case there is nothing to focus and
+         the popup is what carries the reader on. */
+      markerElement(id)?.focus();
     });
   });
 
