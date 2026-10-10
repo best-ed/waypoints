@@ -97,7 +97,13 @@ export const ICONS = Object.freeze({
     ['path', 'M4.5 5l15 14']
   ],
 
-  chevron: [['path', 'M9.5 5.5l6.5 6.5-6.5 6.5']]
+  chevron: [['path', 'M9.5 5.5l6.5 6.5-6.5 6.5']],
+
+  /* A full arrow rather than the chevron turned round. The chevron is the disclosure marker
+     and it earns its meaning by always pointing at what opens; a shaft says "go back there",
+     which is a different thing and deserves a different glyph. The head meets the shaft on
+     the same pixel so nothing shows through the join at 14px. */
+  back: [['path', 'M19.5 12H5'], ['path', 'M10.5 6.5L5 12l5.5 5.5']]
 });
 
 export const ICON_NAMES = Object.freeze(Object.keys(ICONS));

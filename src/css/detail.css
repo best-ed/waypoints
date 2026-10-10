@@ -1,0 +1,91 @@
+/* The detail view. It takes the sidebar's place rather than floating over it, which is why
+   there is no scrim, no elevation and no shadow here: nothing is above anything else. A
+   dialog would have been easier and wrong - a memory is not a decision to confirm, it is the
+   thing the app is for, and reading it should not black out the map it sits on. */
+
+.detail {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  background-color: var(--color-surface);
+}
+
+/* Pinned, so Back and the two step buttons stay reachable however long the note is. The
+   border is the only thing separating it from the content, as with the sidebar header. */
+.detail-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.detail-steps {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.detail-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.detail-title {
+  margin: 0;
+  padding: var(--space-4) var(--space-4) var(--space-0);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-display);
+  line-height: var(--line-tight);
+  /* A title can be one long unbroken word, and the sidebar is narrow. */
+  overflow-wrap: anywhere;
+}
+
+/* The heading takes focus when the view opens, so it needs a focus ring of its own: without
+   one, a keyboard reader is told where they are and shown nothing. */
+.detail-title:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ---- what the detail replaces ------------------------------------------------ */
+
+/* While a memory is open the list and everything above it are gone. Hidden rather than
+   unmounted, so the scroll position of the list, the open filters panel and the search box
+   are all exactly as they were when Back comes back to them. */
+body[data-detail] .sidebar-header,
+body[data-detail] .memory-list,
+body[data-detail] .sidebar-empty {
+  display: none;
+}
+
+/* The sidebar stops being a column beside the map and becomes the page the memory is on.
+   Written against .app-body rather than straight at .sidebar so it outranks the narrow
+   rules in mobile.css by specificity rather than by which stylesheet happens to load last. */
+@media (max-width: 720px) {
+  body[data-detail] .app-body .sidebar {
+    display: flex;
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    border-right: none;
+  }
+
+  body[data-detail] .app-body .app-main {
+    display: none;
+  }
+
+  /* Nothing to switch between while one memory is open. display rather than the hidden
+     attribute, because the attribute belongs to the view switch itself: it uses it to take
+     the control off a wide screen, and the two must not fight over the same property. */
+  body[data-detail] #view-switch {
+    display: none;
+  }
+}

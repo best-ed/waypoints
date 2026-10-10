@@ -41,7 +41,7 @@ function fakeDocument() {
 const REQUIRED = [
   'add', 'settings', 'search', 'close', 'map', 'list', 'filter', 'calendar', 'tag', 'photo',
   'pin', 'route', 'play', 'pause', 'previous', 'next', 'undo', 'export', 'import', 'offline',
-  'chevron'
+  'chevron', 'back'
 ];
 
 test('every icon the app uses is in the set', () => {

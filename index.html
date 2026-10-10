@@ -100,6 +100,7 @@
     <link rel="stylesheet" href="src/css/sandbox.css" />
     <link rel="stylesheet" href="src/css/offline.css" />
     <link rel="stylesheet" href="src/css/settings.css" />
+    <link rel="stylesheet" href="src/css/detail.css" />
     <link rel="stylesheet" href="src/css/mobile.css" />
     <!-- Last, so its system colours win over every component sheet. -->
     <!-- Scoped, because every rule in this file is already inside @media (forced-colors:
@@ -336,6 +337,54 @@
 
         <!-- tabindex="-1" so the skip link can actually land focus on it. -->
       <div id="memory-list" class="memory-list" tabindex="-1"></div>
+
+        <!--
+          The detail view. It lives in the sidebar region and replaces the list while it is
+          open, so a memory is read where it was found rather than in a dialog over the map.
+          On a narrow screen it takes the place of both panes and the Map/List switch goes
+          with them: there is nothing to switch between while one memory is open.
+        -->
+        <section id="memory-detail" class="detail" aria-labelledby="detail-title" hidden>
+          <div class="detail-header">
+            <button
+              id="detail-back"
+              class="button button-sm button-ghost detail-back"
+              type="button"
+              data-icon="back"
+              data-icon-size="16"
+            >
+              <span class="button-label">Back to list</span>
+            </button>
+
+            <!--
+              Previous and Next step through the filtered list in its own order, newest
+              first. aria-disabled rather than disabled at the ends, for the same reason the
+              journey controls use it: a disabled button leaves the tab order, which would
+              drop focus the moment stepping to the last memory disabled the button just
+              pressed.
+            -->
+            <div class="detail-steps" role="group" aria-label="Step through the memories">
+              <button
+                id="detail-previous"
+                class="button button-sm icon-only"
+                type="button"
+                data-icon="previous"
+                data-icon-size="16"
+                aria-label="Previous memory"
+              ></button>
+              <button
+                id="detail-next"
+                class="button button-sm icon-only"
+                type="button"
+                data-icon="next"
+                data-icon-size="16"
+                aria-label="Next memory"
+              ></button>
+            </div>
+          </div>
+
+          <div id="detail-content" class="detail-content"></div>
+        </section>
       </aside>
 
       <div class="app-main">

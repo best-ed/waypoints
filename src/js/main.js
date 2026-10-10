@@ -40,6 +40,8 @@ import { createJourneyPanel } from './ui/journey-panel.js';
 import { createJourneyControls } from './ui/journey-controls.js';
 import { createMemoryList } from './ui/memory-list.js';
 import { createThumbnailOwner } from './ui/thumbnail-owner.js';
+import { createDetailView } from './ui/detail-view.js';
+import { findNeighbours } from './ui/neighbours.js';
 import { createEmptyLibrary } from './ui/empty-library.js';
 import { createPlacementHint } from './ui/placement-hint.js';
 import { createSidebarToggle } from './ui/sidebar-toggle.js';
@@ -399,6 +401,53 @@ function boot() {
 
   let journeyActive = false;
   let journeyStops = [];
+
+  const detail = createDetailView({
+    sectionElement: document.getElementById('memory-detail'),
+    contentElement: document.getElementById('detail-content'),
+    backButton: document.getElementById('detail-back'),
+    previousButton: document.getElementById('detail-previous'),
+    nextButton: document.getElementById('detail-next'),
+    onBack: () => closeDetail(),
+    onPrevious: () => stepDetail('previous'),
+    onNext: () => stepDetail('next'),
+    isBlocked: () => placement.isActive() || moveMode.isMoving()
+  });
+
+  /* The list's order, which is the filtered set newest first: stepping out of it would land
+     on a memory the list behind this view does not even show. */
+  function detailNeighbours(id) {
+    return findNeighbours(list.getOrder(), id);
+  }
+
+  function openDetail(id) {
+    const memory = store.get(id);
+    if (!memory) {
+      return;
+    }
+
+    /* The marker highlights while the detail is open, through the same selection state the
+       list and the map already share. */
+    selection.select(id);
+    detail.open(memory);
+    detail.setNeighbours(detailNeighbours(id));
+  }
+
+  function closeDetail() {
+    detail.close();
+  }
+
+  function stepDetail(direction) {
+    const id = detail.openId();
+    if (!id) {
+      return;
+    }
+
+    const next = detailNeighbours(id)[direction];
+    if (next) {
+      openDetail(next);
+    }
+  }
 
   const emptyLibrary = createEmptyLibrary({
     controlsElement: document.getElementById('sidebar-controls'),
