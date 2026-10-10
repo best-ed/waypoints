@@ -22,6 +22,7 @@ import { createSelection } from './ui/selection.js';
 import { createFilterState } from './filters/filter-state.js';
 import { applyFilters } from './filters/apply-filters.js';
 import { serializeFilters, parseFilters } from './filters/filter-url.js';
+import { parseMemoryId, withMemoryId } from './filters/memory-url.js';
 import { createSearchInput } from './ui/search-input.js';
 import { createTagBar } from './ui/tag-bar.js';
 import { createDateRange } from './ui/date-range.js';
@@ -477,12 +478,14 @@ function boot() {
     selection.select(id);
     detail.open(memory);
     detail.setNeighbours(detailNeighbours(id));
+    writeUrl();
   }
 
   function closeDetail() {
     const closed = detail.close();
 
     if (closed !== null) {
+      writeUrl();
       restoreFocusAfterDetail(closed);
     }
   }
@@ -717,16 +720,24 @@ function boot() {
 
   map.on('dragstart', pauseForInteraction);
 
-  /* replaceState, not pushState: filtering is not navigation, and a history entry per
-     keystroke would bury whatever page the user arrived from. */
-  function writeFiltersToUrl(current) {
-    const search = buildSearch(serializeFilters(current).toString(), { sandbox, sw: swFlag });
+  /* The whole of the view, in one string: what is being filtered on, which memory is open,
+     and the bare flags that must survive every rewrite. Built in one place so a filter change
+     cannot drop the open memory and opening a memory cannot drop the filters.
 
-    window.history.replaceState(null, '', window.location.pathname + search);
+     replaceState, not pushState: filtering is not navigation, and a history entry per
+     keystroke would bury whatever page the user arrived from. */
+  function currentSearch() {
+    const params = withMemoryId(serializeFilters(filters.getFilters()), detail.openId());
+
+    return buildSearch(params.toString(), { sandbox, sw: swFlag });
   }
 
-  filters.subscribe((current) => {
-    writeFiltersToUrl(current);
+  function writeUrl() {
+    window.history.replaceState(null, '', window.location.pathname + currentSearch());
+  }
+
+  filters.subscribe(() => {
+    writeUrl();
     /* A filter change rebuilds the journey, so the position in the old one means nothing.
        Back to idle rather than resuming at a stop that may not even be in it any more. */
     playback.reset();
@@ -746,6 +757,19 @@ function boot() {
   filtersPanel.start(filters.getFilters());
 
   rerender();
+
+  /* ?memory=<id> opens that memory, after the first render because what can be opened is what
+     the list is showing: the same URL can carry filters, and a memory those filters exclude
+     has no place in the order Previous, Next and Back all read from. An id that is unknown,
+     deleted or filtered out is dropped from the URL rather than reported - a URL is edited,
+     shared and half-remembered, and none of that is an error anyone can act on. */
+  const openFromUrl = parseMemoryId(window.location.search);
+
+  if (openFromUrl && list.getOrder().includes(openFromUrl)) {
+    openDetail(openFromUrl, { origin: 'list' });
+  } else if (openFromUrl) {
+    writeUrl();
+  }
 
   /* On a phone with nothing saved, the map is empty and the welcome is in the other pane, so
      the first thing a new person sees is a blank map and no explanation. Only at boot, so it
