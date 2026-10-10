@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "682778346ec8";
+self.PRECACHE_VERSION = "0df87aca891f";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -54,6 +54,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/filters/filter-state.js", hash: "f53e3433eef51fbed0a89ba7631457da4ff9e5fc60c80b20c068bbffd2f88225" },
   { url: "src/js/filters/filter-url.js", hash: "fae86eccda28c67f1cd675392902497f39a5ab58b8decf3713263cb37064b4a7" },
   { url: "src/js/filters/match-memory.js", hash: "d12af7c8029d6a47fc7d16d916fd76da93d98a3a2df92baa7bec5bb18c52210e" },
+  { url: "src/js/filters/memory-url.js", hash: "9086394b299e2605457d5f83a03fbad67888266666973811712b21c45ba3586e" },
   { url: "src/js/filters/tag-counts.js", hash: "913e67abd89c9a149db8806b3ce8c41b8796260022264b765cd1e86cc40896d5" },
   { url: "src/js/filters/timeline.js", hash: "fa8ec823de9fbcfb0c50d41bcc2dd3e5839b145a38f376542f0ca394bfb12d5e" },
   { url: "src/js/geo/nominatim-client.js", hash: "ef7ca1dc906601f50984e4a46f97a23969b693d5d0a48194d4b1dbbb4450a61d" },
@@ -98,7 +99,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/ui/filter-summary.js", hash: "a40770f8fc2ab236b9f1e0258e5930b47cce2d4a4d675a59dea527e7fbcbb4cd" },
   { url: "src/js/ui/filters-panel.js", hash: "a830fe0e83e907dc3064d217a24e9fb4f41e8dbd7cde45a97a218703b547295f" },
   { url: "src/js/ui/form-values.js", hash: "6cf62731f06a8763c69480b7f3f9dca738cc3c271bf38117c0d33d2fbd661bd7" },
-  { url: "src/js/ui/format-date.js", hash: "0f2fb6967dfe67c4a2684e9eff6f94c6d4933f8e2067661d1cc9562a9996dbcd" },
+  { url: "src/js/ui/format-date.js", hash: "cbcafd5c11ac865aab20d802718d074caa122370e33e2d5e72e0f7d4db6e3994" },
   { url: "src/js/ui/group-by-year.js", hash: "5b3b3bcddc0a0881510d03ec04d5adf2bffc47760709acd1b9c27b403492e283" },
   { url: "src/js/ui/icons.js", hash: "5cfe3a46043938c5b351ef427cefa65705565f11ef9bfb083b242a1760ab4465" },
   { url: "src/js/ui/import-dialog.js", hash: "13a51a9a04a0cdf4dd2e13b0a8e3cc3f5e8e637088a16a62b9b199f35a211f9c" },
@@ -109,6 +110,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/ui/memory-form.js", hash: "535c2f5e1e27d67bddcfd99d1256704eb445cc1c1e5bd60cd80caccda4311cb4" },
   { url: "src/js/ui/memory-list.js", hash: "f993564912affe6fd43ed84aad439857343376e454ed1f7fbb85b72410a74b7b" },
   { url: "src/js/ui/motion.js", hash: "4e44bcf163a2da5979f4fecb9fcad37ec49dba53b8e498a580b41741fc015307" },
+  { url: "src/js/ui/neighbours.js", hash: "96778c9dc42343fa5e812f5267a495954918a3c15635d856bf7bcd22430463ce" },
   { url: "src/js/ui/object-urls.js", hash: "bd262bf69375cc135a2e2a037669c48f394cbf476f7e9d3c08b31136a3e6d2f6" },
   { url: "src/js/ui/offline-banner.js", hash: "a2e5a720f4b3b7ac93b8fe4d82c825e32644d4d371931ba647d42f2e6660f5c3" },
   { url: "src/js/ui/photo-picker.js", hash: "061fe01289a3fb4c34c66128533fad4a6100bce529560b51ec949ca5e8dcf6f3" },
