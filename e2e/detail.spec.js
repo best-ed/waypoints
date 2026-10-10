@@ -327,6 +327,44 @@ test('Show on map gives the map back first on a narrow screen', async ({ page })
   expect(await page.evaluate(() => window.location.search)).toBe('');
 });
 
+test('Show on map lands the pin in the middle, not against the edge', async ({ page }) => {
+  /* The fly has to be allowed to finish. Leaflet 1.9 pans the map when a marker takes focus
+     (Marker._panOnFocus), so focusing the pin on the way there cancels the animation and
+     leaves it at the edge of the map with its popup running off the side. */
+  await seedLibrary(page, [
+    memory('a', 'Over here', '2025-01-01', -1.3521, 36.6412),
+    memory('b', 'Over there', '2024-01-01', -1.2864, 36.8172)
+  ]);
+  await openApp(page);
+
+  await openDetail(page);
+  await page.locator('#detail-show').click();
+  await expect(page.locator('.leaflet-popup')).toBeVisible();
+
+  /* Settled, because flyTo animates and the assertion is about where it ended up. */
+  await page.waitForFunction(
+    () => {
+      const popup = document.querySelector('.leaflet-popup');
+      if (!popup) return false;
+      const left = popup.getBoundingClientRect().left;
+      const settled = window.__lastLeft === left;
+      window.__lastLeft = left;
+      return settled;
+    },
+    null,
+    { timeout: 10000 }
+  );
+
+  const placed = await page.evaluate(() => {
+    const map = document.getElementById('map').getBoundingClientRect();
+    const popup = document.querySelector('.leaflet-popup').getBoundingClientRect();
+    return { mapLeft: map.left, mapRight: map.right, popupLeft: popup.left, popupRight: popup.right };
+  });
+
+  expect(placed.popupLeft, JSON.stringify(placed)).toBeGreaterThanOrEqual(placed.mapLeft);
+  expect(placed.popupRight, JSON.stringify(placed)).toBeLessThanOrEqual(placed.mapRight);
+});
+
 test('stepping quickly through memories does not hoard object URLs', async ({ page }) => {
   /* Every render reads blobs out of IndexedDB, and a read that lands after Next has moved on
      belongs to a view that is no longer on screen. Without the guard it would still create a

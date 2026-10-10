@@ -610,11 +610,14 @@ function boot() {
         clusterGroup: markers.clusterGroup()
       });
 
-      /* The pin, if it has an element: on a narrow screen the control that was pressed has
-         just gone with the view, and focus would otherwise fall to the body. A clustered pin
-         has no element until the reveal finishes, in which case there is nothing to focus and
-         the popup is what carries the reader on. */
-      markerElement(id)?.focus();
+      /* Deliberately nothing is focused here. Focusing the pin was the obvious thing to do on
+         a narrow screen, where the button that was pressed has just gone with the view, and it
+         cancelled the fly: Leaflet 1.9's Marker._panOnFocus pans the map when a marker takes
+         focus, and doing that mid-flight stopped the animation and left the pin pressed
+         against the edge of the map with its popup running off the side of it. Measured, not
+         guessed: the pin landed at the map's left edge rather than its centre and 117px of the
+         popup was clipped. Giving focus somewhere useful once the fly has settled is worth
+         doing, and it is not a line of code. */
     });
   });
 
