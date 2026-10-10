@@ -206,7 +206,8 @@ function boot() {
         },
         onMove: () => startMove(memory.id),
         onDelete: () => deleteMemory(memory.id),
-        onToggleTag: (tag) => filters.toggleTag(tag)
+        onToggleTag: (tag) => filters.toggleTag(tag),
+        onClose: () => closePopupFor(memory.id)
       }),
     /* The photo strip is filled from onPopupContent, not here: Leaflet rebuilds the content
        on paths that never fire popupopen. */
@@ -672,6 +673,10 @@ function boot() {
   function markerElement(id) {
     const marker = markers.getMarker(id);
     return marker ? marker.getElement() : null;
+  }
+
+  function closePopupFor(id) {
+    markers.getMarker(id)?.closePopup();
   }
 
   function openPopupFor(id) {

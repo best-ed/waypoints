@@ -31,6 +31,19 @@ function buildTagList(tags, onToggleTag) {
   return list;
 }
 
+/* Leaflet's own close control is turned off in markers-layer.js, so this is the popup's
+   close button. A real button with a real name: the link it replaced pointed at "#close",
+   which matches nothing, and a screen reader had no way to tell what it did. */
+function buildClose(onClose) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'button button-sm button-ghost icon-only popup-close';
+  button.setAttribute('aria-label', 'Close');
+  button.append(createIcon('close', { size: 16 }));
+  button.addEventListener('click', () => onClose());
+  return button;
+}
+
 function buildActions({ onEdit, onMove, onDelete }) {
   const actions = element('div', 'popup-actions');
 
@@ -61,6 +74,10 @@ export function findPhotoStrip(root) {
 
 export function buildPopupContent(memory, handlers) {
   const root = element('div', 'popup');
+
+  /* First in the DOM so it is first in the tab order: the popup opens with focus on the map,
+     and a reader tabbing in should be able to get out again before reading the whole thing. */
+  root.append(buildClose(handlers.onClose));
 
   root.append(element('h2', 'popup-title', memory.title));
   root.append(element('p', 'popup-date', formatMemoryDate(memory.date)));

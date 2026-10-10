@@ -24,11 +24,8 @@ const WIDTHS = [
 
 const THEMES = ['light', 'dark'];
 
-async function analyse(page, { disable = [] } = {}) {
-  let builder = new AxeBuilder({ page }).withTags(TAGS);
-  if (disable.length > 0) builder = builder.disableRules(disable);
-
-  const results = await builder.analyze();
+async function analyse(page) {
+  const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
 
   /* Named, so a failure says which rule and where rather than just a count. */
   return results.violations.map((violation) => ({
@@ -159,19 +156,9 @@ const STATES = {
   }
 };
 
-/* Rules switched off for one state, each with the reason and each a known issue rather than
-   an accepted one.
-
-   skip-link on the open popup: Leaflet builds its close control as <a href="#close">, and
-   "#close" matches no element. axe's skip-link rule only looks at links near the start of the
-   document, so this surfaces at 375 - where the sidebar is hidden and the close button becomes
-   the first link - and not at 1280. It is Leaflet's markup and it is wrong: a control that
-   closes something is a button, not a link to nowhere. Replacing it means taking over a
-   control Leaflet binds its own handler to, which is more than a patch release should carry,
-   so it is turned off here and fixed on the UI branch. */
-const DISABLED = {
-  'open popup': ['skip-link']
-};
+/* Nothing is switched off. 1.0.1 had to turn skip-link off for the open popup, because
+   Leaflet builds its close control as <a href="#close"> and "#close" matches no element; the
+   popup carries a real button now, so the exemption is gone and the state passes without it. */
 
 for (const [name, reach] of Object.entries(STATES)) {
   for (const theme of THEMES) {
@@ -182,7 +169,7 @@ for (const [name, reach] of Object.entries(STATES)) {
 
         await reach(page, { narrow: size.width <= 720 });
 
-        const violations = await analyse(page, { disable: DISABLED[name] ?? [] });
+        const violations = await analyse(page);
         expect(violations, JSON.stringify(violations, null, 1)).toEqual([]);
       });
     }

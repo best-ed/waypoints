@@ -10,6 +10,11 @@ const CLUSTER_OPTIONS = {
 };
 
 const POPUP_OPTIONS = {
+  /* Leaflet builds its close control as <a href="#close">, and "#close" matches nothing in the
+     document: a control that closes something is a button, not a link to nowhere. axe's
+     skip-link rule says so too, and 1.0.1 had to switch that rule off for the open popup. Our
+     own content carries a real button instead, so the plugin's is turned off here. */
+  closeButton: false,
   /* Leaflet knows nothing about the app header, so an auto-panned popup would happily tuck
      itself underneath it. */
   autoPanPaddingTopLeft: [16, 72],

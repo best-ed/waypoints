@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "2ee3d564b62d";
+self.PRECACHE_VERSION = "682778346ec8";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -29,7 +29,7 @@ self.PRECACHE_FILES = [
   { url: "src/css/mobile.css", hash: "869ef5b9bc80e91e34042ff4ab982664a4607859f4515a8f29289a8d3e8707f1" },
   { url: "src/css/offline.css", hash: "4872716544f7a7e501707f593fed4222984a1d09846f953cc1d152c79650b1d6" },
   { url: "src/css/place-search.css", hash: "022ade986d3bc03cc316cb195f0b56ff6d0192811860e38024839b7854546c7d" },
-  { url: "src/css/popup.css", hash: "dec17965caf02a696705e8076c394a190f546452670093ab398645b76857044c" },
+  { url: "src/css/popup.css", hash: "2f66f3e5f421ecf7ca5d05fc25e5da6ff7a189792ab6ce646597e70080181fc5" },
   { url: "src/css/primitives.css", hash: "bbe2549cfa1345537369fb551d347c52d1990998cf256105991ce3bfeab80719" },
   { url: "src/css/sandbox.css", hash: "adf83da6e52b818a2a351a03e3070b7c7cdf6da3ec67576b0750cd910106df3f" },
   { url: "src/css/settings.css", hash: "db0014b2ec7b324d4b0687d54918b914527634f6961859717771c83ea192ba9b" },
@@ -67,7 +67,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/journey/journey-order.js", hash: "27cfd981a5c7984aa7a6ed70ac45bcc608b215f8528b25ac83c5cd84d545058b" },
   { url: "src/js/journey/journey-summary.js", hash: "29d2a44ebbd0be72b7faeae8978b8c4ae594fa344d1bd2047be144abe122e25c" },
   { url: "src/js/journey/playback.js", hash: "17c3477b8c72aafe38f837dbce44200494a1fe44104791520727a5779fe5b6b0" },
-  { url: "src/js/main.js", hash: "6565ca90804e050ffcdf3972290fed369eb9e1326082f019bcd5bb1a95a37202" },
+  { url: "src/js/main.js", hash: "df711aefe3a95833ea649706fc6171b3df4cccda8e3adc11aec58715da6edcad" },
   { url: "src/js/map/basemap-control.js", hash: "34f9d047896b722472fec9b78a8ec7d366697b13c47252ac8f79879ea75e7959" },
   { url: "src/js/map/basemap-preference.js", hash: "19e95114e821d4e1c12a8c167e99a435da65639ab41f03eb05c1df0f68868436" },
   { url: "src/js/map/cluster-icon.js", hash: "4413a2377a9bcf88c137cde42d0e537a777756c32d9e883fee42e41314fe966a" },
@@ -76,7 +76,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/map/focus-marker.js", hash: "38433893ab59a57ad4712878fb574c6f9a8eabe57ae55aca07c801283e1b01c1" },
   { url: "src/js/map/journey-chevrons.js", hash: "f4f3d096720ab9a43cf175ed8923223011bc21b27397a744c9dbba547b36f66c" },
   { url: "src/js/map/journey-path.js", hash: "9adb27aea9c9e9b04f3b0ade6edeb2fc17e7fac69c73ac94bc36fa4158c8c6d5" },
-  { url: "src/js/map/markers-layer.js", hash: "30f49f1861457ec2f093cca8f19c3e285d3f65e82e97fcc0d2a30c142fe55bee" },
+  { url: "src/js/map/markers-layer.js", hash: "ce463e989df473f6b2218524e99f8dbeb8b9bc6d42cea6bcdf3148f59cd1426f" },
   { url: "src/js/map/move-mode.js", hash: "01d6216451a769baa4ba2064ba550d66051d9ca1ed6401c1b79e3e7abee015dd" },
   { url: "src/js/map/pin-icon.js", hash: "a22817590e2f81096e52f16f9c47c21f49e95fceb039be99f978de9792a0368e" },
   { url: "src/js/map/place-search-control.js", hash: "e7d3eb56a5381e01780f5d59854bcdb9382a50aaaf8508e771ca58e2a678e04d" },
@@ -113,7 +113,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/ui/offline-banner.js", hash: "a2e5a720f4b3b7ac93b8fe4d82c825e32644d4d371931ba647d42f2e6660f5c3" },
   { url: "src/js/ui/photo-picker.js", hash: "061fe01289a3fb4c34c66128533fad4a6100bce529560b51ec949ca5e8dcf6f3" },
   { url: "src/js/ui/placement-hint.js", hash: "e28f00628550d4d00b8afe8b98e141908d711eb29e190384ca11d01b15d27475" },
-  { url: "src/js/ui/popup-content.js", hash: "483f6188ed01128172bc6880d575441cf59680dd97e29ef2a1fd810be17d5ffd" },
+  { url: "src/js/ui/popup-content.js", hash: "82aa8c555307d83148d2c0cdc797c14130f19775a617ca4ddc3beab2b83d3ab7" },
   { url: "src/js/ui/popup-photos.js", hash: "8f584a91e6d876a964ce686d790c82fe063ce626a9037de0716b7835a6a317c1" },
   { url: "src/js/ui/search-input.js", hash: "28857975ccb7fd36d27a9dc21678cfc15801123a4ccd529e42ccd164ce1ac8f1" },
   { url: "src/js/ui/selection.js", hash: "f626ab2f21081782cebf90f6060302daa6ffe94558db439836e078d64caf8ea4" },
