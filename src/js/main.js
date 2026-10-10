@@ -292,7 +292,9 @@ function boot() {
        Next have nowhere to go and Back would return to a list without it. Closed for the same
        reason the selection is cleared. */
     if (detail.openId() === id) {
-      closeDetail();
+      /* Straight to the close rather than through history: a filter change is not a
+         navigation, and going back here would undo whatever the reader just typed. */
+      finishCloseDetail();
     }
 
     const marker = markers.getMarker(id);
@@ -460,11 +462,14 @@ function boot() {
     }
   }
 
-  function openDetail(id, { origin = 'list' } = {}) {
+  function openDetail(id, { origin = 'list', push = true } = {}) {
     const memory = store.get(id);
     if (!memory) {
       return;
     }
+
+    /* Stepping within an open view replaces rather than pushes: see pushUrl above. */
+    const stepping = detail.isOpen();
 
     detailOrigin = origin;
 
@@ -478,16 +483,49 @@ function boot() {
     selection.select(id);
     detail.open(memory);
     detail.setNeighbours(detailNeighbours(id));
+
+    if (push && !stepping) {
+      pushUrl();
+      detailPushed = true;
+      return;
+    }
+
     writeUrl();
   }
 
-  function closeDetail() {
+  /* The close itself. Everything that actually takes the view off screen comes through here,
+     whether the request came from a button, from Escape or from the browser's own Back. */
+  function finishCloseDetail() {
     const closed = detail.close();
 
-    if (closed !== null) {
-      writeUrl();
-      restoreFocusAfterDetail(closed);
+    if (closed === null) {
+      return;
     }
+
+    detailPushed = false;
+    /* The URL is written from the live state rather than trusted from the history entry: a
+       filter changed while the view was open was replaced onto this entry, not the one
+       behind it, so the entry we have just returned to can be out of date. */
+    writeUrl();
+    restoreFocusAfterDetail(closed);
+  }
+
+  /* A close request. If opening pushed an entry, the honest way out is back through it, so
+     the history does not keep an entry for a view nobody is looking at; popstate then does
+     the closing. If it did not, there is nothing to go back to and the entry is rewritten
+     where it stands. */
+  function closeDetail() {
+    if (!detail.isOpen()) {
+      return;
+    }
+
+    if (detailPushed) {
+      detailPushed = false;
+      window.history.back();
+      return;
+    }
+
+    finishCloseDetail();
   }
 
   /* Each action reads the open id rather than closing over one, so a row of four static
@@ -736,6 +774,20 @@ function boot() {
     window.history.replaceState(null, '', window.location.pathname + currentSearch());
   }
 
+  /* Opening a memory is navigation, which is the one thing in this app that is: Back should
+     mean "back to the list" because that is what it means everywhere else. Filtering is not,
+     and neither is stepping with Previous and Next - thirty presses of Next would otherwise
+     put thirty entries between the reader and the page they arrived from, and Back would
+     walk them all the way out one memory at a time. */
+  function pushUrl() {
+    window.history.pushState(null, '', window.location.pathname + currentSearch());
+  }
+
+  /* Whether the entry the detail view is sitting on is one we pushed. A memory opened from a
+     link is already the entry the page loaded on: calling back() there would leave the app
+     altogether rather than returning to the list. */
+  let detailPushed = false;
+
   filters.subscribe(() => {
     writeUrl();
     /* A filter change rebuilds the journey, so the position in the old one means nothing.
@@ -744,9 +796,14 @@ function boot() {
     rerender();
   });
 
+  /* Both read before anything is applied. Restoring the filters notifies, and that rewrites
+     the query string from the live state - in which no memory is open yet - so reading the
+     memory id afterwards would read a URL this line has already taken it out of. */
+  const fromUrl = parseFilters(window.location.search);
+  const openFromUrl = parseMemoryId(window.location.search);
+
   /* Restored before the first render, so the map and list never flash the unfiltered
      set on the way to the filtered one. */
-  const fromUrl = parseFilters(window.location.search);
   filters.setQuery(fromUrl.query);
   filters.setTags(fromUrl.tags);
   filters.setDateRange({ from: fromUrl.from, to: fromUrl.to });
@@ -763,13 +820,32 @@ function boot() {
      has no place in the order Previous, Next and Back all read from. An id that is unknown,
      deleted or filtered out is dropped from the URL rather than reported - a URL is edited,
      shared and half-remembered, and none of that is an error anyone can act on. */
-  const openFromUrl = parseMemoryId(window.location.search);
-
   if (openFromUrl && list.getOrder().includes(openFromUrl)) {
-    openDetail(openFromUrl, { origin: 'list' });
+    /* No push: this is the entry the page loaded on. Pushing here would put a second entry
+       with the same URL on top of it, and Back to list would then walk back onto a URL that
+       still names the memory and reopen the view it had just closed. */
+    openDetail(openFromUrl, { push: false });
   } else if (openFromUrl) {
     writeUrl();
   }
+
+  /* The browser's own Back closes the view, and its Forward opens it again. The URL that the
+     navigation landed on is what decides, rather than anything remembered here: it is the one
+     thing both directions agree on. */
+  window.addEventListener('popstate', () => {
+    const wanted = parseMemoryId(window.location.search);
+
+    if (wanted && list.getOrder().includes(wanted)) {
+      if (detail.openId() !== wanted) {
+        /* No push: this entry already exists, which is how we got here. */
+        openDetail(wanted, { push: false });
+        detailPushed = false;
+      }
+      return;
+    }
+
+    finishCloseDetail();
+  });
 
   /* On a phone with nothing saved, the map is empty and the welcome is in the other pane, so
      the first thing a new person sees is a blank map and no explanation. Only at boot, so it
