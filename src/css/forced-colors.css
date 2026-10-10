@@ -158,16 +158,21 @@
      non-square thumbnail. Keeping the button transparent is the only way to leave the photo
      looking like the photo. */
   .popup-photo-button,
+  .detail-hero-button,
+  .detail-thumb-button,
   .lightbox-image {
     forced-color-adjust: none;
     background-color: transparent;
   }
 
-  .popup-photo-button {
+  .popup-photo-button,
+  .detail-thumb-button {
     border: 1px solid CanvasText;
   }
 
-  .popup-photo-button:focus-visible {
+  .popup-photo-button:focus-visible,
+  .detail-hero-button:focus-visible,
+  .detail-thumb-button:focus-visible {
     outline: 2px solid Highlight;
     outline-offset: 2px;
   }

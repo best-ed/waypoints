@@ -408,9 +408,22 @@ function boot() {
     backButton: document.getElementById('detail-back'),
     previousButton: document.getElementById('detail-previous'),
     nextButton: document.getElementById('detail-next'),
+    loadPhotos: (ids) => loadPhotos(ids),
+    onOpenLightbox: (records, index, memory, trigger) =>
+      lightbox.open(records, index, memory, trigger),
+    /* Choosing a tag from a memory is a way of asking "what else is like this one", so it
+       takes the filter and goes back to the list it has just narrowed. */
+    onSelectTag: (tag) => {
+      filters.toggleTag(tag);
+      closeDetail();
+    },
     onBack: () => closeDetail(),
     onPrevious: () => stepDetail('previous'),
     onNext: () => stepDetail('next'),
+    onError: (error) => {
+      toast.show({ message: PHOTO_LOAD_FAILED_MESSAGE });
+      console.error(error);
+    },
     isBlocked: () => placement.isActive() || moveMode.isMoving()
   });
 

@@ -55,6 +55,106 @@
   outline-offset: 2px;
 }
 
+.detail-date,
+.detail-place {
+  padding: var(--space-1) var(--space-4) var(--space-0);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.detail-note {
+  padding: var(--space-4);
+  /* Keeps the writer's own line breaks without injecting <br> into the document. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-0) var(--space-4);
+  list-style: none;
+}
+
+/* Shape and colour come from .chip and .chip-tag in primitives.css. These are display tags
+   that happen to be actionable, which is why they keep the quiet label treatment rather than
+   the filter chip's edge and fill: the state they would be showing lives in the sidebar. */
+.detail-tag:hover {
+  color: var(--color-accent);
+}
+
+.detail-coordinates {
+  padding: var(--space-4);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  /* Numbers read better aligned, and these are the only ones in the app that get compared
+     against something outside it. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- photos ------------------------------------------------------------------- */
+
+/* 16:10 and cropped. A memory's photos are whatever shape they came out of the camera, and a
+   column of letterboxed frames at their own ratios reads as a gallery of mistakes; the
+   lightbox is where a photo is seen whole. */
+.detail-hero {
+  aspect-ratio: 16 / 10;
+  background-color: var(--color-surface-raised);
+}
+
+.detail-hero-button,
+.detail-thumb-button {
+  display: block;
+  padding: var(--space-0);
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.detail-hero-button {
+  width: 100%;
+  height: 100%;
+}
+
+.detail-hero-button img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.detail-hero-button:focus-visible,
+.detail-thumb-button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  /* Inside, because the hero runs to both edges of the sidebar and an outset ring would be
+     clipped by the scroller. */
+  outline-offset: -3px;
+}
+
+.detail-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-4) var(--space-0);
+  list-style: none;
+}
+
+.detail-thumb-button {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.detail-thumb-button img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
 /* ---- what the detail replaces ------------------------------------------------ */
 
 /* While a memory is open the list and everything above it are gone. Hidden rather than

@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "a4f9e615f5e7";
+self.PRECACHE_VERSION = "39ad9355efaa";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -20,14 +20,14 @@ self.PRECACHE_FILES = [
   { url: "src/css/base.css", hash: "9d15903b9de124ecaf89702ddd8e2a27532cbf7be8950893c2bd817099728fb0" },
   { url: "src/css/basemap.css", hash: "f549a6c2bc944c02c790c2160ccef3a8d5a5aeeed492e18b2c5918ca9604722a" },
   { url: "src/css/cluster.css", hash: "76aacce96f0f5233af3edab8255dc63949105b7821be85205973ab9e26b94159" },
-  { url: "src/css/detail.css", hash: "5dc288d90436e74308307a08232817708e0bfaf493733eab0b19261c54b2f253" },
+  { url: "src/css/detail.css", hash: "4e05a9fbb48a10b8ce29897e4df1ffd30508aa085dd5009eb613e18383ce3382" },
   { url: "src/css/dialog.css", hash: "0591f7910a1eb39855ffb45157c406886ebe9da347781185e89a3d9fd1fb9d72" },
-  { url: "src/css/forced-colors.css", hash: "3f159d209f17bd5f8c1a79bccf4395d0849cb5711f7aae9c6f4450052a107c27" },
+  { url: "src/css/forced-colors.css", hash: "b371db268644c0f35318d9bbd5a9e90c30fdc8351efe10df2c290566b21241be" },
   { url: "src/css/journey.css", hash: "412950a149167468c21425e13d12a05824447c8b6544bccbc88de522dbb1f1b3" },
   { url: "src/css/layout.css", hash: "0299e99651e5bc91557ac4a94e93b390872de1192238ee45166e52cfd3432075" },
   { url: "src/css/lightbox.css", hash: "68acee9697d02cd44424ce746fa39b3dc5cc03b73a622ed1c90348f3c032b695" },
   { url: "src/css/map.css", hash: "725dfee46e769a4982d3dde5aa89610b1513f474028ff27bb0a87edab4b27375" },
-  { url: "src/css/mobile.css", hash: "869ef5b9bc80e91e34042ff4ab982664a4607859f4515a8f29289a8d3e8707f1" },
+  { url: "src/css/mobile.css", hash: "c039e21ddd32c9684d80e8a8eb1427676e6b8184a853e17cc9a4fd73566dd474" },
   { url: "src/css/offline.css", hash: "4872716544f7a7e501707f593fed4222984a1d09846f953cc1d152c79650b1d6" },
   { url: "src/css/place-search.css", hash: "022ade986d3bc03cc316cb195f0b56ff6d0192811860e38024839b7854546c7d" },
   { url: "src/css/popup.css", hash: "2f66f3e5f421ecf7ca5d05fc25e5da6ff7a189792ab6ce646597e70080181fc5" },
@@ -69,7 +69,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/journey/journey-order.js", hash: "27cfd981a5c7984aa7a6ed70ac45bcc608b215f8528b25ac83c5cd84d545058b" },
   { url: "src/js/journey/journey-summary.js", hash: "29d2a44ebbd0be72b7faeae8978b8c4ae594fa344d1bd2047be144abe122e25c" },
   { url: "src/js/journey/playback.js", hash: "17c3477b8c72aafe38f837dbce44200494a1fe44104791520727a5779fe5b6b0" },
-  { url: "src/js/main.js", hash: "f2b8709d1c960a4223597ec82915eabf42a48372149750d044476f17be918d68" },
+  { url: "src/js/main.js", hash: "f5d13453f7b4eae50df81bea2b1a5424be20d147ec47b159345426faaaa903aa" },
   { url: "src/js/map/basemap-control.js", hash: "34f9d047896b722472fec9b78a8ec7d366697b13c47252ac8f79879ea75e7959" },
   { url: "src/js/map/basemap-preference.js", hash: "19e95114e821d4e1c12a8c167e99a435da65639ab41f03eb05c1df0f68868436" },
   { url: "src/js/map/cluster-icon.js", hash: "4413a2377a9bcf88c137cde42d0e537a777756c32d9e883fee42e41314fe966a" },
@@ -96,7 +96,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/theme-boot.js", hash: "5340f8a117b720ee67a48eca1edd31a02c98c3e30d684c7d37c78d58be4a3d8e" },
   { url: "src/js/ui/active-filters.js", hash: "22b7b8c46952cce5690b978d1541e472220dc61868436710d15f4bfa6c30a1a4" },
   { url: "src/js/ui/date-range.js", hash: "80e8854d322d3313c3de43cacb5a61bd8523398ac81e8be219775246e7e1d7f2" },
-  { url: "src/js/ui/detail-view.js", hash: "d9ca20d50bfd923afec2e02cb5aeee33093aa2c4215f53bc787cb54b76edfecb" },
+  { url: "src/js/ui/detail-view.js", hash: "b3f2b36e92f79cf0a3ff9e12c79fe2d1899bd328eb7847dad2541174d57df3e1" },
   { url: "src/js/ui/empty-library.js", hash: "c408031976b5f4874f25558b072e17167f8c29f90041d70ee23a0296feb8cc5d" },
   { url: "src/js/ui/filter-summary.js", hash: "a40770f8fc2ab236b9f1e0258e5930b47cce2d4a4d675a59dea527e7fbcbb4cd" },
   { url: "src/js/ui/filters-panel.js", hash: "a830fe0e83e907dc3064d217a24e9fb4f41e8dbd7cde45a97a218703b547295f" },
