@@ -9,6 +9,19 @@
   are untouched, and **Settings -> Dim the map in dark mode** turns it off. It is off entirely
   under forced colours, where the palette has already been decided.
 
+### Reading a memory
+
+- **A memory has a view of its own.** The note in full, a hero photo with the rest of them
+  under it, the date written out, the place, the tags and the coordinates. It opens where the
+  list was, so the map is still beside it, and it takes the whole screen on a phone.
+- The popup is a preview now: the cover, the title, a line of date and place, and Open. Edit,
+  Move, Delete and the tags moved into the view, where there is room for them.
+- Previous and Next step through the list as it currently stands, and stop at both ends.
+- **A memory has a link.** `?memory=<id>` opens it, the browser's Back button closes it, and
+  the link carries whatever filters were on with it.
+- The popup's close control is a real button with a real name. It was a link pointing at
+  nothing, which is Leaflet's own markup and which no screen reader could make sense of.
+
 ### The sidebar and the list
 
 - **The memories come first.** The filter controls live behind one Filters button with a count
@@ -21,6 +34,8 @@
 - A first run shows a welcome rather than a search box, a filter panel and a journey control
   that cannot be used.
 - Placing a pin says so, over the map.
+- Choosing a card opens the memory rather than flying the map to its pin. The pin still
+  highlights, and Show on map is there when moving the map is the point.
 - A no-results message names what excluded everything rather than saying "the current
   filters".
 - The timeline no longer renders as a solid block when one memory matches.

@@ -284,8 +284,12 @@ exactly one place that revokes it:
 | Pool | Revoked when |
 |------|--------------|
 | form picker | the dialog's `close` event, on every path out |
-| popup strip | `popupclose`, and when the next popup opens |
+| popup cover | `popupclose`, and when the next popup opens |
+| detail view | it renders a different memory, and when it closes |
 | lightbox | the lightbox's `close` event |
+
+The list is the exception and has an owner rather than a pool. See **Thumbnails, and the one
+owner rule**.
 
 Do not revoke an individual URL anywhere else. If a new surface shows blobs, give it its
 own pool and one teardown.
@@ -380,15 +384,101 @@ existing disabled-with-reason behaviour when a filter leaves fewer than two in v
 
 ---
 
+## The Detail View
+
+A memory used to be a 280px popup floating over a map that moves. Everything it holds was in
+there: the note in full, the tags, and Edit, Move and Delete side by side at 11px. The popup
+is a **preview** now, and `ui/detail-view.js` is where a memory is actually read.
+
+- **The popup** is the cover thumbnail, the title, one line of date and place, and Open. It is
+  enough to recognise the pin you clicked and nothing more. Leaflet's own close control is off
+  (`closeButton: false`): it builds one as `<a href="#close">`, "#close" matches no element,
+  and 1.0.1 had to switch axe's `skip-link` rule off for the open-popup state because of it.
+  Our content carries a real button. That exemption is gone and the state passes without it.
+- **The view** takes the sidebar's place rather than opening over it, so the map it describes
+  is still beside it on a wide screen. On a narrow one it takes both panes and the Map/List
+  switch goes with them: there is nothing to switch between while one memory is open.
+- **Choosing a card opens the memory.** It used to fly the map and open a popup, which was the
+  only thing a click could do when the popup was the whole of a memory. The pin still
+  highlights, through the same selection state, and **Show on map** is there for when moving
+  the map is the point.
+- **Previous and Next** step through `list.getOrder()`, which is the filtered set in the
+  sidebar's own order. Not the store's, which is the opposite, and not the whole library:
+  stepping out of the filtered set would land on a memory the list behind the view does not
+  show. `ui/neighbours.js` is pure and returns null at either end.
+- The step buttons use `aria-disabled`, not `disabled`, for the reason the journey controls
+  do. Note that Playwright will not click an `aria-disabled` button, so a test that presses one
+  at the end of the order has to dispatch the event.
+- A filter that excludes the open memory **closes the view**, in the same place the selection
+  is cleared. Previous and Next would have nowhere to go and Back would return to a list
+  without it.
+- Everything above the list is hidden rather than unmounted, so Back finds the search box, the
+  open filters panel and the list's scroll position exactly as they were.
+- Back returns focus to the card it was opened from, to the pin if it was opened from one, and
+  to the sidebar's heading if that card has gone. The heading carries `tabindex="-1"` for it.
+
+### Its photos
+
+The hero is the first photo's full image at 16:10, cropped, with a strip of thumbnails under
+it at two or more. A memory with none gets **no hero at all**, not a frame around nothing.
+
+This view owns an object URL pool and revokes it in exactly two places: when it renders a
+different memory, and when it closes. The list cannot work that way - its rows come and go and
+there is no moment when they are all finished with, which is what `ui/thumbnail-owner.js` is
+for - but one memory at a time has exactly that moment.
+
+**Every render carries a token.** Reading the blobs takes a moment and holding Next steps
+faster than that, so a read for a memory three back can land in a view showing something else.
+The token is checked **before a single URL is created**, never after: a URL created for a view
+that has gone is the case that leaks, because nothing is left to revoke it. Measured over
+thirty rapid Next presses, the live count does not move.
+
+### History
+
+**Opening a memory is navigation.** It is the one thing in this app that is, and Back should
+mean "back to the list" because that is what it means everywhere else.
+
+| what happened | what it does to the history |
+|---|---|
+| opening from a card or a popup | `pushState` |
+| stepping with Previous or Next | `replaceState` |
+| a filter changing | `replaceState`, as before |
+| opening from `?memory=` at load | nothing; that entry already exists |
+
+Stepping replaces because thirty presses of Next would otherwise put thirty entries between
+the reader and the page they arrived from, and Back would walk them out one memory at a time.
+
+Closing goes **back through** the entry if opening pushed one, and `popstate` then does the
+closing; otherwise the entry is rewritten where it stands. A memory opened from a link is
+already the entry the page loaded on, and calling `back()` there leaves the app. The first
+version pushed on that path too, which put a second entry with the same URL on top of the
+first, so Back to list walked onto a URL that still named the memory and reopened the view it
+had just closed.
+
+`popstate` reads the URL it landed on rather than anything remembered here, so Forward works
+for free. `filters/memory-url.js` is pure and holds the param.
+
+**The memory id is read out of the URL before the filters are restored.** Restoring them
+notifies, which rewrites the query string from the live state, in which no memory is open yet.
+Read afterwards, the id is gone: `?q=trail&memory=x` opened nothing, and the id had been
+dropped from the URL by the time anything looked for it.
+
+An id that is unknown, deleted or **excluded by the filters in the same URL** is dropped from
+the URL and opens nothing. A URL is edited, shared and half-remembered, and none of that is an
+error anyone can act on.
+
+---
+
 ## Selection Flow
 
 The sidebar list and the map never call each other. Both talk to `ui/selection.js`, which
 holds one id and notifies subscribers:
 
 ```
-list click  -> selection.select(id) -> list marks it, then main.js flies the map
-marker open -> selection.select(id) -> list marks it and scrolls it into view
-marker close -> selection.clear()   -> list unmarks it
+list click   -> openDetail(id) -> selection.select(id) -> list marks it, pin highlights
+Show on map  -> selection.select(id) -> list marks it, then main.js flies the map
+marker open  -> selection.select(id) -> list marks it and scrolls it into view
+marker close -> selection.clear()    -> list unmarks it
 ```
 
 Three details keep this from looping or fighting itself:
@@ -398,8 +488,9 @@ Three details keep this from looping or fighting itself:
 - `popupclose` only clears the selection if the closing popup still owns it. Switching
   markers closes the old popup *after* the new id is selected, so an unguarded clear
   would wipe the new selection.
-- The fly-to lives on the list-click path, not in the selection subscriber. Clicking a
-  marker directly should not move the map out from under the user.
+- The fly-to lives on the paths that ask for it, Show on map and a journey step, not in the
+  selection subscriber. Clicking a marker, or opening a memory, should not move the map out
+  from under the user.
 
 `map/` and `ui/` still do not import each other. `main.js` wires them, and passes
 `prefersReducedMotion()` into `focusMarker` rather than letting `map/` read the DOM.
@@ -983,8 +1074,9 @@ The breakpoint is 720px, where the sidebar and a usable map stop fitting side by
   down to the icon. The title may ellipsis; the controls may not be pushed off.
 - **Map and List.** `data-view` on the app body, read entirely by CSS. Above the breakpoint the
   attribute is **removed**, so a wide layout can never be left with a hidden map. Choosing a
-  memory in List switches to Map first, because flying to a marker on a map of the wrong size
-  lands in the wrong place - every path that reveals the map calls `invalidateSize`.
+  memory opens its detail view, which is full screen here and needs no switch; **Show on map**
+  and **Move** switch to Map first, because flying to a marker on a map of the wrong size lands
+  in the wrong place - every path that reveals the map calls `invalidateSize`.
 - **The sidebar header is not sticky on narrow.** It holds the search, the chips, the dates,
   the timeline and the journey controls, which together are taller than a phone screen; sticky
   pinned all of it over the list and nothing below could be reached.
