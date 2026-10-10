@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "6b0140d921c1";
+self.PRECACHE_VERSION = "6c95454fa60c";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -22,15 +22,15 @@ self.PRECACHE_FILES = [
   { url: "src/css/cluster.css", hash: "76aacce96f0f5233af3edab8255dc63949105b7821be85205973ab9e26b94159" },
   { url: "src/css/detail.css", hash: "dc7d3c43309a377dddc1273b3410d3f03486aa5afaccd900309bda83c44f0456" },
   { url: "src/css/dialog.css", hash: "0591f7910a1eb39855ffb45157c406886ebe9da347781185e89a3d9fd1fb9d72" },
-  { url: "src/css/forced-colors.css", hash: "b371db268644c0f35318d9bbd5a9e90c30fdc8351efe10df2c290566b21241be" },
+  { url: "src/css/forced-colors.css", hash: "ce35d01c05da4e2c67710efbcafcb6c811dae13dbe2f0c6ea8d7eb5859c46444" },
   { url: "src/css/journey.css", hash: "412950a149167468c21425e13d12a05824447c8b6544bccbc88de522dbb1f1b3" },
   { url: "src/css/layout.css", hash: "0299e99651e5bc91557ac4a94e93b390872de1192238ee45166e52cfd3432075" },
   { url: "src/css/lightbox.css", hash: "68acee9697d02cd44424ce746fa39b3dc5cc03b73a622ed1c90348f3c032b695" },
   { url: "src/css/map.css", hash: "725dfee46e769a4982d3dde5aa89610b1513f474028ff27bb0a87edab4b27375" },
-  { url: "src/css/mobile.css", hash: "c039e21ddd32c9684d80e8a8eb1427676e6b8184a853e17cc9a4fd73566dd474" },
+  { url: "src/css/mobile.css", hash: "2a89d5649bf1a975126dc5463f5b615435777764a5296f1a377194cdea2477a9" },
   { url: "src/css/offline.css", hash: "4872716544f7a7e501707f593fed4222984a1d09846f953cc1d152c79650b1d6" },
   { url: "src/css/place-search.css", hash: "022ade986d3bc03cc316cb195f0b56ff6d0192811860e38024839b7854546c7d" },
-  { url: "src/css/popup.css", hash: "2f66f3e5f421ecf7ca5d05fc25e5da6ff7a189792ab6ce646597e70080181fc5" },
+  { url: "src/css/popup.css", hash: "c66745033345412b8e1885bbdcb7154d0d75626b9c230120807b896070c1a090" },
   { url: "src/css/primitives.css", hash: "bbe2549cfa1345537369fb551d347c52d1990998cf256105991ce3bfeab80719" },
   { url: "src/css/sandbox.css", hash: "adf83da6e52b818a2a351a03e3070b7c7cdf6da3ec67576b0750cd910106df3f" },
   { url: "src/css/settings.css", hash: "db0014b2ec7b324d4b0687d54918b914527634f6961859717771c83ea192ba9b" },
@@ -69,7 +69,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/journey/journey-order.js", hash: "27cfd981a5c7984aa7a6ed70ac45bcc608b215f8528b25ac83c5cd84d545058b" },
   { url: "src/js/journey/journey-summary.js", hash: "29d2a44ebbd0be72b7faeae8978b8c4ae594fa344d1bd2047be144abe122e25c" },
   { url: "src/js/journey/playback.js", hash: "17c3477b8c72aafe38f837dbce44200494a1fe44104791520727a5779fe5b6b0" },
-  { url: "src/js/main.js", hash: "fa029088a1ccc76e81ec5b55cdd32f7e145965a65263d809cb07069b0a078550" },
+  { url: "src/js/main.js", hash: "5f3b8b8f18030e398c485ed5db1e9c9d1c64c87001a401966aaeef81b0718915" },
   { url: "src/js/map/basemap-control.js", hash: "34f9d047896b722472fec9b78a8ec7d366697b13c47252ac8f79879ea75e7959" },
   { url: "src/js/map/basemap-preference.js", hash: "19e95114e821d4e1c12a8c167e99a435da65639ab41f03eb05c1df0f68868436" },
   { url: "src/js/map/cluster-icon.js", hash: "4413a2377a9bcf88c137cde42d0e537a777756c32d9e883fee42e41314fe966a" },
@@ -78,7 +78,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/map/focus-marker.js", hash: "38433893ab59a57ad4712878fb574c6f9a8eabe57ae55aca07c801283e1b01c1" },
   { url: "src/js/map/journey-chevrons.js", hash: "f4f3d096720ab9a43cf175ed8923223011bc21b27397a744c9dbba547b36f66c" },
   { url: "src/js/map/journey-path.js", hash: "9adb27aea9c9e9b04f3b0ade6edeb2fc17e7fac69c73ac94bc36fa4158c8c6d5" },
-  { url: "src/js/map/markers-layer.js", hash: "ce463e989df473f6b2218524e99f8dbeb8b9bc6d42cea6bcdf3148f59cd1426f" },
+  { url: "src/js/map/markers-layer.js", hash: "25ffbb91ae05cd124c3f695f9d4af93f44faa3e8ef6832f18ac2185bd1551b8c" },
   { url: "src/js/map/move-mode.js", hash: "01d6216451a769baa4ba2064ba550d66051d9ca1ed6401c1b79e3e7abee015dd" },
   { url: "src/js/map/pin-icon.js", hash: "a22817590e2f81096e52f16f9c47c21f49e95fceb039be99f978de9792a0368e" },
   { url: "src/js/map/place-search-control.js", hash: "e7d3eb56a5381e01780f5d59854bcdb9382a50aaaf8508e771ca58e2a678e04d" },
@@ -117,8 +117,8 @@ self.PRECACHE_FILES = [
   { url: "src/js/ui/offline-banner.js", hash: "a2e5a720f4b3b7ac93b8fe4d82c825e32644d4d371931ba647d42f2e6660f5c3" },
   { url: "src/js/ui/photo-picker.js", hash: "061fe01289a3fb4c34c66128533fad4a6100bce529560b51ec949ca5e8dcf6f3" },
   { url: "src/js/ui/placement-hint.js", hash: "e28f00628550d4d00b8afe8b98e141908d711eb29e190384ca11d01b15d27475" },
-  { url: "src/js/ui/popup-content.js", hash: "82aa8c555307d83148d2c0cdc797c14130f19775a617ca4ddc3beab2b83d3ab7" },
-  { url: "src/js/ui/popup-photos.js", hash: "208a64a3ec2978131b937a12fa848d833a33d14e41bd3481e569e47c03fb6d61" },
+  { url: "src/js/ui/popup-content.js", hash: "a39e3abbbe191e565871f8f37c88a9bd32407871c31da1393991950655530b31" },
+  { url: "src/js/ui/popup-photos.js", hash: "98a2d0ee3e6b7d7d30cea098732e9216507a11afe5a9c77cb059af32690338ba" },
   { url: "src/js/ui/search-input.js", hash: "28857975ccb7fd36d27a9dc21678cfc15801123a4ccd529e42ccd164ce1ac8f1" },
   { url: "src/js/ui/selection.js", hash: "f626ab2f21081782cebf90f6060302daa6ffe94558db439836e078d64caf8ea4" },
   { url: "src/js/ui/settings-dialog.js", hash: "a90f438775e8d6215d5265180d70e922c2e05f9355851716508c707d528487db" },

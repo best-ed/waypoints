@@ -2,6 +2,7 @@ import {
   test,
   expect,
   openApp,
+  openDetail,
   seedLibrary,
   mockNominatim,
   generatePhotoBytes,
@@ -98,8 +99,8 @@ test('a photo survives a reload, on whichever engine is running', async ({ page 
 
   const jpeg = await generatePhotoBytes(page);
 
-  await page.locator('.memory-list li button').first().click();
-  await page.locator('.leaflet-popup button', { hasText: 'Edit' }).click();
+  await openDetail(page);
+  await page.locator('#detail-edit').click();
   await expect(page.locator('#memory-dialog')).toBeVisible();
 
   await page.locator('#memory-photo-input').setInputFiles({
@@ -140,13 +141,22 @@ test('a photo survives a reload, on whichever engine is running', async ({ page 
   expect(shape.bytes).toBeGreaterThan(0);
 
   await openApp(page);
+
+  /* The popup shows the thumb as a cover, and the detail view shows the photo itself. Both
+     come out of the same record, so both are checked here. */
   await page.locator('.memory-list li button').first().click();
+  const cover = page.locator('.popup-cover-image');
+  await expect(cover).toBeVisible();
+  expect(await cover.evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
 
-  const thumb = page.locator('.popup-photo-button img').first();
-  await expect(thumb).toBeVisible();
-  expect(await thumb.evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
+  await page.locator('.popup-open').click();
+  await expect(page.locator('#memory-detail')).toBeVisible();
 
-  await page.locator('.popup-photo-button').first().click();
+  const hero = page.locator('.detail-hero-button img');
+  await expect(hero).toBeVisible();
+  expect(await hero.evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
+
+  await page.locator('.detail-hero-button').click();
   await expect(page.locator('#lightbox')).toBeVisible();
   expect(await page.locator('#lightbox-image').evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
 });
@@ -157,9 +167,8 @@ test('edits a memory and sees it everywhere', async ({ page }) => {
   await seedLibrary(page, [memory('only', 'The only memory', '2025-03-03', -1.29, 36.82, ['x'])]);
   await openApp(page);
 
-  await page.locator('.memory-list li button').first().click();
-  await expect(page.locator('.leaflet-popup')).toBeVisible();
-  await page.locator('.leaflet-popup button', { hasText: 'Edit' }).click();
+  await openDetail(page);
+  await page.locator('#detail-edit').click();
   await page.locator('#memory-title').fill('Renamed on the way through');
   await page.locator('#memory-save').click();
 
@@ -180,9 +189,8 @@ test('deletes a memory and undoes it, keeping the same record', async ({ page })
 
   const before = await page.evaluate(() => JSON.parse(localStorage.getItem('waypoints:v1')).memories);
 
-  await page.locator('.memory-list li button').first().click();
-  await expect(page.locator('.leaflet-popup')).toBeVisible();
-  await page.locator('.leaflet-popup button', { hasText: 'Delete' }).click();
+  await openDetail(page);
+  await page.locator('#detail-delete').click();
 
   await expect(page.locator('.memory-list li')).toHaveCount(1);
   await expect(page.locator('#toast-region')).toContainText('Deleted');
@@ -486,8 +494,8 @@ test('a card shows its photo, and the list does not hoard object URLs', async ({
   await openApp(page);
 
   const jpeg = await generatePhotoBytes(page);
-  await page.locator('.memory-list li button').first().click();
-  await page.locator('.leaflet-popup button', { hasText: 'Edit' }).click();
+  await openDetail(page);
+  await page.locator('#detail-edit').click();
   await page.locator('#memory-photo-input').setInputFiles({
     name: 'generated.jpg',
     mimeType: 'image/jpeg',
@@ -496,6 +504,12 @@ test('a card shows its photo, and the list does not hoard object URLs', async ({
   await expect(page.locator('#memory-photos img')).toHaveCount(1);
   await page.locator('#memory-save').click();
   await expect(page.locator('#memory-dialog')).toBeHidden();
+
+  /* Back to the list, which is where a card is. While the detail view is open the list is
+     display:none, so its observer never fires and no row ever asks for its cover: hidden
+     rows not loading pictures is the lazy loading working, not the cover failing. */
+  await page.locator('#detail-back').click();
+  await expect(page.locator('#memory-detail')).toBeHidden();
 
   /* The card picks the cover up without a reload. */
   const cover = page.locator('.memory-cover-image').first();

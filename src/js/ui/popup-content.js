@@ -1,7 +1,14 @@
 import { createIcon } from './icons.js';
 import { formatMemoryDate } from './format-date.js';
 
-/* Every value that came from the user goes in through textContent. Nothing in this file
+/* A preview, not a page. The popup used to carry the whole memory - the note in full, the
+   tags, and Edit, Move and Delete - squeezed into 280px floating over the map, which is the
+   narrowest and least stable surface in the app. Three buttons at 11px wide enough apart to
+   hit, under a note of up to five thousand characters, over a map that pans out from under
+   them. All of that is in the detail view now, and what is left here is enough to recognise
+   the pin you clicked: the picture, the title, when and where, and a way in.
+
+   Every value that came from the user goes in through textContent. Nothing in this file
    builds markup from a string, so a title of <img src=x onerror=...> renders as the
    characters the user typed. */
 function element(tag, className, text) {
@@ -15,61 +22,50 @@ function element(tag, className, text) {
   return node;
 }
 
-function buildTagList(tags, onToggleTag) {
-  const list = element('ul', 'popup-tags');
-
-  for (const tag of tags) {
-    const item = element('li');
-    const button = element('button', 'chip chip-tag popup-tag', tag);
-    button.type = 'button';
-    button.setAttribute('aria-label', 'Filter by tag ' + tag);
-    button.addEventListener('click', () => onToggleTag(tag));
-    item.append(button);
-    list.append(item);
-  }
-
-  return list;
-}
-
 /* Leaflet's own close control is turned off in markers-layer.js, so this is the popup's
    close button. A real button with a real name: the link it replaced pointed at "#close",
    which matches nothing, and a screen reader had no way to tell what it did. */
 function buildClose(onClose) {
-  const button = document.createElement('button');
+  const button = element('button', 'button button-sm button-ghost icon-only popup-close');
   button.type = 'button';
-  button.className = 'button button-sm button-ghost icon-only popup-close';
   button.setAttribute('aria-label', 'Close');
   button.append(createIcon('close', { size: 16 }));
   button.addEventListener('click', () => onClose());
   return button;
 }
 
-function buildActions({ onEdit, onMove, onDelete }) {
-  const actions = element('div', 'popup-actions');
+/* The image is filled in asynchronously by the caller once the blob is read, because popup
+   content has to be handed to Leaflet synchronously. The bed is painted meanwhile, so the
+   popup does not change height when the picture lands. */
+function buildCover() {
+  const cover = element('div', 'popup-cover');
 
-  for (const [label, icon, handler] of [
-    ['Edit', 'settings', onEdit],
-    ['Move', 'pin', onMove],
-    ['Delete', 'close', onDelete]
-  ]) {
-    const button = element('button', 'button button-sm popup-button');
-    button.type = 'button';
-    button.append(createIcon(icon, { size: 16 }), element('span', 'button-label', label));
-    button.addEventListener('click', handler);
-    actions.append(button);
+  const image = document.createElement('img');
+  image.className = 'popup-cover-image';
+  /* Decorative: the title beside it is the name of this memory, and "Photo of <title>"
+     underneath it would only be the same thing twice. */
+  image.alt = '';
+  image.decoding = 'async';
+  image.hidden = true;
+
+  cover.append(image);
+  return cover;
+}
+
+export function findPopupCover(root) {
+  return root.querySelector('.popup-cover');
+}
+
+/* One muted line. The date and the place are the two things that place a memory, and keeping
+   them on one line is what lets the popup stay the height of a preview. */
+function metaLine(memory) {
+  const parts = [formatMemoryDate(memory.date)];
+
+  if (memory.placeName) {
+    parts.push(memory.placeName);
   }
 
-  return actions;
-}
-
-/* Filled in asynchronously by the caller once the blobs are read, because popup content
-   has to be handed to Leaflet synchronously. */
-function buildPhotoStrip() {
-  return element('ul', 'popup-photos');
-}
-
-export function findPhotoStrip(root) {
-  return root.querySelector('.popup-photos');
+  return parts.join(' · ');
 }
 
 export function buildPopupContent(memory, handlers) {
@@ -79,27 +75,18 @@ export function buildPopupContent(memory, handlers) {
      and a reader tabbing in should be able to get out again before reading the whole thing. */
   root.append(buildClose(handlers.onClose));
 
-  root.append(element('h2', 'popup-title', memory.title));
-  root.append(element('p', 'popup-date', formatMemoryDate(memory.date)));
-
-  if (memory.placeName) {
-    root.append(element('p', 'popup-place', memory.placeName));
-  }
-
-  if (memory.note) {
-    /* Line breaks are preserved by white-space in CSS rather than by injecting <br>. */
-    root.append(element('p', 'popup-note', memory.note));
-  }
-
   if (memory.photoIds.length > 0) {
-    root.append(buildPhotoStrip());
+    root.append(buildCover());
   }
 
-  if (memory.tags.length > 0) {
-    root.append(buildTagList(memory.tags, handlers.onToggleTag));
-  }
+  root.append(element('h2', 'popup-title', memory.title));
+  root.append(element('p', 'popup-meta', metaLine(memory)));
 
-  root.append(buildActions(handlers));
+  const open = element('button', 'button button-primary popup-open');
+  open.type = 'button';
+  open.append(element('span', 'button-label', 'Open'));
+  open.addEventListener('click', () => handlers.onOpen());
+  root.append(open);
 
   return root;
 }

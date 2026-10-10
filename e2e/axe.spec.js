@@ -4,6 +4,7 @@ import {
   test,
   expect,
   openApp,
+  openDetail,
   seedLibrary,
   mockNominatim,
   generatePhotoBytes,
@@ -93,9 +94,8 @@ const STATES = {
     await openApp(page);
 
     const jpeg = await generatePhotoBytes(page);
-    if (narrow) await page.locator('#view-list').click();
-    await page.locator('.memory-list li button').first().click();
-    await page.locator('.leaflet-popup button', { hasText: 'Edit' }).click();
+    await openDetail(page, { narrow });
+    await page.locator('#detail-edit').click();
     await page.locator('#memory-photo-input').setInputFiles({
       name: 'generated.jpg',
       mimeType: 'image/jpeg',
@@ -105,9 +105,7 @@ const STATES = {
     await page.locator('#memory-save').click();
     await expect(page.locator('#memory-dialog')).toBeHidden();
 
-    if (narrow) await page.locator('#view-list').click();
-    await page.locator('.memory-list li button').first().click();
-    await page.locator('.popup-photo-button').first().click();
+    await page.locator('.detail-hero-button').click();
     await expect(page.locator('#lightbox')).toBeVisible();
   },
 
@@ -125,9 +123,8 @@ const STATES = {
     await openApp(page);
 
     const jpeg = await generatePhotoBytes(page);
-    if (narrow) await page.locator('#view-list').click();
-    await page.locator('.memory-list li button').first().click();
-    await page.locator('.leaflet-popup button', { hasText: 'Edit' }).click();
+    await openDetail(page, { narrow });
+    await page.locator('#detail-edit').click();
     await page.locator('#memory-photo-input').setInputFiles({
       name: 'generated.jpg',
       mimeType: 'image/jpeg',
@@ -137,12 +134,13 @@ const STATES = {
     await page.locator('#memory-save').click();
     await expect(page.locator('#memory-dialog')).toBeHidden();
 
+    await page.locator('#detail-back').click();
     if (narrow) await page.locator('#view-list').click();
     await page.locator('.memory-list li button').first().click();
     await expect(page.locator('.leaflet-popup')).toBeVisible();
-    /* The strip is filled lazily from Leaflet's contentupdate, so the popup is not finished
+    /* The cover is filled lazily from Leaflet's contentupdate, so the popup is not finished
        the moment it appears. */
-    await expect(page.locator('.popup-photo-button img')).toHaveCount(1);
+    await expect(page.locator('.popup-cover-image')).toBeVisible();
   },
 
   async journey(page, { narrow }) {
@@ -220,7 +218,7 @@ for (const theme of THEMES) {
         return null;
       };
 
-      return ['.popup-title', '.popup-date', '.popup-place', '.popup-note'].map((selector) => {
+      return ['.popup-title', '.popup-meta'].map((selector) => {
         const node = document.querySelector(selector);
         if (!node) return { selector, missing: true };
         const background = painted(node);

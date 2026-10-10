@@ -57,7 +57,7 @@ import { downloadText } from './io/download.js';
 import { checkFileSize, readImport, ImportError } from './io/parse-import.js';
 import { writeImportedPhotos } from './photos/import-photos.js';
 import { createImportDialog } from './ui/import-dialog.js';
-import { buildPopupContent, findPhotoStrip } from './ui/popup-content.js';
+import { buildPopupContent, findPopupCover } from './ui/popup-content.js';
 import { createPopupPhotos } from './ui/popup-photos.js';
 import { createOfflineBanner } from './ui/offline-banner.js';
 import { createInstallPrompt } from './ui/install-prompt.js';
@@ -188,10 +188,10 @@ function boot() {
   const filters = createFilterState();
   const lightbox = createLightbox({ reducedMotion: prefersReducedMotion });
 
+  /* One record, not the whole set: the popup shows a cover, and the detail view is what
+     reads every photo a memory has. */
   const popupPhotos = createPopupPhotos({
-    loadPhotos: (ids) => loadPhotos(ids),
-    onOpenLightbox: (records, index, memory, trigger) =>
-      lightbox.open(records, index, memory, trigger)
+    loadPhoto: (id) => photos.get(id)
   });
 
   const markers = createMarkersLayer(map, {
@@ -200,15 +200,7 @@ function boot() {
     iconCreateFunction: createClusterIcon,
     renderPopup: (memory) =>
       buildPopupContent(memory, {
-        onEdit: () => {
-          startEdit(memory.id).catch((error) => {
-            toast.show({ message: PHOTO_LOAD_FAILED_MESSAGE });
-            console.error(error);
-          });
-        },
-        onMove: () => startMove(memory.id),
-        onDelete: () => deleteMemory(memory.id),
-        onToggleTag: (tag) => filters.toggleTag(tag),
+        onOpen: () => openDetail(memory.id),
         onClose: () => closePopupFor(memory.id)
       }),
     /* The photo strip is filled from onPopupContent, not here: Leaflet rebuilds the content
@@ -221,7 +213,7 @@ function boot() {
         pauseForInteraction();
       }
     },
-    onPopupContent: (id) => fillPopupPhotos(id),
+    onPopupContent: (id) => fillPopupCover(id),
     /* Switching markers closes the old popup after the new id is already selected, so
        only the popup that still owns the selection is allowed to clear it. */
     onPopupClose: (id) => {
@@ -438,6 +430,11 @@ function boot() {
     if (!memory) {
       return;
     }
+
+    /* The popup is a preview of what this view now shows in full, so it has done its job.
+       Closed before the selection is set, never after: popupclose clears the selection if
+       the closing popup still owns it, which would undo the line below. */
+    map.closePopup();
 
     /* The marker highlights while the detail is open, through the same selection state the
        list and the map already share. */
@@ -832,7 +829,7 @@ function boot() {
     }
   }
 
-  function fillPopupPhotos(id) {
+  function fillPopupCover(id) {
     const memory = store.get(id);
     const marker = markers.getMarker(id);
     if (!memory || !marker || memory.photoIds.length === 0) {
@@ -840,14 +837,14 @@ function boot() {
     }
 
     /* The popup content is a function now, so getContent would hand back the function
-       itself. The rendered element is what has the photo strip in it. */
+       itself. The rendered element is what has the cover in it. */
     const popupElement = marker.getPopup().getElement();
-    const strip = popupElement ? findPhotoStrip(popupElement) : null;
-    if (!strip) {
+    const cover = popupElement ? findPopupCover(popupElement) : null;
+    if (!cover) {
       return;
     }
 
-    popupPhotos.fill(strip, memory).catch((error) => console.error(error));
+    popupPhotos.fill(cover, memory).catch((error) => console.error(error));
   }
 
   async function loadPhotos(photoIds) {

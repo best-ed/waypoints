@@ -25,9 +25,11 @@ const POPUP_OPTIONS = {
 };
 
 /* Everything the popup and tooltip actually show. Compared as a whole so a change to any
-   displayed field refreshes the popup, while an untouched memory keeps its DOM node. */
+   displayed field refreshes the popup, while an untouched memory keeps its DOM node. The
+   popup is a preview now, so the note and the tags are out of it and the cover is in: a
+   different first photo is a different picture, and nothing else here would notice. */
 function displaySignature(memory) {
-  return JSON.stringify([memory.title, memory.date, memory.placeName, memory.note, memory.tags]);
+  return JSON.stringify([memory.title, memory.date, memory.placeName, memory.photoIds[0] ?? null]);
 }
 
 /* The pin shows a bare number in journey mode, so the accessible name has to say what the

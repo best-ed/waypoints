@@ -145,6 +145,20 @@ export async function openApp(page, search = '') {
   );
 }
 
+/* Edit, Move and Delete live in the detail view now, so the way to any of them is through a
+   memory rather than through its pin. One helper, because every spec that used to reach for
+   the popup's buttons has to come this way instead. */
+export async function openDetail(page, { narrow = false, index = 0 } = {}) {
+  if (narrow) {
+    await page.locator('#view-list').click();
+  }
+
+  await page.locator('.memory-list li button').nth(index).click();
+  await expect(page.locator('.leaflet-popup')).toBeVisible();
+  await page.locator('.popup-open').click();
+  await expect(page.locator('#memory-detail')).toBeVisible();
+}
+
 /* Mocks a place search. Added after the guard route in the fixture, so it wins. */
 export async function mockNominatim(page, { search = SEARCH_RESULTS, reverse = REVERSE_RESULT } = {}) {
   await page.route(NOMINATIM, (route) => {
