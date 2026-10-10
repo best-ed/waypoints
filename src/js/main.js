@@ -450,6 +450,87 @@ function boot() {
     detail.close();
   }
 
+  /* Each action reads the open id rather than closing over one, so a row of four static
+     buttons works for whatever memory the view is showing after Previous and Next have been
+     through it. */
+  function withOpenMemory(run) {
+    const id = detail.openId();
+    if (id && store.get(id)) {
+      run(id);
+    }
+  }
+
+  /* On a narrow screen the detail view is the whole screen, so anything that happens on the
+     map has to give it back first. On a wide one the map is already there beside it and the
+     view stays open. */
+  function leaveDetailForMap() {
+    if (viewSwitch.isNarrow()) {
+      closeDetail();
+      viewSwitch.showMap();
+    }
+  }
+
+  function refreshDetail(id) {
+    if (detail.openId() !== id) {
+      return false;
+    }
+
+    const memory = store.get(id);
+    if (!memory) {
+      closeDetail();
+      return true;
+    }
+
+    detail.render(memory);
+    detail.setNeighbours(detailNeighbours(id));
+    return true;
+  }
+
+  document.getElementById('detail-edit').addEventListener('click', () => {
+    withOpenMemory((id) => {
+      /* Back to the button that opened it, not to the marker: the marker is behind the
+         detail view, and on a narrow screen it is not on screen at all. */
+      startEdit(id, { returnFocus: document.getElementById('detail-edit') }).catch((error) => {
+        toast.show({ message: PHOTO_LOAD_FAILED_MESSAGE });
+        console.error(error);
+      });
+    });
+  });
+
+  document.getElementById('detail-show').addEventListener('click', () => {
+    withOpenMemory((id) => {
+      const marker = markers.getMarker(id);
+      if (!marker) {
+        return;
+      }
+
+      leaveDetailForMap();
+      selection.select(id);
+      /* The same reveal every other path uses, so a pin inside a cluster or pruned off the
+         edge of the map is still arrived at rather than flown past. */
+      focusMarker(map, marker, {
+        reducedMotion: prefersReducedMotion(),
+        clusterGroup: markers.clusterGroup()
+      });
+    });
+  });
+
+  document.getElementById('detail-move').addEventListener('click', () => {
+    withOpenMemory((id) => {
+      leaveDetailForMap();
+      startMove(id);
+    });
+  });
+
+  document.getElementById('detail-delete').addEventListener('click', () => {
+    withOpenMemory((id) => {
+      /* Closed first, so the list is back on screen before deleteMemory moves focus to
+         whatever slid into the deleted memory's place. */
+      closeDetail();
+      deleteMemory(id);
+    });
+  });
+
   function stepDetail(direction) {
     const id = detail.openId();
     if (!id) {
@@ -780,7 +861,7 @@ function boot() {
     return loaded;
   }
 
-  async function startEdit(id) {
+  async function startEdit(id, { returnFocus = markerElement(id) } = {}) {
     const memory = store.get(id);
     if (!memory) {
       return;
@@ -790,10 +871,10 @@ function boot() {
 
     /* Closed before the dialog opens so the popup that reopens afterwards is rebuilt
        from the saved record rather than left showing the old values behind the modal. */
-    markers.getMarker(id).closePopup();
+    markers.getMarker(id)?.closePopup();
 
     const existingPhotos = await loadPhotos(memory.photoIds);
-    form.openForEdit(memory, { returnFocus: markerElement(id), photos: existingPhotos });
+    form.openForEdit(memory, { returnFocus, photos: existingPhotos });
   }
 
   /* Journey mode owns the unclustered state while it is on, so a move ending inside it must
@@ -874,8 +955,11 @@ function boot() {
 
     if (mode === 'edit') {
       /* Edit closed this popup on the way in, so reopening it leaves the screen exactly
-         as the user found it. */
-      openPopupFor(memoryId);
+         as the user found it - unless the edit came from the detail view, which is still
+         open and is where the reader was. */
+      if (detail.openId() !== memoryId) {
+        openPopupFor(memoryId);
+      }
       return;
     }
     draftMarker.clear();
@@ -920,7 +1004,9 @@ function boot() {
       draftMarker.clear();
       resultMarker.clear();
       form.closeAsSaved();
-      if (context.mode === 'edit') {
+      /* The detail view is showing the record that just changed, so it is redrawn from the
+         saved one rather than left displaying what was typed over. */
+      if (context.mode === 'edit' && !refreshDetail(id)) {
         openPopupFor(id);
       }
     } catch (error) {

@@ -94,6 +94,18 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Outside the scroller, so a long note scrolls past them rather than carrying them with it.
+   They wrap at the sidebar's width: four labelled buttons do not fit on one line at 320px,
+   and cutting them down to icons would leave Delete and Move as two unlabelled squares next
+   to each other. */
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
 /* ---- photos ------------------------------------------------------------------- */
 
 /* 16:10 and cropped. A memory's photos are whatever shape they came out of the camera, and a

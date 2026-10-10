@@ -384,6 +384,50 @@
           </div>
 
           <div id="detail-content" class="detail-content"></div>
+
+          <!--
+            A row at the foot of the view rather than the end of the content. A note can run
+            to five thousand characters, and everything someone might want to do with the
+            memory they are reading should not be a scroll away at the bottom of it.
+          -->
+          <div class="detail-actions">
+            <button
+              id="detail-edit"
+              class="button button-sm"
+              type="button"
+              data-icon="settings"
+              data-icon-size="16"
+            >
+              <span class="button-label">Edit</span>
+            </button>
+            <button
+              id="detail-show"
+              class="button button-sm"
+              type="button"
+              data-icon="map"
+              data-icon-size="16"
+            >
+              <span class="button-label">Show on map</span>
+            </button>
+            <button
+              id="detail-move"
+              class="button button-sm button-ghost"
+              type="button"
+              data-icon="pin"
+              data-icon-size="16"
+            >
+              <span class="button-label">Move</span>
+            </button>
+            <button
+              id="detail-delete"
+              class="button button-sm button-ghost"
+              type="button"
+              data-icon="close"
+              data-icon-size="16"
+            >
+              <span class="button-label">Delete</span>
+            </button>
+          </div>
         </section>
       </aside>
 

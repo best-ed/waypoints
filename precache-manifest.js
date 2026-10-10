@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "39ad9355efaa";
+self.PRECACHE_VERSION = "6b0140d921c1";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -15,12 +15,12 @@ self.PRECACHE_FILES = [
   { url: "icons/icon-maskable-512.png", hash: "9d9adfc08b12d69dbb9382711a07ec02b468102b07595f4504870d53278ac782" },
   { url: "icons/icon-maskable.svg", hash: "8cc77e94ee61857679fef6e9351cd60e6100f33d46bdbbb32e9d3f6a7751723a" },
   { url: "icons/icon.svg", hash: "2eb6bff67b3d1ed0d1279cbe5dac1c58eee100760366b1fe358bb7f5df3c320d" },
-  { url: "index.html", hash: "4ec1c06245a8aaa1a3b7e3ef001cd696ece756360ab6f1ffce00104fde0bbc94" },
+  { url: "index.html", hash: "edec95cde6db7ad535df30ab4e6a78a672cc17812f65dee6981640ecc1a466a1" },
   { url: "manifest.webmanifest", hash: "6aebd5bcbd8a3d19b6769b70c2f078df4519194704899393b452421dd5ca50e8" },
   { url: "src/css/base.css", hash: "9d15903b9de124ecaf89702ddd8e2a27532cbf7be8950893c2bd817099728fb0" },
   { url: "src/css/basemap.css", hash: "f549a6c2bc944c02c790c2160ccef3a8d5a5aeeed492e18b2c5918ca9604722a" },
   { url: "src/css/cluster.css", hash: "76aacce96f0f5233af3edab8255dc63949105b7821be85205973ab9e26b94159" },
-  { url: "src/css/detail.css", hash: "4e05a9fbb48a10b8ce29897e4df1ffd30508aa085dd5009eb613e18383ce3382" },
+  { url: "src/css/detail.css", hash: "dc7d3c43309a377dddc1273b3410d3f03486aa5afaccd900309bda83c44f0456" },
   { url: "src/css/dialog.css", hash: "0591f7910a1eb39855ffb45157c406886ebe9da347781185e89a3d9fd1fb9d72" },
   { url: "src/css/forced-colors.css", hash: "b371db268644c0f35318d9bbd5a9e90c30fdc8351efe10df2c290566b21241be" },
   { url: "src/css/journey.css", hash: "412950a149167468c21425e13d12a05824447c8b6544bccbc88de522dbb1f1b3" },
@@ -69,7 +69,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/journey/journey-order.js", hash: "27cfd981a5c7984aa7a6ed70ac45bcc608b215f8528b25ac83c5cd84d545058b" },
   { url: "src/js/journey/journey-summary.js", hash: "29d2a44ebbd0be72b7faeae8978b8c4ae594fa344d1bd2047be144abe122e25c" },
   { url: "src/js/journey/playback.js", hash: "17c3477b8c72aafe38f837dbce44200494a1fe44104791520727a5779fe5b6b0" },
-  { url: "src/js/main.js", hash: "f5d13453f7b4eae50df81bea2b1a5424be20d147ec47b159345426faaaa903aa" },
+  { url: "src/js/main.js", hash: "fa029088a1ccc76e81ec5b55cdd32f7e145965a65263d809cb07069b0a078550" },
   { url: "src/js/map/basemap-control.js", hash: "34f9d047896b722472fec9b78a8ec7d366697b13c47252ac8f79879ea75e7959" },
   { url: "src/js/map/basemap-preference.js", hash: "19e95114e821d4e1c12a8c167e99a435da65639ab41f03eb05c1df0f68868436" },
   { url: "src/js/map/cluster-icon.js", hash: "4413a2377a9bcf88c137cde42d0e537a777756c32d9e883fee42e41314fe966a" },
