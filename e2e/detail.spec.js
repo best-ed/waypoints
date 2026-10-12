@@ -327,6 +327,60 @@ test('Show on map gives the map back first on a narrow screen', async ({ page })
   expect(await page.evaluate(() => window.location.search)).toBe('');
 });
 
+test('focus follows to the pin once the map has settled, and the pin stays put', async ({ page }) => {
+  /* On a narrow screen the button that was pressed goes with the view, so focus would land on
+     the body. It cannot be moved any earlier than this: Leaflet 1.9 pans the map when a marker
+     takes focus, and doing that mid-flight cancels the fly. */
+  await page.setViewportSize({ width: 375, height: 760 });
+  await seedLibrary(page, [
+    memory('a', 'Over here', '2025-01-01', -1.3521, 36.6412),
+    memory('b', 'Over there', '2024-01-01', -1.2864, 36.8172)
+  ]);
+  await openApp(page);
+
+  await openDetail(page, { narrow: true });
+  await page.locator('#detail-show').click();
+  await expect(page.locator('.leaflet-popup')).toBeVisible();
+
+  await expect
+    .poll(() => page.evaluate(() => document.activeElement?.className ?? ''), { timeout: 10000 })
+    .toContain('leaflet-marker-icon');
+
+  /* And taking focus did not move the map out from under the popup: panInside finds the pin
+     already inside its padding once the fly has put it there. */
+  const centred = await page.evaluate(() => {
+    const map = document.getElementById('map').getBoundingClientRect();
+    const popup = document.querySelector('.leaflet-popup').getBoundingClientRect();
+    return { mapLeft: map.left, mapRight: map.right, popupLeft: popup.left, popupRight: popup.right };
+  });
+
+  expect(centred.popupLeft, JSON.stringify(centred)).toBeGreaterThanOrEqual(centred.mapLeft);
+  expect(centred.popupRight, JSON.stringify(centred)).toBeLessThanOrEqual(centred.mapRight);
+});
+
+test('dragging the map first keeps focus where the reader left it', async ({ page }) => {
+  /* Moving focus to the pin after someone has started looking somewhere else would be the app
+     arguing with them. */
+  await page.setViewportSize({ width: 375, height: 760 });
+  await seedLibrary(page, [memory('a', 'Over here', '2025-01-01', -1.3521, 36.6412)]);
+  await openApp(page);
+
+  await openDetail(page, { narrow: true });
+  await page.locator('#detail-show').click();
+
+  const box = await page.locator('#map').boundingBox();
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.6);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.3, { steps: 8 });
+  await page.mouse.up();
+
+  await page.waitForTimeout(1500);
+
+  expect(await page.evaluate(() => document.activeElement?.className ?? '')).not.toContain(
+    'leaflet-marker-icon'
+  );
+});
+
 test('Show on map lands the pin in the middle, not against the edge', async ({ page }) => {
   /* The fly has to be allowed to finish. Leaflet 1.9 pans the map when a marker takes focus
      (Marker._panOnFocus), so focusing the pin on the way there cancels the animation and

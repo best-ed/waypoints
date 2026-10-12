@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "1440343eced0";
+self.PRECACHE_VERSION = "1202dfc3edb8";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -69,13 +69,13 @@ self.PRECACHE_FILES = [
   { url: "src/js/journey/journey-order.js", hash: "27cfd981a5c7984aa7a6ed70ac45bcc608b215f8528b25ac83c5cd84d545058b" },
   { url: "src/js/journey/journey-summary.js", hash: "29d2a44ebbd0be72b7faeae8978b8c4ae594fa344d1bd2047be144abe122e25c" },
   { url: "src/js/journey/playback.js", hash: "17c3477b8c72aafe38f837dbce44200494a1fe44104791520727a5779fe5b6b0" },
-  { url: "src/js/main.js", hash: "e63b98b1f7328a552e415e10702c822b70b27252b8e13717ac50bf0a8f86572e" },
+  { url: "src/js/main.js", hash: "5b7d648a2efc4710f1c6d03877b9273f5f21b0ff619fe16b1651950a2e10a7df" },
   { url: "src/js/map/basemap-control.js", hash: "34f9d047896b722472fec9b78a8ec7d366697b13c47252ac8f79879ea75e7959" },
   { url: "src/js/map/basemap-preference.js", hash: "19e95114e821d4e1c12a8c167e99a435da65639ab41f03eb05c1df0f68868436" },
   { url: "src/js/map/cluster-icon.js", hash: "4413a2377a9bcf88c137cde42d0e537a777756c32d9e883fee42e41314fe966a" },
   { url: "src/js/map/create-map.js", hash: "b5b9073471e0fe889dd09a37a582fbdfc4de6a376f6c6e141a854a7733de21dc" },
   { url: "src/js/map/draft-marker.js", hash: "facc12686dd95e47ebf3feaed46619b4bac5d34e12d00cead9b54e84ae409420" },
-  { url: "src/js/map/focus-marker.js", hash: "38433893ab59a57ad4712878fb574c6f9a8eabe57ae55aca07c801283e1b01c1" },
+  { url: "src/js/map/focus-marker.js", hash: "87d8468bc84ec6c0a42fe329b89d5260ee52db6ed06316f85d2b3d0f89e0e2f0" },
   { url: "src/js/map/journey-chevrons.js", hash: "f4f3d096720ab9a43cf175ed8923223011bc21b27397a744c9dbba547b36f66c" },
   { url: "src/js/map/journey-path.js", hash: "9adb27aea9c9e9b04f3b0ade6edeb2fc17e7fac69c73ac94bc36fa4158c8c6d5" },
   { url: "src/js/map/markers-layer.js", hash: "25ffbb91ae05cd124c3f695f9d4af93f44faa3e8ef6832f18ac2185bd1551b8c" },

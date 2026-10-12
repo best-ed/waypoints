@@ -12,7 +12,7 @@ import { createClusterIcon, enableClusterKeyboard } from './map/cluster-icon.js'
 import { createBasemapControl } from './map/basemap-control.js';
 import { readBasemapId, writeBasemapId } from './map/basemap-preference.js';
 import { createMoveMode } from './map/move-mode.js';
-import { focusMarker, openMarkerPopup } from './map/focus-marker.js';
+import { focusMarker, focusMarkerWhenSettled, openMarkerPopup } from './map/focus-marker.js';
 import { createPlaceSearchControl } from './map/place-search-control.js';
 import { createResultMarker } from './map/result-marker.js';
 import { createRequestScheduler } from './geo/request-scheduler.js';
@@ -553,7 +553,7 @@ function boot() {
      screen would only put it on the body. */
   function leaveDetailForMap() {
     if (!viewSwitch.isNarrow()) {
-      return;
+      return false;
     }
 
     const pushed = detailPushed;
@@ -565,6 +565,7 @@ function boot() {
     }
 
     viewSwitch.showMap();
+    return true;
   }
 
   function refreshDetail(id) {
@@ -601,7 +602,19 @@ function boot() {
         return;
       }
 
-      leaveDetailForMap();
+      const left = leaveDetailForMap();
+
+      /* Only where focus would otherwise be lost. On a narrow screen the button that was
+         pressed has just gone with the view, so focus would fall to the body; on a wide one
+         the button is still there and still the right place to be, and dragging focus onto
+         the map would be taking it from somewhere good.
+
+         Armed before the fly rather than after, because reduced motion makes the move
+         synchronous and moveend has already fired by the time focusMarker returns. */
+      if (left) {
+        focusMarkerWhenSettled(map, marker);
+      }
+
       selection.select(id);
       /* The same reveal every other path uses, so a pin inside a cluster or pruned off the
          edge of the map is still arrived at rather than flown past. */
@@ -609,15 +622,6 @@ function boot() {
         reducedMotion: prefersReducedMotion(),
         clusterGroup: markers.clusterGroup()
       });
-
-      /* Deliberately nothing is focused here. Focusing the pin was the obvious thing to do on
-         a narrow screen, where the button that was pressed has just gone with the view, and it
-         cancelled the fly: Leaflet 1.9's Marker._panOnFocus pans the map when a marker takes
-         focus, and doing that mid-flight stopped the animation and left the pin pressed
-         against the edge of the map with its popup running off the side of it. Measured, not
-         guessed: the pin landed at the map's left edge rather than its centre and 117px of the
-         popup was clipped. Giving focus somewhere useful once the fly has settled is worth
-         doing, and it is not a line of code. */
     });
   });
 
