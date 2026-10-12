@@ -128,6 +128,68 @@
   object-fit: cover;
 }
 
+.photo-tile.is-dragging {
+  opacity: 0.4;
+}
+
+/* Where it would land. An edge rather than a shift of the tiles around it: moving the grid
+   under the pointer mid-drag makes the target move as you aim at it. */
+.photo-tile.is-drop-target {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+/* One word, on the one tile it is true of. The cover travels with the memory into the list,
+   the popup and the detail view, and which photo that is was previously something you worked
+   out from position. */
+.photo-cover-badge {
+  position: absolute;
+  top: var(--space-1);
+  left: var(--space-1);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  line-height: var(--line-loose);
+}
+
+/* Out of the way until wanted. Three controls over an 80px thumbnail hide the thing they are
+   about, so they come in on hover and on focus - focus-within, because keyboard users reach
+   them by tabbing into the tile and they have to be visible before they are reached. */
+.photo-actions {
+  position: absolute;
+  left: var(--space-0);
+  right: var(--space-0);
+  bottom: var(--space-0);
+  display: flex;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background-color: var(--color-surface);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+
+.photo-tile:hover .photo-actions,
+.photo-tile:focus-within .photo-actions {
+  opacity: 1;
+}
+
+/* Always there for a pointer that cannot hover, where there is no hover to reveal them. */
+@media (hover: none) {
+  .photo-actions {
+    opacity: 1;
+  }
+}
+
+.photo-move {
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  padding: var(--space-0);
+}
+
 /* A small round button in the corner rather than a full pill across the picture. The pill
    covered about half of an 80px thumbnail, which left no way to tell which photo you were
    about to remove by looking at it. */

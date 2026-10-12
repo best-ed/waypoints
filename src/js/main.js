@@ -162,6 +162,7 @@ function boot() {
     inputElement: document.getElementById('memory-photo-input'),
     countElement: document.getElementById('memory-photos-count'),
     errorElement: document.getElementById('memory-photos-errors'),
+    statusElement: document.getElementById('memory-photos-status'),
     processFiles
   });
 
