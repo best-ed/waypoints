@@ -117,7 +117,11 @@ export function createPhotoPicker({
        turn off: the picture is picked up by the browser and the list is in its new order the
        moment it is let go. */
     item.draggable = true;
+    /* Position, for a drop to read, and identity, which survives a reorder. The grid is
+       rebuilt on every change and every object URL with it, so the src of the image in a tile
+       says nothing about which photo it is. */
     item.dataset.index = String(index);
+    item.dataset.photoId = entry.id;
 
     const image = element('img', 'photo-thumb');
     image.src = urls.create(entry.thumb);

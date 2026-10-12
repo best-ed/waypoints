@@ -7,6 +7,7 @@ import {
   openDetail,
   openPopup,
   seedLibrary,
+  seedSettings,
   mockNominatim,
   generatePhotoBytes,
   memory,
@@ -60,6 +61,63 @@ const STATES = {
     const box = await page.locator('#map').boundingBox();
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
     await expect(page.locator('#memory-dialog')).toBeVisible();
+  },
+
+  /* The tag suggestions, which are a listbox over a combobox: the one popup in the app that
+     has to carry its state in attributes rather than in focus. */
+  async 'tag autocomplete open'(page, { narrow }) {
+    /* Reached through Edit rather than by placing a pin: the suggestions come from the tags
+       already in the library, and with a library seeded the pins sit under the middle of the
+       map at 1280, where a click opens a popup instead of placing anything. */
+    await seedLibrary(page);
+    await openApp(page);
+    await openDetail(page, { narrow });
+    await page.locator('#detail-edit').click();
+    await expect(page.locator('#memory-dialog')).toBeVisible();
+
+    await page.locator('#memory-tags').click();
+    await page.locator('#memory-tags').type('t');
+    await expect(page.locator('#memory-tag-listbox')).toBeVisible();
+    await page.keyboard.press('ArrowDown');
+  },
+
+  /* A full grid: six tiles, each with a cover badge or three move controls over an 80px
+     picture, which is the densest thing in the app. */
+  async 'six photos'(page, { narrow }) {
+    await seedSettings(page, { suggestPlaceNames: false });
+    await seedLibrary(page, []);
+    await page.goto(BASE);
+    if (narrow) await page.locator('#view-map').click();
+    await page.locator('#add-memory').click();
+    const box = await page.locator('#map').boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(page.locator('#memory-dialog')).toBeVisible();
+
+    const jpeg = await generatePhotoBytes(page);
+    await page.locator('#memory-photo-input').setInputFiles(
+      ['a', 'b', 'c', 'd', 'e', 'f'].map((name) => ({
+        name: name + '.jpg',
+        mimeType: 'image/jpeg',
+        buffer: Buffer.from(jpeg, 'base64')
+      }))
+    );
+    await expect(page.locator('#memory-photos img')).toHaveCount(6);
+  },
+
+  /* The question asked in the footer's place when leaving would cost something. */
+  async 'discard prompt'(page, { narrow }) {
+    await seedSettings(page, { suggestPlaceNames: false });
+    await seedLibrary(page, []);
+    await page.goto(BASE);
+    if (narrow) await page.locator('#view-map').click();
+    await page.locator('#add-memory').click();
+    const box = await page.locator('#map').boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(page.locator('#memory-dialog')).toBeVisible();
+
+    await page.locator('#memory-title').fill('Worth keeping');
+    await page.locator('#memory-cancel').click();
+    await expect(page.locator('#memory-discard')).toBeVisible();
   },
 
   /* Nothing saved yet: the welcome block, with the search, the filters and the journey all

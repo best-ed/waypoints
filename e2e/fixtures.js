@@ -135,6 +135,19 @@ export async function seedLibrary(page, memories = LIBRARY) {
   }, memories);
 }
 
+/* Settings, written before anything on the page runs. Mostly used to turn place suggestions
+   off: placing a pin reverse geocodes, and a test about the form has no business depending on
+   a lookup it never asked for. Unconditional, unlike the library, because a test that sets a
+   setting means it. */
+export async function seedSettings(page, settings) {
+  await page.addInitScript((values) => {
+    window.localStorage.setItem(
+      'waypoints:settings',
+      JSON.stringify({ suggestPlaceNames: true, theme: 'system', dimMapInDark: true, ...values })
+    );
+  }, settings);
+}
+
 export async function openApp(page, search = '') {
   await page.goto(BASE + search);
   await page.waitForFunction(

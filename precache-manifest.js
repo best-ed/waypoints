@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "88c2f0799464";
+self.PRECACHE_VERSION = "374e0a3e6e08";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -118,7 +118,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/ui/neighbours.js", hash: "96778c9dc42343fa5e812f5267a495954918a3c15635d856bf7bcd22430463ce" },
   { url: "src/js/ui/object-urls.js", hash: "bd262bf69375cc135a2e2a037669c48f394cbf476f7e9d3c08b31136a3e6d2f6" },
   { url: "src/js/ui/offline-banner.js", hash: "a2e5a720f4b3b7ac93b8fe4d82c825e32644d4d371931ba647d42f2e6660f5c3" },
-  { url: "src/js/ui/photo-picker.js", hash: "4911018f617948ffedff50e64cb130a979d2b2532b5a32a30e6148b182dd3f38" },
+  { url: "src/js/ui/photo-picker.js", hash: "6dd07596f496c2752e35467eafde27e09c8a698a25fa299fa5c60ff8276d0b22" },
   { url: "src/js/ui/placement-hint.js", hash: "e28f00628550d4d00b8afe8b98e141908d711eb29e190384ca11d01b15d27475" },
   { url: "src/js/ui/popup-content.js", hash: "a39e3abbbe191e565871f8f37c88a9bd32407871c31da1393991950655530b31" },
   { url: "src/js/ui/popup-photos.js", hash: "98a2d0ee3e6b7d7d30cea098732e9216507a11afe5a9c77cb059af32690338ba" },
