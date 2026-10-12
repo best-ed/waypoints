@@ -16,9 +16,15 @@ export function suggestTags(input, allTags, selected = [], { limit = MAX_SUGGEST
   const tags = Array.isArray(allTags) ? allTags : [];
   const taken = new Set((Array.isArray(selected) ? selected : []).map(normalizeText));
 
-  const available = tags.filter(
-    (tag) => typeof tag === 'string' && tag !== '' && !taken.has(normalizeText(tag))
-  );
+  /* Folded before the blank check as well as before the comparison: the store's tags are
+     trimmed already, but this takes whatever it is handed. */
+  const available = tags.filter((tag) => {
+    if (typeof tag !== 'string') {
+      return false;
+    }
+    const normalized = normalizeText(tag);
+    return normalized !== '' && !taken.has(normalized);
+  });
 
   const query = normalizeText(input);
 
