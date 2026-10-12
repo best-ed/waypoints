@@ -501,8 +501,42 @@
 
         <div class="field">
           <label class="field-label" for="memory-tags">Tags</label>
-          <input id="memory-tags" name="tags" class="field-input" type="text" autocomplete="off" />
-          <p id="memory-tags-hint" class="field-hint">Separate tags with commas</p>
+
+          <!-- The tags already on this memory. A list, because that is what it is, and each
+               one carries the button that takes it off. -->
+          <ul id="memory-tag-tokens" class="tag-tokens" aria-label="Tags on this memory" hidden></ul>
+
+          <!--
+            The ARIA 1.2 combobox pattern. Focus stays in the input the whole time and
+            aria-activedescendant says which suggestion is current: moving real focus into the
+            listbox would take the keyboard away from the field being typed into.
+
+            No name attribute, deliberately. The tokens above are what the memory has, not
+            whatever happens to be half typed here, so the form reads the list rather than the
+            input and FormData must not see this at all.
+          -->
+          <div class="tag-combobox">
+            <input
+              id="memory-tags"
+              class="field-input tag-input"
+              type="text"
+              role="combobox"
+              aria-expanded="false"
+              aria-controls="memory-tag-listbox"
+              aria-autocomplete="list"
+              aria-describedby="memory-tags-hint"
+              autocomplete="off"
+            />
+            <ul
+              id="memory-tag-listbox"
+              class="tag-listbox"
+              role="listbox"
+              aria-label="Matching tags"
+              hidden
+            ></ul>
+          </div>
+
+          <p id="memory-tags-hint" class="field-hint">Enter, comma or Tab adds a tag</p>
           <p id="memory-tags-error" class="field-error" hidden></p>
         </div>
 

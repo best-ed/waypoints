@@ -169,3 +169,84 @@
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
+
+/* ---- tags ------------------------------------------------------------------- */
+
+/* What the memory has. Shape and colour come from .chip-tag in primitives.css; these are the
+   same labels the detail view shows, with the control that takes one off built in. */
+.tag-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+  padding: var(--space-0);
+  list-style: none;
+}
+
+/* Shape, bed and type come from .chip and .chip-tag in primitives.css: a token is a tag
+   label, the same one the detail view shows, with the control that takes it off built in.
+   Only the gap for that control belongs here. */
+.tag-token {
+  gap: var(--space-1);
+  padding-right: var(--space-1);
+}
+
+.tag-token-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-0);
+  border: none;
+  border-radius: var(--radius-full);
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.tag-token-remove:hover {
+  color: var(--color-accent);
+}
+
+.tag-token-remove:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+/* The popup is positioned against this rather than the field, so it lines up with the input
+   and not with the tokens above it. */
+.tag-combobox {
+  position: relative;
+}
+
+/* --elevation-3 is for something that arrives and then leaves, which is exactly what a
+   suggestion list does. */
+.tag-listbox {
+  position: absolute;
+  z-index: 1;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  right: 0;
+  max-height: 11rem;
+  overflow-y: auto;
+  margin: var(--space-0);
+  padding: var(--space-1);
+  list-style: none;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-overlay);
+  box-shadow: var(--elevation-3);
+}
+
+.tag-option {
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+/* The active option, which is where Enter would land. Not :hover and not focus: focus stays
+   in the input the whole time, which is the point of aria-activedescendant. */
+.tag-option.is-active,
+.tag-option:hover {
+  background-color: var(--color-bg);
+}

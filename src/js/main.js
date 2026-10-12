@@ -905,6 +905,10 @@ function boot() {
 
   const form = createMemoryForm({
     photoPicker,
+    createIcon,
+    /* Read when the suggestions are built, never held: a tag added to another memory while
+       this dialog is open is offered the next time somebody types in it. */
+    getAllTags: () => allTags(store.list()),
     onSubmit: (values, context) => handleSubmit(values, context),
     onCancel: (context) => handleCancel(context)
   });

@@ -1,4 +1,5 @@
-import { parseTagInput, todayLocalDate } from './form-values.js';
+import { todayLocalDate } from './form-values.js';
+import { createTagInput } from './tag-input.js';
 import { createAutoGrow } from './autogrow.js';
 import { normalizeMemoryInput } from '../data/normalize.js';
 import { validateMemory } from '../data/validate.js';
@@ -43,7 +44,17 @@ function isBackdropClick(event, dialog) {
   );
 }
 
-export function createMemoryForm({ document: doc = document, onSubmit, onCancel, photoPicker, now = () => new Date() }) {
+export function createMemoryForm({
+  document: doc = document,
+  onSubmit,
+  onCancel,
+  photoPicker,
+  /* Every tag in the library, read when the suggestions are built rather than held, so a
+     memory saved while the dialog is open is offered the next time somebody types. */
+  getAllTags = () => [],
+  createIcon = null,
+  now = () => new Date()
+}) {
   const dialog = doc.getElementById('memory-dialog');
   const form = doc.getElementById('memory-form');
   const coordinatesOutput = doc.getElementById('memory-coordinates');
@@ -56,6 +67,16 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
   const formError = doc.getElementById('memory-form-error');
 
   const noteHeight = createAutoGrow(noteInput);
+
+  const tagInput = createTagInput({
+    inputElement: doc.getElementById('memory-tags'),
+    tokensElement: doc.getElementById('memory-tag-tokens'),
+    listboxElement: doc.getElementById('memory-tag-listbox'),
+    errorElement: doc.getElementById('memory-tags-error'),
+    getAllTags,
+    createIcon,
+    onChange: () => revalidate()
+  });
 
   let session = null;
   let returnFocusTo = null;
@@ -132,7 +153,8 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
       date: data.get('date'),
       note: data.get('note'),
       placeName: data.get('placeName'),
-      tags: parseTagInput(data.get('tags')),
+      /* From the tokens, not from the input: what is half typed in the box is not yet a tag. */
+      tags: tagInput.getTags(),
       lat: session.coordinates.lat,
       lng: session.coordinates.lng
     };
@@ -205,8 +227,9 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
       form.elements.date.value = memory.date;
       form.elements.note.value = memory.note;
       form.elements.placeName.value = memory.placeName;
-      form.elements.tags.value = memory.tags.join(', ');
+      tagInput.setTags(memory.tags);
     } else {
+      tagInput.setTags([]);
       form.elements.date.value = todayLocalDate(now());
     }
 
