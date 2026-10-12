@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "0b73c7f2970b";
+self.PRECACHE_VERSION = "4caeaf72df28";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -111,7 +111,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/ui/journey-controls.js", hash: "440e8dee56facb2038c35e4977481c392a2f485e0d2d95175ef39d3b2986be8b" },
   { url: "src/js/ui/journey-panel.js", hash: "7d2389d5d31f2a34810f507c8f5e629b2e3ca374f393de008df54560a9da2cd8" },
   { url: "src/js/ui/lightbox.js", hash: "9d5c8fdd78162b6f70ee1b41ccf3f025211c679d53b0502d45f8c3503ba78650" },
-  { url: "src/js/ui/memory-form.js", hash: "f7c2e03ce6ac1c9771a49f17d128adea52a507681d23a9741f91f0a7c3037b37" },
+  { url: "src/js/ui/memory-form.js", hash: "db65ef53f82ea5014b0392cbe10d290a7e6763c3743c132046e6a10972558af6" },
   { url: "src/js/ui/memory-list.js", hash: "f993564912affe6fd43ed84aad439857343376e454ed1f7fbb85b72410a74b7b" },
   { url: "src/js/ui/motion.js", hash: "4e44bcf163a2da5979f4fecb9fcad37ec49dba53b8e498a580b41741fc015307" },
   { url: "src/js/ui/move-photo.js", hash: "54f38862e464987c168fb07c1d90ddc189e5d8ad58ea1f1b615f5423235126e5" },

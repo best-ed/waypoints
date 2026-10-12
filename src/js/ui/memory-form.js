@@ -1,5 +1,7 @@
 import { parseTagInput, todayLocalDate } from './form-values.js';
 import { createAutoGrow } from './autogrow.js';
+import { normalizeMemoryInput } from '../data/normalize.js';
+import { validateMemory } from '../data/validate.js';
 
 const SAVED = 'saved';
 const CANCELLED = 'cancelled';
@@ -136,6 +138,31 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     };
   }
 
+  /* An error clears the moment the field is right again, rather than waiting for the next
+     submit to admit it. The reverse is deliberately not done: nothing new is reported while
+     someone is still typing, because a title is empty for as long as it takes to type the
+     first letter and saying so is just shouting at them.
+
+     The same validator the store uses, over the whole form, rather than a per-field copy of
+     the rules. A second set of rules beside the real ones is a second thing to get wrong. */
+  function clearErrorWhenFixed(field) {
+    if (field.error.hidden) {
+      return;
+    }
+
+    const { errors } = validateMemory(normalizeMemoryInput(readValues()));
+
+    if (!errors[field.name]) {
+      applyFieldError(field, null);
+    }
+  }
+
+  function revalidate() {
+    for (const field of fields) {
+      clearErrorWhenFixed(field);
+    }
+  }
+
   function showPlaceHint(visible) {
     placeHint.hidden = !visible;
   }
@@ -231,6 +258,26 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     });
   });
 
+  for (const field of fields) {
+    field.input.addEventListener('input', () => clearErrorWhenFixed(field));
+  }
+
+  /* Ctrl+Enter and Cmd+Enter save from anywhere in the form, including the note, where plain
+     Enter has to keep meaning a new line. requestSubmit rather than submit(), because submit()
+     skips the submit event and with it everything the handler does. */
+  form.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' || !(event.ctrlKey || event.metaKey)) {
+      return;
+    }
+
+    if (saveButton.disabled) {
+      return;
+    }
+
+    event.preventDefault();
+    form.requestSubmit();
+  });
+
   cancelButton.addEventListener('click', () => close(CANCELLED));
 
   dialog.addEventListener('click', (event) => {
@@ -262,6 +309,7 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     closeAsSaved: () => close(SAVED),
     showFieldErrors,
     showFormError,
+    revalidate,
     setBusy,
     showPlaceHint,
     suggestPlaceName,
