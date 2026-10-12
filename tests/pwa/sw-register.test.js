@@ -273,6 +273,71 @@ test('removing unregisters every worker it finds', async () => {
   assert.ok(registry.registrations.every((r) => r.unregistered));
 });
 
+/* The handshake that makes the cleanup's order real. Unregistering does not release the page
+   a worker is already controlling, so without this the worker goes on serving tiles into the
+   cache being deleted and opens it again the moment it does. */
+function fakeController({ reply = 'caching-stopped', silent = false } = {}) {
+  const sent = [];
+
+  return {
+    sent,
+    postMessage(data, transfer) {
+      sent.push(data);
+      if (silent) {
+        return;
+      }
+      /* The real worker answers down the port the page opened. */
+      transfer[0].postMessage(reply);
+    }
+  };
+}
+
+test('the worker is told to stop caching before anything is deleted', async () => {
+  const controller = fakeController();
+  const cacheStorage = fakeCacheStorage(['waypoints-tiles']);
+  const order = [];
+
+  const registry = fakeRegistry(1);
+  registry.controller = controller;
+
+  const original = controller.postMessage.bind(controller);
+  controller.postMessage = (data, transfer) => {
+    order.push('stop-caching');
+    original(data, transfer);
+  };
+
+  const deleteOriginal = cacheStorage.delete.bind(cacheStorage);
+  cacheStorage.delete = (name) => {
+    order.push('delete');
+    return deleteOriginal(name);
+  };
+
+  await removeServiceWorkers({ serviceWorker: registry, cacheStorage });
+
+  assert.deepEqual(controller.sent, ['stop-caching']);
+  assert.deepEqual(order, ['stop-caching', 'delete']);
+});
+
+test('a worker that never answers does not hold up the cleanup', async () => {
+  const registry = fakeRegistry(1);
+  registry.controller = fakeController({ silent: true });
+  const cacheStorage = fakeCacheStorage(['waypoints-tiles']);
+
+  await removeServiceWorkers({ serviceWorker: registry, cacheStorage, stopCachingTimeout: 10 });
+
+  assert.deepEqual(cacheStorage.deleted, ['waypoints-tiles']);
+});
+
+test('nothing is posted when no worker is controlling the page', async () => {
+  const registry = fakeRegistry(1);
+  registry.controller = null;
+  const cacheStorage = fakeCacheStorage(['waypoints-tiles']);
+
+  await removeServiceWorkers({ serviceWorker: registry, cacheStorage });
+
+  assert.deepEqual(cacheStorage.deleted, ['waypoints-tiles']);
+});
+
 test('removing takes our caches with it and leaves everything else alone', async () => {
   const cacheStorage = fakeCacheStorage([
     'waypoints-precache-aaa',

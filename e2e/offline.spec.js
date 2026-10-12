@@ -104,6 +104,21 @@ test('the sw flag survives a filter change and turns the worker off again', asyn
     })
     .toBe(0);
 
+  /* The page is still controlled: unregistering does not release a document the worker already
+     has. So this drags the map, which asks for tiles the worker will handle after the cleanup
+     has run. Serving one used to open the tile cache again and put the whole thing back, and
+     this test failed about once in twenty under parallel load because the map's own first
+     tiles were sometimes late enough to do it by themselves. Doing it on purpose is what turns
+     that into something either true or false every time. */
+  expect(await page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+
+  const box = await page.locator('#map').boundingBox();
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.6);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.2, { steps: 10 });
+  await page.mouse.up();
+  await page.waitForTimeout(1500);
+
   const caches = await page.evaluate(() =>
     window.caches.keys().then((names) => names.filter((name) => name.startsWith('waypoints-')))
   );

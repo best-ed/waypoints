@@ -29,7 +29,61 @@ export function shouldRegister({ hostname, search, supported }) {
 
    The caches go too. Nothing would read them with no worker registered, but leaving a hundred
    files per version lying around in storage is not what "off" should mean. */
-export async function removeServiceWorkers({ serviceWorker, cacheStorage, prefix = 'waypoints-' }) {
+/* How long to wait for the worker to confirm it has stopped writing. It is alive - the page
+   has a controller - so the reply comes back in a tick; this is only here so a wedged worker
+   cannot hold up a boot, and the cleanup goes ahead either way. */
+const STOP_CACHING_TIMEOUT = 2000;
+
+/* Unregistering a worker does not release the page it is already controlling. The document
+   keeps its controller for the whole of its life, so the worker being removed goes on handling
+   this page's fetches while we delete its caches, and a tile served after the delete opens the
+   tile cache again and puts it straight back.
+
+   So it is asked to stop first, and it answers. The handshake is what makes the order real
+   rather than likely: without it, one no-flag load left waypoints-tiles behind whenever a tile
+   happened to arrive late, which under parallel test load was about one run in twenty. */
+async function stopCaching(serviceWorker, timeout) {
+  const worker = serviceWorker.controller;
+
+  if (!worker || typeof MessageChannel !== 'function') {
+    return false;
+  }
+
+  return new Promise((resolve) => {
+    const channel = new MessageChannel();
+    let settled = false;
+
+    const finish = (stopped) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      channel.port1.close();
+      resolve(stopped);
+    };
+
+    channel.port1.onmessage = (event) => finish(event.data === 'caching-stopped');
+    setTimeout(() => finish(false), timeout);
+
+    try {
+      worker.postMessage('stop-caching', [channel.port2]);
+    } catch {
+      /* A worker that has already gone cannot write anything either. */
+      finish(false);
+    }
+  });
+}
+
+export async function removeServiceWorkers({
+  serviceWorker,
+  cacheStorage,
+  prefix = 'waypoints-',
+  stopCachingTimeout = STOP_CACHING_TIMEOUT
+}) {
+  /* Before the unregister, not after: a worker that is still registered is certain to be the
+     one controlling this page. */
+  await stopCaching(serviceWorker, stopCachingTimeout);
+
   const registrations = await serviceWorker.getRegistrations();
 
   await Promise.all(registrations.map((registration) => registration.unregister()));

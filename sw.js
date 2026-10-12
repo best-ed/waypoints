@@ -22,6 +22,13 @@ const TILE_HOSTS = ['.tile.openstreetmap.org'];
    useful without letting a long session grow without limit. */
 const TILE_CACHE_LIMIT = 300;
 
+/* Set when the page tells us it is removing this worker. Unregistering does not release the
+   page a worker is already controlling: the document keeps its controller for its whole life,
+   so this worker goes on handling fetches for a page that is in the middle of deleting the
+   caches it writes to. Every tile it then serves calls caches.open, which creates the tile
+   cache again, and "off" quietly stopped meaning off. */
+let cachingStopped = false;
+
 function isTile(url) {
   return TILE_HOSTS.some((host) => url.hostname.endsWith(host));
 }
@@ -117,6 +124,12 @@ async function trimTileCache(cache) {
    nothing, and the map draws instantly on a slow connection instead of waiting on the
    network. */
 async function serveTile(event) {
+  /* Checked before caches.open, not before the put: opening a cache that is not there creates
+     it, so a single tile served after the cleanup is enough to put the whole thing back. */
+  if (cachingStopped) {
+    return fetch(event.request);
+  }
+
   const cache = await caches.open(TILE_CACHE);
   const cached = await cache.match(event.request);
 
@@ -199,5 +212,14 @@ self.addEventListener('message', (event) => {
      activates, and controllerchange on the page triggers the reload. */
   if (event.data === 'skip-waiting') {
     self.skipWaiting();
+  }
+
+  /* The page is unregistering this worker and is about to delete its caches. Stop writing to
+     them first and say so, so the delete is the last thing that touches them. Replied to down
+     the port the page opened rather than broadcast, because the page has to know this worker
+     in particular has stopped before it deletes anything. */
+  if (event.data === 'stop-caching') {
+    cachingStopped = true;
+    event.ports[0]?.postMessage('caching-stopped');
   }
 });
