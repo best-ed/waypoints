@@ -22,6 +22,24 @@
 - The popup's close control is a real button with a real name. It was a link pointing at
   nothing, which is Leaflet's own markup and which no screen reader could make sense of.
 
+### Writing a memory
+
+- **Tags are tokens.** Type and press Enter, and the ones already in your library are offered
+  as you go. Each token says what will be stored and carries its own remove button, instead of
+  a line of commas that quietly became something else on save.
+- **Photos have an order, and the first one is the cover.** Drag them, or use Move earlier,
+  Move later and Make cover on each tile. Moves are announced.
+- Drop photos onto the form, or paste one straight in.
+- **Leaving a half-written memory asks first**, inside the dialog rather than through a browser
+  prompt, and so does reloading the page. A form you have not touched still closes without a
+  word.
+- An error clears as soon as that field is right, rather than waiting for the next save.
+- Ctrl+Enter and Cmd+Enter save from anywhere in the form.
+- The note grows with what you write in it, up to a point, and Save stays on screen on a phone.
+- The fields read title, date, place, note: the note is no longer between the date and the
+  place it belongs to.
+- The import preview now sits clearly in front of Settings instead of looking like part of it.
+
 ### The sidebar and the list
 
 - **The memories come first.** The filter controls live behind one Filters button with a count

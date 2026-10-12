@@ -469,6 +469,129 @@ error anyone can act on.
 
 ---
 
+## The Form
+
+One dialog for adding and for editing, and the only place in the app where somebody is
+writing rather than reading. Everything below follows from that: what is typed has to be hard
+to lose, and the form has to say what it will store rather than what was typed at it.
+
+The order is **title, date, place, note, tags, photos**: what the memory is, then when and
+where, then what there is to say about it. The note used to sit above the place, which put the
+longest field in the form between the date and the thing the date belongs to. The title is the
+one field holding the name of a memory, so it carries `--font-display` like every other memory
+title.
+
+- **The note grows with what is in it**, up to a cap in the stylesheet, then scrolls.
+  `ui/autogrow.js` measures; the ceiling is `max-height` on `.field-textarea`, so the number
+  lives with the rest of the sizing. It has to be refitted after `showModal`, because a
+  textarea that is still `display: none` measures its content as nothing and comes back one
+  row tall.
+- **The footer is sticky at both widths.** The dialog's padding is a custom property because
+  the footer pulls itself out to the same edges, and on a narrow screen both change together
+  to clear the safe areas. Two numbers that have to agree, stated once.
+- **An error clears the moment its field is right**, rather than waiting for the next submit to
+  admit it. The reverse is deliberately not done: nothing new is reported while someone is
+  still typing, because a title is empty for as long as it takes to type the first letter and
+  saying so is just shouting. It runs the store's own validator over the whole form rather than
+  a per-field copy of the rules.
+- **Ctrl+Enter and Cmd+Enter save** from anywhere, including the note, where plain Enter has to
+  keep meaning a new line. `requestSubmit`, not `submit()`, which skips the submit event and
+  everything the handler does.
+
+### Tags
+
+A token input, not a line of commas. The old field asked somebody to hold the whole list in
+their head as a string: no way to see what you had, no way to take one off without editing
+around it, and no way to learn that the library already says "trail" and not "trails". The
+store has always normalized the result, so "Trail, trail , TRAIL" quietly became one tag while
+the field went on claiming there were three.
+
+**Committing lowercases.** A token shows what will be stored; the alternative is a field
+showing "Trail" over a memory holding "trail".
+
+- Enter, comma and Tab commit. Tab only when there is something to commit, so it still leaves
+  the field. Enter is always swallowed, open list or not, or it would submit the memory.
+- Backspace in an empty input takes the last token off.
+- The input has **no `name`**: the tokens are what the memory has, not whatever is half typed,
+  so `readValues` reads the list and `FormData` must never see the box.
+- Blur commits what is in the box. Losing a tag because somebody reached for Save is the kind
+  of small theft nobody reports.
+- The suggestions are the ARIA 1.2 combobox pattern: focus stays in the input throughout and
+  `aria-activedescendant` says which option is current, because moving real focus into a
+  listbox takes the keyboard away from the field being typed into. Escape closes the popup and
+  is stopped there, so the first Escape is for the list and the next one is for the dialog.
+- `ui/suggest-tags.js` is pure: prefix matches first, then substring, diacritic-insensitive
+  through the same `normalizeText` the search uses. An empty input offers the library rather
+  than nothing, because the first thing anyone wants from a tag field is a reminder of what
+  they have been calling things.
+
+**A watched edge**: `commit` clears the input, which is right for the thing it has just taken
+and wrong for a caller that has already put the remainder back. Splitting on a comma therefore
+commits first and restores the remainder afterwards. In the other order, everything after the
+last comma was thrown away, which the existing "adds a memory by placing a pin" test caught.
+
+### Photos
+
+**The first photo is the cover, and nothing in the record says so.** `photoIds` is already an
+ordered list and the schema says nothing about what the order means; giving it a meaning costs
+nothing, while a cover field would have to be validated, migrated and kept honest against a
+list it could contradict. `ui/move-photo.js` is pure and clamps rather than refusing, because
+"move later" on the last photo is a thing people press and the answer is that nothing happens.
+
+- Reorder by dragging a tile, or with **Move earlier**, **Move later** and **Make cover** on
+  each one. Native drag and drop, so the browser does the picking up: there is nothing of ours
+  to animate and nothing for reduced motion to turn off.
+- After a keyboard move, **focus follows the photo** rather than staying at the position it
+  left. Without that, moving a photo three places is three presses and two hunts for the
+  button again.
+- Moves are announced in a polite region: "Photo 3 is now the cover".
+- A tile carries `data-index` for a drop to read and `data-photo-id` for identity. The grid is
+  rebuilt on every change and every object URL with it, so the `src` of an image says nothing
+  about which photo is in a tile.
+- **Dropping and pasting both end up in `handleFiles`**, where the cap, the per-file checks and
+  the error reporting already live. Nothing about a file changes because of how it arrived.
+  Paste is listened for on the dialog, because nobody aims at a drop zone before pressing
+  Ctrl+V, and the default is left alone unless the clipboard is actually carrying files, so a
+  paste of text into the note stays text.
+- The drop zone ignores a drag that carries no `Files`, or the whole area would light up as an
+  import target while a tile is being moved three pixels across it.
+- Everything else is unchanged: six photos, per-file errors, rollback on a failed save, and
+  changes applying only on save.
+
+### Leaving without saving
+
+`ui/form-dirty.js` compares through **the store's own normalizer**, so the question is the one
+that matters: would saving this write anything different? Trailing whitespace is not a change
+and neither is "Trail" over "trail", because both would store the same thing. Asking "discard
+your changes?" over a difference that could never reach the record is worse than not asking: it
+teaches people to dismiss the question. Photos are compared as an ordered list, so a reorder
+counts.
+
+The prompt is **inside the dialog**, not `confirm()`, which is a second modal on top of a modal
+that cannot be styled, cannot be read in the voice of this app, and on some platforms arrives
+with the browser's name on it. It swaps with the actions row rather than stacking, so the
+footer stays the same height. **Keep editing takes focus**, because the question is only ever
+asked when there is something to lose.
+
+Escape is held at the dialog's `cancel` event, which is the one place it can be caught before
+the dialog closes. A second Escape answers the question the safe way. `beforeunload` covers the
+one exit the dialog cannot intercept; it is added when the form opens and removed when it
+closes, so a tab sitting on the map never asks anything on its way out.
+
+**The baseline moves with anything the app fills in.** A reverse-geocoded place name is not
+something anybody typed, and asking whether they want to discard it is how a guard trains
+people to press Discard without reading.
+
+### Stacked dialogs
+
+The import preview is the only dialog that opens over another one. It was the same width as
+Settings, in the same place, with the same shadow and the same scrim, so the two read as one
+panel with a white block punched into it. `.dialog-stacked` gives it the lightbox's heavier
+scrim and `--elevation-3`, and under forced colours a heavier border, since a forced palette
+has no scrim to spend and no shadow to raise anything with.
+
+---
+
 ## Selection Flow
 
 The sidebar list and the map never call each other. Both talk to `ui/selection.js`, which
