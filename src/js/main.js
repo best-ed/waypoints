@@ -158,6 +158,7 @@ function boot() {
 
   const photoPicker = createPhotoPicker({
     gridElement: document.getElementById('memory-photos'),
+    dropElement: document.getElementById('memory-photo-drop'),
     inputElement: document.getElementById('memory-photo-input'),
     countElement: document.getElementById('memory-photos-count'),
     errorElement: document.getElementById('memory-photos-errors'),

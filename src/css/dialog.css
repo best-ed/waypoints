@@ -250,3 +250,36 @@
 .tag-option:hover {
   background-color: var(--color-bg);
 }
+
+/* ---- photos ----------------------------------------------------------------- */
+
+/* The drop target is the grid and the button together. The border is always there rather than
+   appearing on drag, so the zone does not change size under the pointer at the moment somebody
+   is aiming at it. */
+.photo-drop {
+  padding: var(--space-3);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+.photo-drop.is-dragging {
+  border-style: solid;
+  border-color: var(--color-accent);
+  background-color: var(--color-bg);
+}
+
+/* Only where there is a pointer to drag with. On a phone there is nothing to drop and the
+   sentence would be an instruction nobody can follow. */
+.photo-drop-hint {
+  display: none;
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+@media (pointer: fine) {
+  .photo-drop-hint {
+    display: block;
+  }
+}

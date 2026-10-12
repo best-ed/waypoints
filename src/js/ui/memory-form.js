@@ -285,6 +285,24 @@ export function createMemoryForm({
     field.input.addEventListener('input', () => clearErrorWhenFixed(field));
   }
 
+  /* A screenshot or a copied picture goes straight in. Listened for on the dialog rather than
+     on the photo area, because nobody aims at a drop zone before pressing Ctrl+V: they press
+     it wherever they happen to be.
+
+     Only when the clipboard is actually carrying files. A paste of text into the note is
+     ordinary text and must stay that way, which is why the default is left alone unless there
+     is something to add. */
+  dialog.addEventListener('paste', (event) => {
+    const files = event.clipboardData?.files;
+
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    event.preventDefault();
+    photoPicker.addFiles(files).catch((error) => console.error(error));
+  });
+
   /* Ctrl+Enter and Cmd+Enter save from anywhere in the form, including the note, where plain
      Enter has to keep meaning a new line. requestSubmit rather than submit(), because submit()
      skips the submit event and with it everything the handler does. */

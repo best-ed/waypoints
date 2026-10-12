@@ -16,7 +16,16 @@ function element(tag, className, text) {
 /* Holds the photos a form session is working with. Existing ones arrive as ids with a
    thumbnail already in the database; pending ones are processed but unwritten. Nothing
    here touches the database - the caller applies the result on save. */
-export function createPhotoPicker({ gridElement, inputElement, countElement, errorElement, processFiles }) {
+export function createPhotoPicker({
+  gridElement,
+  inputElement,
+  countElement,
+  errorElement,
+  /* The grid and the add button together, so a photo can be dropped anywhere it obviously
+     belongs rather than onto a strip beside it. */
+  dropElement = null,
+  processFiles
+}) {
   const urls = createObjectUrlPool();
   let entries = [];
   let removedExistingIds = [];
@@ -102,6 +111,49 @@ export function createPhotoPicker({ gridElement, inputElement, countElement, err
 
   inputElement.addEventListener('change', (event) => handleFiles(event.target.files));
 
+  /* Dropping and pasting both end up in handleFiles, which is where the cap, the per-file
+     checks and the error reporting already live. Nothing about a file changes because of how
+     it arrived. */
+  if (dropElement) {
+    let depth = 0;
+
+    const setDragging = (dragging) => dropElement.classList.toggle('is-dragging', dragging);
+
+    /* Counted rather than toggled: dragenter and dragleave fire for every child the pointer
+       crosses, so a single boolean flickers off the moment the pointer moves from the zone
+       onto a photo inside it. */
+    dropElement.addEventListener('dragenter', (event) => {
+      event.preventDefault();
+      depth += 1;
+      setDragging(true);
+    });
+
+    /* Without preventDefault on dragover the browser refuses the drop and opens the file
+       instead, which navigates away from a half-written memory. */
+    dropElement.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'copy';
+    });
+
+    dropElement.addEventListener('dragleave', () => {
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) {
+        setDragging(false);
+      }
+    });
+
+    dropElement.addEventListener('drop', (event) => {
+      event.preventDefault();
+      depth = 0;
+      setDragging(false);
+
+      const files = event.dataTransfer?.files;
+      if (files && files.length > 0) {
+        handleFiles(files).catch((error) => showErrors([String(error)]));
+      }
+    });
+  }
+
   function reset(existingPhotos = []) {
     entries = existingPhotos.map((photo) => ({
       id: photo.id,
@@ -127,6 +179,9 @@ export function createPhotoPicker({ gridElement, inputElement, countElement, err
   return {
     reset,
     dispose,
+    /* For the paste path, which the form owns because the clipboard belongs to the dialog
+       rather than to this corner of it. */
+    addFiles: (files) => handleFiles(files),
     getPhotoIds: () => entries.map((entry) => entry.id),
     getPendingRecords: () => entries.filter((entry) => !entry.existing).map((entry) => entry.record),
     getRemovedExistingIds: () => [...removedExistingIds],
