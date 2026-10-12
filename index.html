@@ -574,10 +574,28 @@
         </div>
 
         <div class="dialog-actions">
-          <button id="memory-cancel" class="button button-ghost" type="button" data-icon="close">
-            <span class="button-label">Cancel</span>
-          </button>
-          <button id="memory-save" class="button button-primary" type="submit">Save memory</button>
+          <div id="memory-actions" class="dialog-actions-row">
+            <button id="memory-cancel" class="button button-ghost" type="button" data-icon="close">
+              <span class="button-label">Cancel</span>
+            </button>
+            <button id="memory-save" class="button button-primary" type="submit">Save memory</button>
+          </div>
+
+          <!--
+            Asked inside the dialog rather than through confirm(), which is a second modal on
+            top of a modal, cannot be styled, cannot be read in the voice of this app, and on
+            some platforms arrives with the browser's own name on it.
+
+            Keep editing is first and takes focus: the question is only ever asked when there
+            is something to lose, so the safe answer is the default one.
+          -->
+          <div id="memory-discard" class="dialog-actions-row discard-prompt" role="alert" hidden>
+            <p class="discard-text">Discard changes?</p>
+            <button id="memory-discard-keep" class="button" type="button">Keep editing</button>
+            <button id="memory-discard-confirm" class="button button-ghost" type="button">
+              Discard
+            </button>
+          </div>
         </div>
       </form>
     </dialog>

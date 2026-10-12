@@ -67,14 +67,25 @@
 .dialog-actions {
   position: sticky;
   bottom: calc(-1 * var(--dialog-padding-bottom));
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: var(--space-2);
   margin: var(--space-5) calc(-1 * var(--dialog-padding)) calc(-1 * var(--dialog-padding-bottom));
   padding: var(--space-3) var(--dialog-padding);
   border-top: 1px solid var(--color-border);
   background-color: var(--color-surface-overlay);
+}
+
+/* Two rows in the same footer, one at a time: the ordinary actions, and the question asked
+   in their place when leaving would cost something. Swapping rather than stacking keeps the
+   footer the same height, so the form does not jump as the question appears. */
+.dialog-actions-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.discard-text {
+  margin-right: auto;
+  font-weight: var(--weight-semibold);
 }
 
 /* The one field in the form that holds the name of a memory, so it gets the face every other

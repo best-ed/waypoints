@@ -1,5 +1,6 @@
 import { todayLocalDate } from './form-values.js';
 import { createTagInput } from './tag-input.js';
+import { isFormDirty } from './form-dirty.js';
 import { createAutoGrow } from './autogrow.js';
 import { normalizeMemoryInput } from '../data/normalize.js';
 import { validateMemory } from '../data/validate.js';
@@ -65,6 +66,10 @@ export function createMemoryForm({
   const titleInput = doc.getElementById('memory-title');
   const noteInput = doc.getElementById('memory-note');
   const formError = doc.getElementById('memory-form-error');
+  const actionsRow = doc.getElementById('memory-actions');
+  const discardRow = doc.getElementById('memory-discard');
+  const keepEditingButton = doc.getElementById('memory-discard-keep');
+  const discardButton = doc.getElementById('memory-discard-confirm');
 
   const noteHeight = createAutoGrow(noteInput);
 
@@ -81,6 +86,10 @@ export function createMemoryForm({
   let session = null;
   let returnFocusTo = null;
   let closeReason = CANCELLED;
+  /* What the form held when it opened, which is what "unchanged" means. Taken after anything
+     the app fills in on the reader's behalf, so a reverse-geocoded place name is not something
+     they are asked whether they want to discard. */
+  let initialValues = null;
 
   const fields = FIELDS.map((field) => ({
     ...field,
@@ -185,6 +194,57 @@ export function createMemoryForm({
     }
   }
 
+  /* The same shape isFormDirty compares, read straight off the form. */
+  function snapshot() {
+    const data = new FormData(form);
+    return {
+      title: data.get('title'),
+      date: data.get('date'),
+      note: data.get('note'),
+      placeName: data.get('placeName'),
+      tags: tagInput.getTags(),
+      photoIds: photoPicker.getPhotoIds()
+    };
+  }
+
+  function isDirty() {
+    return Boolean(session) && isFormDirty(initialValues, snapshot());
+  }
+
+  function showDiscardPrompt(show) {
+    actionsRow.hidden = show;
+    discardRow.hidden = !show;
+
+    if (show) {
+      keepEditingButton.focus();
+    }
+  }
+
+  /* Every way out of a dirty form comes through here: Cancel, Escape and the backdrop. A clean
+     one closes without a word, because there is nothing to lose and a question with only one
+     sensible answer is noise. */
+  function requestClose() {
+    if (!isDirty()) {
+      close(CANCELLED);
+      return;
+    }
+
+    showDiscardPrompt(true);
+  }
+
+  /* The browser's own question, for the one exit this dialog cannot intercept. It is added
+     when the form opens and removed when it closes, so a tab sitting on the map never asks
+     anything on its way out. */
+  function warnBeforeUnload(event) {
+    if (!isDirty()) {
+      return;
+    }
+
+    event.preventDefault();
+    /* Older engines need the property as well as the default being prevented. */
+    event.returnValue = '';
+  }
+
   function showPlaceHint(visible) {
     placeHint.hidden = !visible;
   }
@@ -199,6 +259,14 @@ export function createMemoryForm({
     }
 
     form.elements.placeName.value = name;
+
+    /* The baseline moves with it. The app filled this in, nobody typed it, and asking whether
+       they want to discard something they never wrote is how a guard trains people to press
+       Discard without reading. */
+    if (initialValues) {
+      initialValues = { ...initialValues, placeName: name };
+    }
+
     return true;
   }
 
@@ -233,11 +301,17 @@ export function createMemoryForm({
       form.elements.date.value = todayLocalDate(now());
     }
 
+    showDiscardPrompt(false);
+
     dialog.showModal();
 
     /* After showModal, not before: a textarea that is still display:none measures its content
        as nothing at all and comes back one row tall. */
     noteHeight.reset();
+
+    /* After everything the app fills in, before anything the reader does. */
+    initialValues = snapshot();
+    window.addEventListener('beforeunload', warnBeforeUnload);
 
     titleInput.focus();
   }
@@ -319,11 +393,37 @@ export function createMemoryForm({
     form.requestSubmit();
   });
 
-  cancelButton.addEventListener('click', () => close(CANCELLED));
+  cancelButton.addEventListener('click', () => requestClose());
+
+  keepEditingButton.addEventListener('click', () => {
+    showDiscardPrompt(false);
+    /* Back where they were, not to the top of the form. */
+    cancelButton.focus();
+  });
+
+  discardButton.addEventListener('click', () => close(CANCELLED));
 
   dialog.addEventListener('click', (event) => {
     if (isBackdropClick(event, dialog)) {
-      close(CANCELLED);
+      requestClose();
+    }
+  });
+
+  /* Escape reaches the dialog as a cancel event before it closes, which is the one place it
+     can be held. Prevented rather than swallowed: the dialog still closes on the second
+     Escape, through Discard, which is what someone pressing it twice means. */
+  dialog.addEventListener('cancel', (event) => {
+    if (!discardRow.hidden) {
+      /* The question is already on screen. Escape answers it the safe way. */
+      event.preventDefault();
+      showDiscardPrompt(false);
+      cancelButton.focus();
+      return;
+    }
+
+    if (isDirty()) {
+      event.preventDefault();
+      showDiscardPrompt(true);
     }
   });
 
@@ -334,6 +434,12 @@ export function createMemoryForm({
        in one place rather than on each of cancel, Esc, backdrop and save. */
     photoPicker.dispose();
     showPlaceHint(false);
+    showDiscardPrompt(false);
+    tagInput.closeList();
+
+    /* Whatever the form held is gone, so there is nothing left to warn about. */
+    window.removeEventListener('beforeunload', warnBeforeUnload);
+    initialValues = null;
 
     if (closeReason !== SAVED) {
       onCancel({ mode: session.mode, memoryId: session.memoryId });
@@ -351,6 +457,7 @@ export function createMemoryForm({
     showFieldErrors,
     showFormError,
     revalidate,
+    isDirty,
     setBusy,
     showPlaceHint,
     suggestPlaceName,
