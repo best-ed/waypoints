@@ -461,9 +461,20 @@
           <span id="memory-coordinates" class="coordinates-value"></span>
         </p>
 
+        <!--
+          Title, date, place, note, tags, photos: what the memory is, then when and where it
+          was, then what there is to say about it. The note used to sit above the place, which
+          put the longest field in the form between the date and the thing the date belongs to.
+        -->
         <div class="field">
           <label class="field-label" for="memory-title">Title</label>
-          <input id="memory-title" name="title" class="field-input" type="text" autocomplete="off" />
+          <input
+            id="memory-title"
+            name="title"
+            class="field-input field-title"
+            type="text"
+            autocomplete="off"
+          />
           <p id="memory-title-error" class="field-error" hidden></p>
         </div>
 
@@ -474,16 +485,18 @@
         </div>
 
         <div class="field">
-          <label class="field-label" for="memory-note">Note</label>
-          <textarea id="memory-note" name="note" class="field-input field-textarea" rows="3"></textarea>
-          <p id="memory-note-error" class="field-error" hidden></p>
-        </div>
-
-        <div class="field">
           <label class="field-label" for="memory-place-name">Place name</label>
           <input id="memory-place-name" name="placeName" class="field-input" type="text" autocomplete="off" />
           <p id="memory-place-hint" class="field-hint" hidden>Finding place...</p>
           <p id="memory-place-name-error" class="field-error" hidden></p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="memory-note">Note</label>
+          <!-- rows is the floor; the height follows the content from there, up to the cap in
+               the stylesheet. See ui/autogrow.js. -->
+          <textarea id="memory-note" name="note" class="field-input field-textarea" rows="3"></textarea>
+          <p id="memory-note-error" class="field-error" hidden></p>
         </div>
 
         <div class="field">

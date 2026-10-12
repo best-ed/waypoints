@@ -1,4 +1,5 @@
 import { parseTagInput, todayLocalDate } from './form-values.js';
+import { createAutoGrow } from './autogrow.js';
 
 const SAVED = 'saved';
 const CANCELLED = 'cancelled';
@@ -11,11 +12,13 @@ const COPY = {
   [EDIT]: { heading: 'Edit memory', submit: 'Save changes' }
 };
 
+/* In the order the form shows them, which is what decides where focus lands when a submit
+   reports more than one thing wrong. */
 const FIELDS = [
   { name: 'title', inputId: 'memory-title', errorId: 'memory-title-error' },
   { name: 'date', inputId: 'memory-date', errorId: 'memory-date-error' },
-  { name: 'note', inputId: 'memory-note', errorId: 'memory-note-error' },
   { name: 'placeName', inputId: 'memory-place-name', errorId: 'memory-place-name-error' },
+  { name: 'note', inputId: 'memory-note', errorId: 'memory-note-error' },
   { name: 'tags', inputId: 'memory-tags', errorId: 'memory-tags-error', hintId: 'memory-tags-hint' }
 ];
 
@@ -47,7 +50,10 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
   const heading = doc.getElementById('memory-dialog-title');
   const placeHint = doc.getElementById('memory-place-hint');
   const titleInput = doc.getElementById('memory-title');
+  const noteInput = doc.getElementById('memory-note');
   const formError = doc.getElementById('memory-form-error');
+
+  const noteHeight = createAutoGrow(noteInput);
 
   let session = null;
   let returnFocusTo = null;
@@ -178,6 +184,11 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     }
 
     dialog.showModal();
+
+    /* After showModal, not before: a textarea that is still display:none measures its content
+       as nothing at all and comes back one row tall. */
+    noteHeight.reset();
+
     titleInput.focus();
   }
 

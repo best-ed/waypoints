@@ -138,10 +138,15 @@
 
   .dialog {
     overflow-y: auto;
-    /* Below the notch, and clear of a home indicator. */
+    /* Below the notch, and clear of a home indicator. Written through the dialog's own
+       padding properties so the sticky footer pulls out to these edges rather than the wide
+       layout's, which left it floating a few pixels short of the bottom of the screen. */
+    --dialog-padding: max(var(--space-4), env(safe-area-inset-left));
+    --dialog-padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+
     padding-top: max(var(--space-4), env(safe-area-inset-top));
-    padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
-    padding-left: max(var(--space-4), env(safe-area-inset-left));
+    padding-bottom: var(--dialog-padding-bottom);
+    padding-left: var(--dialog-padding);
     padding-right: max(var(--space-4), env(safe-area-inset-right));
   }
 

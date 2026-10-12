@@ -1,6 +1,12 @@
 .dialog {
+  /* The padding is a custom property because the sticky footer below has to pull itself out
+     to the same edges, and on a narrow screen both change together to clear the safe areas.
+     Two numbers that must agree, stated once. */
+  --dialog-padding: var(--space-5);
+  --dialog-padding-bottom: var(--space-5);
+
   width: min(32rem, calc(100vw - var(--space-6)));
-  padding: var(--space-5);
+  padding: var(--dialog-padding);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background-color: var(--color-surface-overlay);
@@ -60,15 +66,33 @@
    margins pull it out to the dialog's own edges so the rule and the background span it. */
 .dialog-actions {
   position: sticky;
-  bottom: calc(-1 * var(--space-5));
+  bottom: calc(-1 * var(--dialog-padding-bottom));
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: var(--space-2);
-  margin: var(--space-5) calc(-1 * var(--space-5)) calc(-1 * var(--space-5));
-  padding: var(--space-3) var(--space-5);
+  margin: var(--space-5) calc(-1 * var(--dialog-padding)) calc(-1 * var(--dialog-padding-bottom));
+  padding: var(--space-3) var(--dialog-padding);
   border-top: 1px solid var(--color-border);
   background-color: var(--color-surface-overlay);
+}
+
+/* The one field in the form that holds the name of a memory, so it gets the face every other
+   memory title has. Declared here rather than left to .field-input, which is the primitive and
+   has no business knowing which field is which. */
+.field-title {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-display);
+}
+
+/* The floor comes from the rows attribute and the height from the content; this is the
+   ceiling, past which the textarea scrolls rather than the dialog growing without end. */
+.field-textarea {
+  max-height: 18rem;
+  overflow-y: auto;
+  /* The height is set in pixels from script, so a drag handle would fight it. */
+  resize: none;
 }
 
 .form-error {
