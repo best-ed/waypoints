@@ -724,7 +724,12 @@
       </div>
     </dialog>
 
-    <dialog id="import-dialog" class="dialog" aria-labelledby="import-dialog-title">
+    <!--
+      The one dialog that opens over another one: it is always reached from Settings, and
+      nothing else in the app stacks. dialog-stacked is what gives it the separation that
+      needs, since CSS has no way to ask whether something else is already open.
+    -->
+    <dialog id="import-dialog" class="dialog dialog-stacked" aria-labelledby="import-dialog-title">
       <h2 id="import-dialog-title" class="dialog-title">Import preview</h2>
 
       <p id="import-summary" class="import-summary"></p>

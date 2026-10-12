@@ -18,6 +18,24 @@
   background-color: var(--color-backdrop);
 }
 
+/* A dialog that opens over another dialog rather than over the app.
+
+   The import preview was the same width as Settings and sat in the same place, so its backdrop
+   only showed as a thin frame around it and the two panels read as one: a white block punched
+   into the middle of the settings panel rather than something that had arrived on top of it.
+   Both carried --elevation-2 as well, so there was nothing to say which was in front.
+
+   The stronger scrim is the one the lightbox uses, and elevation-3 is the level for a surface
+   that arrives and then leaves. Together they are the difference between "the panel changed"
+   and "something is in front of the panel". */
+.dialog-stacked::backdrop {
+  background-color: var(--color-backdrop-strong);
+}
+
+.dialog-stacked {
+  box-shadow: var(--elevation-3);
+}
+
 .dialog-title {
   margin-bottom: var(--space-2);
   font-size: var(--text-lg);

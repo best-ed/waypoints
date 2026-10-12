@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "756850dcb72d";
+self.PRECACHE_VERSION = "88c2f0799464";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -15,14 +15,14 @@ self.PRECACHE_FILES = [
   { url: "icons/icon-maskable-512.png", hash: "9d9adfc08b12d69dbb9382711a07ec02b468102b07595f4504870d53278ac782" },
   { url: "icons/icon-maskable.svg", hash: "8cc77e94ee61857679fef6e9351cd60e6100f33d46bdbbb32e9d3f6a7751723a" },
   { url: "icons/icon.svg", hash: "2eb6bff67b3d1ed0d1279cbe5dac1c58eee100760366b1fe358bb7f5df3c320d" },
-  { url: "index.html", hash: "fe557d5d1eb480aa84cad06289117c9b93d859ff584491b75c7317fa1959b535" },
+  { url: "index.html", hash: "82402f10c5868cf29f98bfb0e9121d5ab09da15ae311e62d9e320fee27b53eeb" },
   { url: "manifest.webmanifest", hash: "6aebd5bcbd8a3d19b6769b70c2f078df4519194704899393b452421dd5ca50e8" },
   { url: "src/css/base.css", hash: "9d15903b9de124ecaf89702ddd8e2a27532cbf7be8950893c2bd817099728fb0" },
   { url: "src/css/basemap.css", hash: "f549a6c2bc944c02c790c2160ccef3a8d5a5aeeed492e18b2c5918ca9604722a" },
   { url: "src/css/cluster.css", hash: "76aacce96f0f5233af3edab8255dc63949105b7821be85205973ab9e26b94159" },
   { url: "src/css/detail.css", hash: "dc7d3c43309a377dddc1273b3410d3f03486aa5afaccd900309bda83c44f0456" },
-  { url: "src/css/dialog.css", hash: "0d309d24d6ecf45bf79e1a856c3798912a7b48359f539cdffd22361f2eb23569" },
-  { url: "src/css/forced-colors.css", hash: "ce35d01c05da4e2c67710efbcafcb6c811dae13dbe2f0c6ea8d7eb5859c46444" },
+  { url: "src/css/dialog.css", hash: "1f5e2348da77d5034897c95cd420efeff8389bcefcaf5aaced7c484905cd3dbd" },
+  { url: "src/css/forced-colors.css", hash: "ed5fa601a221440d453774daebc75b2641f8326548cbfe976d2c93c2f6008e42" },
   { url: "src/css/journey.css", hash: "412950a149167468c21425e13d12a05824447c8b6544bccbc88de522dbb1f1b3" },
   { url: "src/css/layout.css", hash: "0299e99651e5bc91557ac4a94e93b390872de1192238ee45166e52cfd3432075" },
   { url: "src/css/lightbox.css", hash: "68acee9697d02cd44424ce746fa39b3dc5cc03b73a622ed1c90348f3c032b695" },

@@ -151,6 +151,13 @@
     border: 1px solid CanvasText;
   }
 
+  /* A forced palette has no scrim to spend and no shadow to raise anything with, so the one
+     dialog that opens over another gets a heavier edge instead. Without it the import preview
+     and the settings panel underneath it are two rectangles with identical borders. */
+  .dialog-stacked {
+    border-width: 3px;
+  }
+
   /* ---- the one override --------------------------------------------------- */
   /* forced-color-adjust: none is needed here and nowhere else. A photo thumbnail is content,
      not interface: the user agent leaves the image itself alone, but it forces the button's
