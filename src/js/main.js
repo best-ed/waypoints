@@ -700,7 +700,9 @@ function boot() {
   function highlightProgress({ status, index }) {
     const activeIndex = status === IDLE ? null : index;
     journeyPath.setProgress(activeIndex);
-    journeyChevrons.setProgress(activeIndex);
+    /* The chevrons mark what is still ahead, so they are rebuilt from whatever the split just
+       left ahead rather than restyled in place. */
+    journeyChevrons.render(journeyPath.remainingLines());
   }
 
   function renderJourney(visible) {
@@ -708,7 +710,6 @@ function boot() {
 
     if (journeyActive) {
       journeyPath.render(journeyStops);
-      journeyChevrons.render(journeyStops);
       markers.setJourney(journeyStops.map((memory) => memory.id));
       playback.setCount(journeyStops.length);
       highlightProgress(playback.getState());

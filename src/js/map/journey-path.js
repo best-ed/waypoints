@@ -1,10 +1,12 @@
 import { continuousPath, splitPathAtStop } from '../journey/continuous-path.js';
+import { weightForZoom } from '../journey/line-weight.js';
 
 /* Two polylines, not fifty-nine: what is behind the playhead and what is ahead of it. Both
    carry several rings, so a path cut at an antimeridian crossing is still one element.
 
-   Width and colour come from CSS so the tokens stay in one place. Leaflet writes stroke and
-   stroke-width as presentation attributes, which CSS overrides. */
+   Colour, caps and the dash come from CSS, as everything else does. The weight does not: it
+   answers how far out the map is, which no stylesheet can see, so it comes from the pure
+   helper through Leaflet's own style and the stylesheet states no stroke-width at all. */
 
 /* Screen-space simplification, applied by Leaflet before it writes the path data. At 1 - the
    default - a worldwide journey hands the browser thousands of points that land inside the
@@ -51,6 +53,12 @@ export function createJourneyPath(map) {
     }
   }
 
+  function applyWeight() {
+    const weight = weightForZoom(map.getZoom());
+    travelled.setStyle({ weight });
+    remaining.setStyle({ weight });
+  }
+
   function draw() {
     const split = splitPathAtStop(points, stopIndices, position);
 
@@ -62,6 +70,8 @@ export function createJourneyPath(map) {
        nothing is behind anything, so the whole run stays at full strength rather than reading
        as a route nobody has started. */
     remaining.getElement()?.classList.toggle('is-pending', position !== null);
+
+    applyWeight();
   }
 
   function clear() {
@@ -126,7 +136,10 @@ export function createJourneyPath(map) {
     map.fitBounds(bounds, { padding: FIT_PADDING, animate: !reducedMotion });
   }
 
+  map.on('zoomend', applyWeight);
+
   function dispose() {
+    map.off('zoomend', applyWeight);
     clear();
   }
 

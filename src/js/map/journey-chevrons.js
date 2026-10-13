@@ -1,7 +1,18 @@
-import { segmentPath } from '../journey/geometry.js';
-import { journeySegments } from '../journey/journey-order.js';
+import { placeChevrons } from '../journey/place-chevrons.js';
 
 const CHEVRON_SIZE = 16;
+
+/* About a thumb's width apart. Closer and they read as a dotted line; further and a leg can
+   cross the whole view without saying which way it goes. */
+export const MIN_SPACING_PX = 80;
+
+/* Below this the whole world is in the pane and a chevron every eighty pixels is confetti over
+   a path nobody is following stop by stop at that scale. */
+export const MIN_CHEVRON_ZOOM = 4;
+
+/* How far outside the pane to keep placing them, so a pan of less than this does not arrive
+   with an empty edge. */
+const BOUNDS_PADDING_PX = 120;
 
 /* A static literal with no user data in it, which is the only reason a markup string is
    acceptable - L.divIcon takes HTML and nothing else. The glyph points east at 0 degrees,
@@ -23,83 +34,100 @@ function createChevronIcon() {
   });
 }
 
-/* The two drawn points either side of the halfway mark. On an interpolated arc this is a
-   short hop along the curve, so the chevron sits on the line rather than off the chord. */
-function bracketAt(path) {
-  const middle = Math.max(1, Math.floor(path.length / 2));
-  return [path[middle - 1], path[middle]];
-}
+/* Direction arrows along the part of the journey still ahead, spaced by how far apart they
+   look rather than by one per leg.
 
-function midpointOf(a, b) {
-  return { lat: (a.lat + b.lat) / 2, lng: (a.lng + b.lng) / 2 };
-}
-
+   One per leg put thirty of them inside a city where somebody went back and forth, and none
+   at all across the Pacific. Spacing in pixels gives the same density wherever the map is and
+   at whatever zoom, which is the only thing a direction marker is for. The positions are
+   worked out in screen space for the same reason the rotation always was: Mercator stretches
+   north-south as latitude rises, so a true bearing sits visibly off the line. */
 export function createJourneyChevrons(map) {
   const group = L.layerGroup();
-  let entries = [];
+  let markers = [];
+  let lines = [];
   let attached = false;
 
-  /* Projected screen points, not a geographic bearing: the chevron has to line up with the
-     pixels Leaflet actually drew, and Mercator stretches north-south as latitude rises, so a
-     true bearing would sit visibly off the line at high latitudes. */
-  function screenAngle(near, far, fallbackNear, fallbackFar) {
-    const from = map.latLngToLayerPoint(near);
-    const to = map.latLngToLayerPoint(far);
-
-    let dx = to.x - from.x;
-    let dy = to.y - from.y;
-
-    /* latLngToLayerPoint rounds to whole pixels, so zoomed out far enough a short bracket
-       collapses onto one pixel and the angle becomes meaningless. Widening to the segment's
-       own endpoints gives a vector that still spans pixels at any zoom. */
-    if (dx === 0 && dy === 0) {
-      const wideFrom = map.latLngToLayerPoint(fallbackNear);
-      const wideTo = map.latLngToLayerPoint(fallbackFar);
-      dx = wideTo.x - wideFrom.x;
-      dy = wideTo.y - wideFrom.y;
-    }
-
-    if (dx === 0 && dy === 0) {
-      return null;
-    }
-
-    return (Math.atan2(dy, dx) * 180) / Math.PI;
+  function removeAll() {
+    group.clearLayers();
+    markers = [];
   }
 
-  /* Rotation goes on an inner span, never on the marker element: Leaflet owns that one's
-     transform for positioning and overwrites it on every pan. */
-  function applyAngle(entry) {
-    const element = entry.marker.getElement();
-    const glyph = element ? element.querySelector('.journey-chevron-glyph') : null;
+  /* The pane in layer-point space, padded, which is the rectangle worth drawing in. Layer
+     points rather than container points because that is what the path projects to. */
+  function visibleBounds() {
+    const size = map.getSize();
+    const topLeft = map.containerPointToLayerPoint([-BOUNDS_PADDING_PX, -BOUNDS_PADDING_PX]);
+    const bottomRight = map.containerPointToLayerPoint([
+      size.x + BOUNDS_PADDING_PX,
+      size.y + BOUNDS_PADDING_PX
+    ]);
 
-    if (element) {
-      element.setAttribute('aria-hidden', 'true');
-    }
+    return {
+      minX: topLeft.x,
+      minY: topLeft.y,
+      maxX: bottomRight.x,
+      maxY: bottomRight.y
+    };
+  }
 
-    if (!glyph) {
+  function place() {
+    removeAll();
+
+    if (lines.length === 0 || map.getZoom() < MIN_CHEVRON_ZOOM) {
       return;
     }
 
-    const angle = screenAngle(entry.near, entry.far, entry.start, entry.end);
+    const bounds = visibleBounds();
 
-    if (angle === null) {
-      glyph.hidden = true;
-      return;
+    for (const line of lines) {
+      const projected = line.map((point) => map.latLngToLayerPoint(point));
+
+      for (const { x, y, angle } of placeChevrons(projected, MIN_SPACING_PX, { bounds })) {
+        const marker = L.marker(map.layerPointToLatLng([x, y]), {
+          icon: createChevronIcon(),
+          /* Decoration only: it must not take clicks from the markers underneath, must not
+             enter the tab order, and is hidden from assistive technology. The step order is
+             already carried by the numbered pins and the progress readout. */
+          interactive: false,
+          keyboard: false
+        });
+
+        marker.addTo(group);
+
+        const element = marker.getElement();
+
+        if (element) {
+          element.setAttribute('aria-hidden', 'true');
+          /* The marker element carries Leaflet's positioning transform, which it rewrites on
+             every pan, so the rotation goes on the span inside it. */
+          const glyph = element.querySelector('.journey-chevron-glyph');
+          if (glyph) {
+            glyph.style.transform = 'rotate(' + angle.toFixed(2) + 'deg)';
+          }
+        }
+
+        markers.push(marker);
+      }
     }
-
-    glyph.hidden = false;
-    glyph.style.transform = 'rotate(' + angle.toFixed(2) + 'deg)';
   }
 
-  function refreshAngles() {
-    for (const entry of entries) {
-      applyAngle(entry);
+  /* The lines ahead of the playhead, which is all these ever mark: a direction is only a
+     question about where the journey is going next. */
+  function render(remainingLines) {
+    lines = Array.isArray(remainingLines) ? remainingLines : [];
+
+    if (!attached) {
+      group.addTo(map);
+      attached = true;
     }
+
+    place();
   }
 
   function clear() {
-    group.clearLayers();
-    entries = [];
+    lines = [];
+    removeAll();
 
     if (attached) {
       group.remove();
@@ -107,56 +135,16 @@ export function createJourneyChevrons(map) {
     }
   }
 
-  function render(stops) {
-    clear();
-
-    entries = journeySegments(stops).map((segment) => {
-      const path = segmentPath(segment.from, segment.to);
-      const [near, far] = bracketAt(path);
-
-      const marker = L.marker(midpointOf(near, far), {
-        icon: createChevronIcon(),
-        /* Decoration only: it must not take clicks from the markers underneath, must not
-           enter the tab order, and is hidden from assistive technology. The step order is
-           already carried by the numbered pins and the progress readout. */
-        interactive: false,
-        keyboard: false
-      });
-
-      marker.addTo(group);
-
-      return {
-        marker,
-        near,
-        far,
-        start: path[0],
-        end: path[path.length - 1],
-        toIndex: segment.toIndex
-      };
-    });
-
-    group.addTo(map);
-    attached = true;
-    refreshAngles();
-  }
-
-  function setProgress(activeIndex) {
-    const hasPosition = Number.isInteger(activeIndex);
-
-    for (const entry of entries) {
-      const element = entry.marker.getElement();
-      if (element) {
-        element.classList.toggle('is-pending', hasPosition && entry.toIndex > activeIndex);
-      }
-    }
-  }
-
-  map.on('zoomend', refreshAngles);
+  /* Both of these change which stretch is on screen and at what size, so both have to replace
+     the whole set rather than nudge what is there. */
+  map.on('zoomend', place);
+  map.on('moveend', place);
 
   function dispose() {
-    map.off('zoomend', refreshAngles);
+    map.off('zoomend', place);
+    map.off('moveend', place);
     clear();
   }
 
-  return { render, setProgress, refreshAngles, clear, dispose, count: () => entries.length };
+  return { render, clear, dispose, count: () => markers.length };
 }
