@@ -44,6 +44,14 @@
     fill: HighlightText;
   }
 
+  /* A forced palette has nothing to pulse with: an animation that changes only a colour the
+     user agent has already decided is no change at all. The arrival is a thicker edge for as
+     long as the pulse would have lasted. */
+  .pin-arriving .pin-body {
+    stroke: Highlight;
+    stroke-width: 4;
+  }
+
   .pin-draft .pin-body,
   .pin-moving .pin-body {
     fill: GrayText;

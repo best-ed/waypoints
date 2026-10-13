@@ -129,6 +129,30 @@
   position: relative;
 }
 
+/* Arriving at a journey stop. The scale goes on the wrapper rather than on .pin-body, which
+   already carries one for hover and selection: on the wrapper the two compose instead of one
+   cancelling the other, and the pin grows out of its own point.
+
+   The duration is a motion token, so reduced motion takes it to zero and nothing moves. */
+@keyframes pin-arrive {
+  from {
+    transform: scale(1);
+  }
+
+  40% {
+    transform: scale(1.3);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+.pin-arriving .pin-content {
+  transform-origin: 50% 100%;
+  animation: pin-arrive var(--duration-slow) var(--ease-standard);
+}
+
 /* The cluster plugin animates its splits, merges and spider legs through CSS transitions in
    its own stylesheet, which carries no reduced-motion guard of its own. */
 @media (prefers-reduced-motion: reduce) {

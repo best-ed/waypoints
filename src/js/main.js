@@ -7,6 +7,7 @@ import { createMemoryStore } from './data/memory-store.js';
 import { createIdFactory } from './data/make-id.js';
 import { createPlacementMode } from './map/placement-mode.js';
 import { createDraftMarker } from './map/draft-marker.js';
+import { createArrivalPulse } from './map/arrival-pulse.js';
 import { createMarkersLayer } from './map/markers-layer.js';
 import { createClusterIcon, enableClusterKeyboard } from './map/cluster-icon.js';
 import { createBasemapControl } from './map/basemap-control.js';
@@ -240,6 +241,7 @@ function boot() {
   enableClusterKeyboard(map);
 
   const draftMarker = createDraftMarker(map);
+  const arrivalPulse = createArrivalPulse();
 
   /* Every object URL the list creates belongs to this, and it is the only thing that
      revokes one. Bounded in both directions: a capped number held at once, and a capped
@@ -784,6 +786,10 @@ function boot() {
       reducedMotion: prefersReducedMotion(),
       clusterGroup: markers.clusterGroup()
     });
+
+    /* After focusMarker, which is what reveals a marker the cluster plugin had pruned: before
+       it, there may be no element to pulse. */
+    arrivalPulse.pulse(marker.getElement());
   }
 
   playback.subscribe((state) => {
@@ -818,6 +824,7 @@ function boot() {
     markers.setJourney(null);
     markers.setClustering(true);
     journeyStops = [];
+    arrivalPulse.stop();
     journeyPlayer.resetSpeed();
     renderJourney(visibleNow());
     journeyPanel.focus();
