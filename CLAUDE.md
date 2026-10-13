@@ -836,56 +836,128 @@ tile response is opaque and the worker cannot tell a tile from an error page.
 ## Journey Mode
 
 Connects the visible memories chronologically and plays them back. `journey/` is pure - no DOM,
-no Leaflet - so the ordering, the geometry and the state machine are all unit tested.
+no Leaflet - so the ordering, the geometry, the drawn path, the chevron spacing, the line weight
+and the state machine are all unit tested.
 
 - `journeyOrder` sorts by date then `createdAt`, ascending: the opposite of the sidebar, which
   reads newest first. Memories without usable coordinates are dropped.
-- `journeySegments` pairs consecutive stops and **drops a pair pinned at the same spot**. A
-  zero-length polyline renders as a stray dot and would still collect a chevron. Segment indices
-  stay those of the ordered list, so a dropped segment never renumbers the steps.
+- `journeySegments` pairs consecutive stops and **drops a pair pinned at the same spot**. It is
+  what the distance is summed over, so two memories at one address add nothing to the total,
+  which is also what the map shows.
 - Distance is haversine against the mean Earth radius, within about 0.3% of the geodesic, which
   is well inside what a summary line needs.
 
+### The player
+
+The transport lives over the bottom of the map, not in the sidebar. It used to be three small
+buttons and the text "1 / 60" a column away from the pin they were talking about, and on a
+narrow screen not even on the same pane as the map they were driving. **The sidebar keeps the
+way in and the reason it is unavailable, and nothing else.**
+
+It holds Play/Pause, Previous and Next, the current stop's title in the display face with its
+date, "3 of 12", a scrubber and a speed control.
+
+- **The scrubber is a range over the stop indices**, so how far through a journey you are is
+  visible rather than inferred from a number. Dragging or arrowing it goes to that stop and
+  pauses. Ticks come from a `datalist`, which is what a range reads a scale from, and only at
+  thirty stops or fewer: past that they are a grey smear rather than a scale.
+- Its `aria-valuetext` says "Stop 3 of 12: <title>, <date>" and Firefox honours it. **Chromium
+  ignores `aria-valuetext` on a native range** and announces the raw number, exactly as it does
+  on the timeline, so the same text also goes into a live region the input points at. The region
+  is written only when the text changes, or the stop would be re-announced every time the play
+  button swapped its icon.
+- **Speed is Slow, Normal and Fast over the dwell**: 6s, 3.5s, 2s. Per session and deliberately
+  not persisted, because it is a way of watching one journey rather than a preference about the
+  app. Leaving journey mode puts it back to Normal.
+- `setDwellMs` is the **second** place the dwell timer is set, and is paired with the single
+  clear site for the same reason `moveTo` is. The fuzz test that proves at most one timer is ever
+  outstanding has it among the operations it shuffles. It notifies nobody: a notification would
+  fly the map back to the stop already on screen.
+- Space and Enter are left to the browser on each button. Overriding Space across the group meant
+  pressing it on Previous started playback, which is not what a button announcing itself as
+  "Previous" should do. Left and Right step stops, which the scrubber does natively.
+- The toggle and the step buttons use `aria-disabled`, not the `disabled` attribute. A disabled
+  button leaves the tab order, which would put the explanation of why it is unavailable out of
+  reach, and would drop focus when stepping to the last stop disables the button just pressed.
+  Note that Playwright will not click an `aria-disabled` button, so a test that presses one at an
+  end has to dispatch the event, or reach the last stop through the scrubber.
+- **Below 720px it stops floating and becomes a bar at the bottom of the map pane.** A floating
+  card at that width either covers the zoom control and the attribution or is pushed far enough
+  up that it covers the map it is describing. The Map and List switch is at the top of the screen
+  either way.
+
 ### Drawing
 
-Anything over 300km is interpolated along the great circle, one point per 200km up to a cap of
-64. Interpolating lat and lng separately would draw a straight line in the projection, which over
-thousands of kilometres is visibly not the path anything takes.
+**Two polylines, not one per leg**: what is behind the playhead and what is ahead of it.
+Fifty-nine legs were fifty-nine SVG paths for what is conceptually one line, each simplified in
+isolation, which at low zoom over long distances came out as a band of overlapping strokes
+rather than a route. Measured with sixty memories spread worldwide: 59 path elements at world
+zoom and 59 at a 50km scale bar, against 1 and 2 now.
 
-Longitudes are then **unwrapped**: each point is shifted by whole turns until it is within 180
-degrees of the one before. Leaflet draws exactly the longitudes it is given, so a path crossing
-the antimeridian continues past it - Honolulu to Nairobi ends at -323, not -157. Without this it
-is drawn the long way back across Asia and Africa.
+`journey/continuous-path.js` builds the run and is pure.
 
-One polyline per segment, so playback can restyle the part already travelled without redrawing
-the rest. Colours and widths are tokens; Leaflet writes stroke as a presentation attribute, which
-CSS overrides.
+- Anything over 300km is interpolated along the great circle, one point per 200km up to a cap of
+  64. Interpolating lat and lng separately would draw a straight line in the projection, which
+  over thousands of kilometres is visibly not the path anything takes.
+- Longitudes are **unwrapped** within a leg: each point is shifted by whole turns until it is
+  within 180 degrees of the one before, so a path crossing the antimeridian continues past it.
+  Leaflet draws exactly the longitudes it is given, and without this Honolulu to Nairobi is drawn
+  the long way back across Asia and Africa.
+- That is also the one place continuity genuinely breaks, and it is **always at a stop**: a leg
+  can end at a longitude the next leg does not start at, because the next one is anchored to the
+  real world again. The run is cut there and the drawing continues as a second ring of the same
+  polyline. The alternative is either a line drawn the wrong way round the planet or a path that
+  drifts a whole turn per crossing and ends up two copies of the world away from anything anyone
+  is looking at.
+- `splitPathAtStop` returns both halves as lists of lines, with the current stop in both, so they
+  meet at the pin rather than leaving a gap. A line left with one point is dropped: it has
+  nothing to draw.
+- **`smoothFactor` is 3**, not Leaflet's default of 1. It simplifies in screen space, so at low
+  zoom the thousands of points that land inside the same pixel stop being handed to the browser.
+  Tuned by looking at the low-zoom screenshots, not by reasoning about it.
+- **The line weight is the one thing the stylesheet does not state.** It answers how far out the
+  map is, which CSS cannot see, so `journey/line-weight.js` supplies it and Leaflet writes it as
+  a presentation attribute. Three pixels is right over a city and a band over a continent.
 
-Direction chevrons sit at the midpoint of each drawn path, rotated by the angle between
-**projected screen points** rather than a geographic bearing - Mercator stretches north-south as
-latitude rises, so a true bearing would sit visibly off the line. `latLngToLayerPoint` rounds to
-whole pixels, so a short bracket can collapse onto one pixel when zoomed out; the fallback widens
-to the segment's own endpoints, and the angles are recomputed on `zoomend`. Chevrons are
-`aria-hidden`, non-interactive and out of the tab order: the order is already carried by the
-numbered pins and the progress readout.
+### Chevrons
 
-Note when verifying by hand that Leaflet simplifies a polyline at low zoom and clips it to the
-padded viewport, so a drawn path is not always the full point list it was given.
+Placed **every eighty pixels along what is still ahead**, not one per leg. One per leg put thirty
+inside a city somebody went back and forth in and none at all across the Pacific: the spacing
+followed the data rather than what anyone can see.
+
+- `journey/place-chevrons.js` is pure and works in screen space, which is also where the rotation
+  has always come from: Mercator stretches north-south as latitude rises, so a true bearing sits
+  visibly off the line.
+- It is given the pane as a rectangle and **solves for the visible stretch of each piece**
+  rather than walking it. At a close zoom a leg across an ocean is ten million pixels long, and
+  stepping along it a chevron at a time would be a hundred thousand iterations producing nothing.
+  Offsets are counted along the whole path and skipped in whole gaps, so a chevron never shifts
+  because the map moved.
+- **None at all below zoom 4**, where the whole world is in the pane and a chevron every eighty
+  pixels is confetti. A cap of 120 guards the case where a path folds back on itself inside the
+  viewport.
+- They are recomputed on `zoomend` and `moveend`, and on every change of the playhead, because
+  all three change which stretch is ahead and where it is.
+- Still `aria-hidden`, non-interactive and out of the tab order: the order is already carried by
+  the numbered pins and the player's readout.
 
 ### Playback
 
 A state machine over `idle`, `playing`, `paused` and `finished`, holding an index, with
-`setTimeout` and `clearTimeout` injected so tests drive the 3500ms dwell with a fake clock.
+`setTimeout` and `clearTimeout` injected so tests drive the dwell with a fake clock.
 
 `prev` at the first stop and `next` at the last are **silent** no-ops - no state change and no
 notification, so a held arrow key cannot spam the live region. Reaching the last stop while
-playing ends in `finished`, and playing again from there restarts at 0.
+playing ends in `finished`, and playing again from there restarts at 0, which is the whole of
+what Replay means.
 
 **No timer outlives the state that started it**, and this is structural rather than remembered:
 every transition goes through one `moveTo`, which clears any pending dwell before doing anything
-else, and the single `setTimeout` call site is reached only when the new status is `playing`. A
-test fuzzes 400 orderings of the controls and asserts at most one timer is ever outstanding.
-Exiting journey mode calls `reset`, which is one such transition.
+else. A test fuzzes 400 orderings of the controls and asserts at most one timer is ever
+outstanding.
+
+`goTo` takes a `pause` option, because the scrubber needs both in one transition: as two calls
+the map flew to where the journey already was before flying to where it was dragged.
 
 Each step selects the memory - so the sidebar follows - then flies to it and opens its popup.
 Selecting *before* opening is what stops the outgoing popup's close from clearing the incoming
@@ -898,9 +970,45 @@ listener: placement and move mode attach their own Escape handlers to `document`
 this one needs the first look so it can stand aside, rather than also exiting after one of them
 has already cancelled itself.
 
-The toggle and the step buttons use `aria-disabled`, not the `disabled` attribute. A disabled
-button leaves the tab order, which would put the explanation of why it is unavailable out of
-reach, and would drop focus when stepping to the last stop disables the button just pressed.
+### Arriving, and the end
+
+**Arriving at a stop pulses its pin.** Flying the map and opening a popup says plenty on a sparse
+map and nothing at all where the next stop is forty pixels from the last one. The scale goes on
+the pin's wrapper rather than on `.pin-body`, which already carries one for hover and selection:
+on the wrapper the two compose instead of one cancelling the other. The duration is a motion
+token, so reduced motion takes it to zero and nothing moves; under forced colours there is no
+colour to pulse with, so the pin takes a thicker edge for as long as the pulse would have lasted.
+`map/arrival-pulse.js` only puts the class on and takes it off, and reads a layout property
+between the remove and the add, or stepping inside the previous pulse would restart nothing.
+
+**Finishing shows an end card** in the player: what the journey was, with Replay and Exit. Focus
+moves to Replay on arriving at the end, not on every render while sitting there, which would take
+the keyboard off whatever had been reached for.
+
+The summary reads "12 memories · 1,240 km · Mar 2019 to Jun 2024". How many stops comes first,
+because it is the only part of it that is about the memories rather than about the map. A journey
+inside one month says that month once rather than repeating it either side of "to".
+
+### Journey mode and the detail view
+
+**Opening a memory moves the playhead to it, paused.** It used to pause playback and leave the
+player reading a different stop, so the two things on screen disagreed about where the journey
+was. The map is not flown: nobody asked to go anywhere, and on a wide screen it is already beside
+the view. A memory the journey does not contain - the filters can differ from the order the view
+was opened from - can still only mean playback should stop.
+
+Closing the view leaves the journey and the player exactly as they were. On a wide screen the two
+coexist; below 720px the detail view hides the map pane as it already does, and the player, which
+lives in that pane, goes with it and comes back with it.
+
+Journey and move modes move the markers onto a plain layer group and back, because a step cannot
+be numbered or dragged while it is folded into a cluster. `move-mode` reports `onEnd` so an
+Escape revert restores clustering too, and journey mode owns the unclustered state while it is
+on, so a move ending inside it must not switch clustering back on underneath it.
+
+When verifying by hand: Leaflet simplifies a polyline at low zoom and clips it to the padded
+viewport, so a drawn path is not always the point list it was given, and an off-screen chevron
+can look detached from a line that is no longer drawn there.
 
 ---
 
@@ -1200,6 +1308,10 @@ The breakpoint is 720px, where the sidebar and a usable map stop fitting side by
   memory opens its detail view, which is full screen here and needs no switch; **Show on map**
   and **Move** switch to Map first, because flying to a marker on a map of the wrong size lands
   in the wrong place - every path that reveals the map calls `invalidateSize`.
+- **The journey player is a bar, not a card.** It floats over the map on a wide screen; at this
+  width a floating card either covers the zoom control and the attribution or is pushed far
+  enough up that it covers the map it is describing, so it takes its own room at the bottom of
+  the pane instead. It lives in the map pane, so the detail view hides it and gives it back.
 - **The sidebar header is not sticky on narrow.** It holds the search, the chips, the dates,
   the timeline and the journey controls, which together are taller than a phone screen; sticky
   pinned all of it over the list and nothing below could be reached.

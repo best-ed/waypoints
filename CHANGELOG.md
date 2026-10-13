@@ -22,6 +22,21 @@
 - The popup's close control is a real button with a real name. It was a link pointing at
   nothing, which is Leaflet's own markup and which no screen reader could make sense of.
 
+### Journeys
+
+- **A player, over the map rather than in the sidebar.** It says which stop the journey is on by
+  name and date, how far through it you are, and gives you a scrubber to move it.
+- Drag the scrubber or arrow along it to go to any stop.
+- **Slow, Normal and Fast**, for reading a note at each stop or seeing the shape of the whole
+  thing. It goes back to Normal when you leave the journey.
+- **The route is drawn as one line again**, which at a world view used to be a soft teal band
+  rather than a path. The line thins as you pull back, and the direction arrows are spaced evenly
+  along what is still ahead instead of one per leg.
+- Arriving at a stop pulses its pin, which matters most where two stops are a few streets apart.
+- **Opening a memory during a journey takes the journey with you**, paused, without moving the
+  map. Going back leaves it where you left it.
+- Finishing shows what the journey was, with Replay and Exit.
+
 ### Writing a memory
 
 - **Tags are tokens.** Type and press Enter, and the ones already in your library are offered
