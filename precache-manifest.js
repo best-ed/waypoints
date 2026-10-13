@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "adfcd2eeae51";
+self.PRECACHE_VERSION = "c2c5b977241f";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -72,7 +72,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/journey/line-weight.js", hash: "2b081f58fcbc06f2349bca987e8c46402b4189868eb7f23e8f4a70b1ec4df145" },
   { url: "src/js/journey/place-chevrons.js", hash: "90903f2667a4b8c99db4757e15dfe7f550c2371b5974170a3d8095e70223751d" },
   { url: "src/js/journey/playback.js", hash: "596765c4e1079117d7f0bfcc5b23719bc03da957a32630ecce2bb266d8a06894" },
-  { url: "src/js/main.js", hash: "6b4b7cfb8209a7fc731038bdc39ad4f94fb09329bc8fa3b42b41366adcd24687" },
+  { url: "src/js/main.js", hash: "7b9fdd4f9103f0a2ef6868577da5ddeef6b07712c0fc4466b521e0934833cdda" },
   { url: "src/js/map/basemap-control.js", hash: "34f9d047896b722472fec9b78a8ec7d366697b13c47252ac8f79879ea75e7959" },
   { url: "src/js/map/basemap-preference.js", hash: "19e95114e821d4e1c12a8c167e99a435da65639ab41f03eb05c1df0f68868436" },
   { url: "src/js/map/cluster-icon.js", hash: "4413a2377a9bcf88c137cde42d0e537a777756c32d9e883fee42e41314fe966a" },

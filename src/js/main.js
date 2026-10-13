@@ -412,6 +412,8 @@ function boot() {
 
   let journeyActive = false;
   let journeyStops = [];
+  /* Cleared around the one transition that must not move the map: see movePlayheadTo. */
+  let flyToStop = true;
 
   const detail = createDetailView({
     sectionElement: document.getElementById('memory-detail'),
@@ -465,11 +467,40 @@ function boot() {
     }
   }
 
+  /* Opening a memory during a journey moves the journey to it rather than fighting it, so the
+     player goes on describing what is actually being looked at. Paused, because reading one
+     memory is not watching a journey, and without flying the map: nobody asked to go anywhere,
+     and on a wide screen the map is right there beside the view.
+
+     A memory that is not a stop in this journey - the filters can differ from the order the
+     view was opened from - can only mean playback should stop. */
+  function movePlayheadTo(id) {
+    if (!journeyActive) {
+      return;
+    }
+
+    const index = journeyStops.findIndex((stop) => stop.id === id);
+
+    if (index === -1) {
+      pauseForInteraction();
+      return;
+    }
+
+    flyToStop = false;
+    try {
+      playback.goTo(index, { pause: true });
+    } finally {
+      flyToStop = true;
+    }
+  }
+
   function openDetail(id, { origin = 'list', push = true } = {}) {
     const memory = store.get(id);
     if (!memory) {
       return;
     }
+
+    movePlayheadTo(id);
 
     /* Stepping within an open view replaces rather than pushes: see pushUrl above. */
     const stepping = detail.isOpen();
@@ -739,7 +770,7 @@ function boot() {
      clearing the incoming selection. */
   function showStop(index) {
     const stop = journeyStops[index];
-    if (!stop) {
+    if (!stop || !flyToStop) {
       return;
     }
 
@@ -915,10 +946,6 @@ function boot() {
      The pin still highlights, through the selection state openDetail sets, so the map says
      which memory is open even though it has not moved. */
   function selectFromList(id) {
-    if (journeyActive && id !== currentStopId()) {
-      pauseForInteraction();
-    }
-
     openDetail(id, { origin: 'list' });
   }
 
