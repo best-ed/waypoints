@@ -136,14 +136,21 @@ export function createPlayback({
     moveTo(status === PLAYING ? PLAYING : PAUSED, index - 1);
   }
 
-  function goTo(target) {
+  /* The scrubber passes pause, so dragging it stops playback and lands on the stop in one
+     transition. Two calls would notify twice, and the map would fly to where the journey was
+     before flying to where it was dragged. */
+  function goTo(target, { pause: pauseHere = false } = {}) {
     if (!Number.isInteger(target) || target < 0 || target > lastIndex()) {
       return;
     }
-    if (target === index && status !== FINISHED) {
+
+    const next = pauseHere || status !== PLAYING ? PAUSED : PLAYING;
+
+    if (target === index && status !== FINISHED && !(pauseHere && status === PLAYING)) {
       return;
     }
-    moveTo(status === PLAYING ? PLAYING : PAUSED, target);
+
+    moveTo(next, target);
   }
 
   function reset() {

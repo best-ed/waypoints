@@ -456,6 +456,31 @@
 
             <p id="player-position" class="player-position"></p>
           </div>
+
+          <!--
+            A range over stop indices. The ticks come from a datalist, which is what a range
+            input reads a scale from; they are only built at thirty stops or fewer, past which
+            they are a grey smear rather than a scale.
+
+            aria-valuetext is set and is correct, and Firefox honours it. Chromium ignores it
+            on a native range and announces the raw number, which is the same thing the
+            timeline hit, so the text also goes into a live region the input points at.
+          -->
+          <input
+            id="player-scrubber"
+            class="player-scrubber"
+            type="range"
+            min="0"
+            max="0"
+            step="1"
+            value="0"
+            list="player-ticks"
+            aria-label="Journey stop"
+            aria-describedby="player-announce"
+          />
+          <datalist id="player-ticks"></datalist>
+
+          <p id="player-announce" class="visually-hidden" aria-live="polite"></p>
         </div>
       </div>
     </main>

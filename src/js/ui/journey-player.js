@@ -19,6 +19,10 @@ function isAvailable(element) {
   return element.getAttribute('aria-disabled') !== 'true';
 }
 
+/* Past this the ticks are a grey smear rather than a scale, and a reader learns nothing from
+   a mark they cannot land on. */
+export const MAX_TICKS = 30;
+
 export function createJourneyPlayer({
   containerElement,
   playElement,
@@ -27,15 +31,42 @@ export function createJourneyPlayer({
   titleElement,
   metaElement,
   positionElement,
+  scrubberElement,
+  ticksElement,
+  announceElement,
   formatDate,
   onToggle,
   onPrevious,
-  onNext
+  onNext,
+  onScrub
 }) {
+  let announced = '';
+  let tickCount = -1;
+
+  function renderTicks(count) {
+    if (count === tickCount) {
+      return;
+    }
+
+    tickCount = count;
+    ticksElement.replaceChildren();
+
+    if (count > MAX_TICKS) {
+      return;
+    }
+
+    for (let stop = 0; stop < count; stop++) {
+      const option = document.createElement('option');
+      option.value = String(stop);
+      ticksElement.append(option);
+    }
+  }
+
   function render({ status, index, count }, { isActive, stop = null }) {
     containerElement.hidden = !isActive || count === 0;
 
     if (containerElement.hidden) {
+      announced = '';
       return;
     }
 
@@ -55,6 +86,23 @@ export function createJourneyPlayer({
     titleElement.textContent = stop ? stop.title : '';
     metaElement.textContent = stop ? formatDate(stop.date) : '';
     positionElement.textContent = index + 1 + ' of ' + count;
+
+    renderTicks(count);
+
+    scrubberElement.max = String(Math.max(0, count - 1));
+    scrubberElement.value = String(index);
+
+    const where = 'Stop ' + (index + 1) + ' of ' + count;
+    const spoken = stop ? where + ': ' + stop.title + ', ' + formatDate(stop.date) : where;
+
+    scrubberElement.setAttribute('aria-valuetext', spoken);
+
+    /* Only when it actually changes. A live region written on every render would re-announce
+       the stop each time the play button swapped its icon. */
+    if (spoken !== announced) {
+      announced = spoken;
+      announceElement.textContent = spoken;
+    }
   }
 
   function step(handler, element) {
@@ -68,10 +116,17 @@ export function createJourneyPlayer({
   previousElement.addEventListener('click', () => step(onPrevious, previousElement));
   nextElement.addEventListener('click', () => step(onNext, nextElement));
 
-  /* Space and Enter are left to the browser, so each button does what its name says. An
-     overridden Space meant pressing it on Previous started playback, which is not what a
-     button announcing itself as "Previous" should do. Stepping with the arrow keys belongs to
-     the scrubber, which has them natively. */
+  /* Left and Right step stops, which a range input already does: the handler below only has to
+     act on the result. Nothing here intercepts a key, which is also why Space and Enter are
+     left to the browser on each button - an overridden Space meant pressing it on Previous
+     started playback, which is not what a button announcing itself as "Previous" should do. */
+  scrubberElement.addEventListener('input', () => {
+    const target = Number(scrubberElement.value);
+
+    if (Number.isInteger(target)) {
+      onScrub(target);
+    }
+  });
 
   return { render, focusPlay: () => playElement.focus() };
 }

@@ -683,10 +683,16 @@ function boot() {
     titleElement: document.getElementById('player-title'),
     metaElement: document.getElementById('player-meta'),
     positionElement: document.getElementById('player-position'),
+    scrubberElement: document.getElementById('player-scrubber'),
+    ticksElement: document.getElementById('player-ticks'),
+    announceElement: document.getElementById('player-announce'),
     formatDate: formatMemoryDate,
     onToggle: () => playback.toggle(),
     onPrevious: () => playback.prev(),
-    onNext: () => playback.next()
+    onNext: () => playback.next(),
+    /* Dragging the scrubber is taking the journey over, so it stops playing rather than
+       continuing from wherever it was let go. */
+    onScrub: (target) => playback.goTo(target, { pause: true })
   });
 
   function visibleNow() {

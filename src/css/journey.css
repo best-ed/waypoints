@@ -179,3 +179,18 @@
   font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
+
+/* The whole journey as one travel: how far through it you are is the one thing the transport
+   buttons cannot say. accent-color keeps the thumb and the filled track on the journey colour
+   without redrawing a native control, which is what the timeline had to do only because it
+   stacks two inputs on one track. */
+.player-scrubber {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--color-journey);
+}
+
+/* The browser draws the datalist marks itself, and sizes them from the input's own box. */
+.player-scrubber::-webkit-slider-runnable-track {
+  height: var(--space-1);
+}

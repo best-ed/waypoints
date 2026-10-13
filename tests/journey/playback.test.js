@@ -561,3 +561,41 @@ test('a dwell that fires after a pause does nothing', () => {
 
   assert.deepEqual(playback.getState(), { status: PAUSED, index: 0, count: 3 });
 });
+
+/* The scrubber. Dragging it is taking the journey over, so it has to stop playback and land on
+   the stop in one transition: as two calls the map flew to where the journey already was
+   before flying to where it was dragged. */
+test('goTo with pause stops playback and moves in one notification', () => {
+  const { clock, playback, states } = setup(5);
+
+  playback.play();
+  states.length = 0;
+
+  playback.goTo(3, { pause: true });
+
+  assert.equal(states.length, 1);
+  assert.deepEqual(states[0], { status: PAUSED, index: 3, count: 5 });
+  assert.equal(clock.pendingCount(), 0, 'the dwell outlived the pause');
+});
+
+test('goTo with pause stops playback without moving', () => {
+  const { playback, states } = setup(5);
+
+  playback.play();
+  states.length = 0;
+
+  playback.goTo(0, { pause: true });
+
+  assert.deepEqual(states, [{ status: PAUSED, index: 0, count: 5 }]);
+});
+
+test('goTo with pause on an already paused stop stays a no-op', () => {
+  const { playback, states } = setup(5);
+
+  playback.goTo(2, { pause: true });
+  states.length = 0;
+
+  playback.goTo(2, { pause: true });
+
+  assert.equal(states.length, 0);
+});
