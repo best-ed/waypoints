@@ -7,7 +7,8 @@ import {
   IDLE,
   PLAYING,
   PAUSED,
-  FINISHED
+  FINISHED,
+  SPEEDS
 } from '../../src/js/journey/playback.js';
 
 /* A fake clock rather than real timers: a twelve-stop journey would otherwise take 42
@@ -522,7 +523,8 @@ test('dispose empties the state', () => {
 });
 
 /* The structural guarantee: exactly one timer can ever be outstanding, whatever order the
-   controls are hit in. */
+   controls are hit in. setDwellMs is in here because it is the second site that sets the
+   timer, and a second site is exactly what this has to keep honest. */
 test('no sequence of controls leaves more than one dwell pending', () => {
   const { clock, playback } = setup(6);
   const actions = [
@@ -531,8 +533,11 @@ test('no sequence of controls leaves more than one dwell pending', () => {
     () => playback.next(),
     () => playback.prev(),
     () => playback.goTo(3),
+    () => playback.goTo(5, { pause: true }),
     () => playback.toggle(),
     () => playback.reset(),
+    () => playback.setDwellMs(SPEEDS.fast),
+    () => playback.setDwellMs(SPEEDS.slow),
     () => clock.tick()
   ];
 
@@ -598,4 +603,57 @@ test('goTo with pause on an already paused stop stays a no-op', () => {
   playback.goTo(2, { pause: true });
 
   assert.equal(states.length, 0);
+});
+
+/* The speed control. Changing it mid-playback has to take effect now rather than after the
+   stop in progress has run its old course, and it must not notify: a notification would fly
+   the map back to the stop already on screen. */
+test('setDwellMs reschedules a running dwell at the new speed', () => {
+  const { clock, playback } = setup(4);
+
+  playback.play();
+  playback.setDwellMs(SPEEDS.fast);
+
+  assert.equal(clock.pendingCount(), 1, 'one dwell, not two');
+  assert.deepEqual(clock.pendingDelays(), [SPEEDS.fast]);
+});
+
+test('setDwellMs notifies nobody', () => {
+  const { playback, states } = setup(4);
+
+  playback.play();
+  states.length = 0;
+
+  playback.setDwellMs(SPEEDS.slow);
+
+  assert.deepEqual(states, []);
+});
+
+test('setDwellMs while paused schedules nothing', () => {
+  const { clock, playback } = setup(4);
+
+  playback.setDwellMs(SPEEDS.slow);
+
+  assert.equal(clock.pendingCount(), 0);
+});
+
+test('setDwellMs takes effect on the next stop after a pause', () => {
+  const { clock, playback } = setup(4);
+
+  playback.setDwellMs(SPEEDS.slow);
+  playback.play();
+
+  assert.deepEqual(clock.pendingDelays(), [SPEEDS.slow]);
+});
+
+test('setDwellMs ignores a value that is not a usable delay', () => {
+  const { clock, playback } = setup(4);
+
+  playback.play();
+
+  for (const bad of [0, -1, NaN, null, undefined, '2000']) {
+    playback.setDwellMs(bad);
+  }
+
+  assert.deepEqual(clock.pendingDelays(), [DWELL_MS]);
 });

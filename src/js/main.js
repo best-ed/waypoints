@@ -35,7 +35,7 @@ import { timelineBuckets, distinctDateCount } from './filters/timeline.js';
 import { journeyOrder } from './journey/journey-order.js';
 import { journeySummary } from './journey/journey-summary.js';
 import { formatMemoryDate } from './ui/format-date.js';
-import { createPlayback, IDLE } from './journey/playback.js';
+import { createPlayback, IDLE, SPEEDS } from './journey/playback.js';
 import { createJourneyPath } from './map/journey-path.js';
 import { createJourneyChevrons } from './map/journey-chevrons.js';
 import { createJourneyPanel } from './ui/journey-panel.js';
@@ -686,13 +686,15 @@ function boot() {
     scrubberElement: document.getElementById('player-scrubber'),
     ticksElement: document.getElementById('player-ticks'),
     announceElement: document.getElementById('player-announce'),
+    speedElement: document.getElementById('player-speed'),
     formatDate: formatMemoryDate,
     onToggle: () => playback.toggle(),
     onPrevious: () => playback.prev(),
     onNext: () => playback.next(),
     /* Dragging the scrubber is taking the journey over, so it stops playing rather than
        continuing from wherever it was let go. */
-    onScrub: (target) => playback.goTo(target, { pause: true })
+    onScrub: (target) => playback.goTo(target, { pause: true }),
+    onSpeed: (speed) => playback.setDwellMs(SPEEDS[speed])
   });
 
   function visibleNow() {
@@ -785,6 +787,7 @@ function boot() {
     markers.setJourney(null);
     markers.setClustering(true);
     journeyStops = [];
+    journeyPlayer.resetSpeed();
     renderJourney(visibleNow());
     journeyPanel.focus();
   }

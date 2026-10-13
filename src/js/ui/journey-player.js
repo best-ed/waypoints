@@ -1,4 +1,4 @@
-import { FINISHED, PLAYING } from '../journey/playback.js';
+import { DEFAULT_SPEED, FINISHED, PLAYING } from '../journey/playback.js';
 import { setButtonIcon } from './icons.js';
 
 /* The journey's transport, docked to the map rather than stacked in the sidebar.
@@ -34,11 +34,13 @@ export function createJourneyPlayer({
   scrubberElement,
   ticksElement,
   announceElement,
+  speedElement,
   formatDate,
   onToggle,
   onPrevious,
   onNext,
-  onScrub
+  onScrub,
+  onSpeed
 }) {
   let announced = '';
   let tickCount = -1;
@@ -128,5 +130,30 @@ export function createJourneyPlayer({
     }
   });
 
-  return { render, focusPlay: () => playElement.focus() };
+  /* aria-pressed rather than a radio group: these are three buttons that each do something
+     immediately, not a choice that is submitted. Delegated, because the three are fixed and a
+     listener each would say the same thing three times. */
+  function setSpeed(chosen) {
+    for (const option of speedElement.querySelectorAll('[data-speed]')) {
+      option.setAttribute('aria-pressed', String(option.dataset.speed === chosen));
+    }
+
+    onSpeed(chosen);
+  }
+
+  speedElement.addEventListener('click', (event) => {
+    const option = event.target.closest('[data-speed]');
+
+    if (option && option.getAttribute('aria-pressed') !== 'true') {
+      setSpeed(option.dataset.speed);
+    }
+  });
+
+  return {
+    render,
+    focusPlay: () => playElement.focus(),
+    /* Leaving journey mode throws the position away, so it throws the speed away too: a speed
+       is how somebody is watching one journey, not a setting they carry around. */
+    resetSpeed: () => setSpeed(DEFAULT_SPEED)
+  };
 }

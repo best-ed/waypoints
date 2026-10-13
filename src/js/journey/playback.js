@@ -2,6 +2,16 @@
    short enough that a twelve-stop journey does not outlast anyone's patience. */
 export const DWELL_MS = 3500;
 
+/* Slow is for reading a note at each stop, fast is for seeing the shape of the whole thing.
+   Per session and not remembered: it is a way of watching, not a preference about the app. */
+export const SPEEDS = Object.freeze({
+  slow: 6000,
+  normal: DWELL_MS,
+  fast: 2000
+});
+
+export const DEFAULT_SPEED = 'normal';
+
 export const IDLE = 'idle';
 export const PLAYING = 'playing';
 export const PAUSED = 'paused';
@@ -19,6 +29,7 @@ export function createPlayback({
   let index = 0;
   let count = 0;
   let timer = null;
+  let dwell = dwellMs;
   const listeners = new Set();
 
   function report(error) {
@@ -60,7 +71,7 @@ export function createPlayback({
 
   /* The only place the dwell timer is set. */
   function schedule() {
-    timer = setTimer(onDwell, dwellMs);
+    timer = setTimer(onDwell, dwell);
   }
 
   /* Every state change goes through here, and it clears any pending dwell before doing
@@ -157,6 +168,24 @@ export function createPlayback({
     moveTo(IDLE, 0);
   }
 
+  /* A speed change takes effect now rather than after the stop in progress has run its old
+     course. The second and last call site of schedule, and it is paired with clearDwell for
+     exactly the reason moveTo is: no timer may outlive the state that started it. It does not
+     notify, because nothing anybody can see has changed - the map would only fly back to the
+     stop already on screen. */
+  function setDwellMs(nextDwell) {
+    if (!Number.isFinite(nextDwell) || nextDwell <= 0 || nextDwell === dwell) {
+      return;
+    }
+
+    dwell = nextDwell;
+
+    if (status === PLAYING) {
+      clearDwell();
+      schedule();
+    }
+  }
+
   /* A rebuilt journey invalidates the index, so a changed count goes back to idle. An
      unchanged count is left alone, or every unrelated re-render would stop playback. */
   function setCount(nextCount) {
@@ -194,6 +223,7 @@ export function createPlayback({
     prev,
     goTo,
     reset,
+    setDwellMs,
     setCount,
     subscribe,
     dispose

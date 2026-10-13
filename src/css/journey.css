@@ -194,3 +194,35 @@
 .player-scrubber::-webkit-slider-runnable-track {
   height: var(--space-1);
 }
+
+/* Three buttons that look like one control, the same shape as the Map and List switch. The
+   negative margin collapses the two borders between them into one line. */
+.player-speed {
+  display: flex;
+  align-self: center;
+}
+
+.player-speed-option {
+  border-radius: 0;
+}
+
+.player-speed-option + .player-speed-option {
+  margin-inline-start: -1px;
+}
+
+.player-speed-option:first-child {
+  border-start-start-radius: var(--radius-sm);
+  border-end-start-radius: var(--radius-sm);
+}
+
+.player-speed-option:last-child {
+  border-start-end-radius: var(--radius-sm);
+  border-end-end-radius: var(--radius-sm);
+}
+
+/* The pressed one has to sit above its neighbours, or their borders draw over its filled
+   edge and it reads as two thirds of a button. */
+.player-speed-option[aria-pressed='true'] {
+  position: relative;
+  z-index: 1;
+}
