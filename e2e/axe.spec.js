@@ -235,14 +235,33 @@ const STATES = {
     await expect(page.locator('#detail-title')).toBeVisible();
   },
 
+  /* The toggle is in the sidebar and the player is over the map, so at narrow the two are on
+     different panes: entering the journey means going back to the map to see it. */
   async journey(page, { narrow }) {
     await seedLibrary(page);
     await openApp(page);
     if (narrow) await page.locator('#view-list').click();
     await page.locator('#journey-toggle').click();
+    if (narrow) await page.locator('#view-map').click();
     await expect(page.locator('#journey-player')).toBeVisible();
     await page.locator('#player-play').click();
     await expect(page.locator('#player-position')).toContainText('1 of');
+  },
+
+  async 'journey end card'(page, { narrow }) {
+    await seedLibrary(page);
+    await openApp(page);
+    if (narrow) await page.locator('#view-list').click();
+    await page.locator('#journey-toggle').click();
+    if (narrow) await page.locator('#view-map').click();
+
+    /* Scrubbed to the last stop rather than stepped there: Next is aria-disabled at the end
+       and Playwright will not click one of those. */
+    const scrubber = page.locator('#player-scrubber');
+    await scrubber.fill(await scrubber.getAttribute('max'));
+    await page.locator('#player-play').click();
+
+    await expect(page.locator('#player-end')).toBeVisible({ timeout: 10000 });
   }
 };
 
