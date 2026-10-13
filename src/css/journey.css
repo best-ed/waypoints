@@ -226,3 +226,30 @@
   position: relative;
   z-index: 1;
 }
+
+/* The end of the journey, under the transport rather than instead of it: Replay is one of two
+   things anybody wants here, and stepping back through the stops is the other. */
+.player-end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.player-end-summary {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-display);
+  line-height: var(--line-snug);
+  color: var(--color-journey);
+}
+
+.player-end-actions {
+  display: flex;
+  flex: none;
+  gap: var(--space-2);
+}

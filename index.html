@@ -493,6 +493,21 @@
           </div>
 
           <p id="player-announce" class="visually-hidden" aria-live="polite"></p>
+
+          <!-- Shown when playback reaches the last stop: what the journey was, and the two
+               things anybody wants next. -->
+          <div id="player-end" class="player-end" hidden>
+            <p id="player-end-summary" class="player-end-summary"></p>
+
+            <div class="player-end-actions">
+              <button id="player-replay" class="button button-sm button-primary" type="button" data-icon="play">
+                <span class="button-label">Replay</span>
+              </button>
+              <button id="player-exit" class="button button-sm" type="button" data-icon="close">
+                <span class="button-label">Exit journey</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </main>

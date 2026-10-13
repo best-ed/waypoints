@@ -68,16 +68,17 @@ export function formatDistanceKm(distanceKm) {
   return distance().format(Math.round(distanceKm)) + ' km';
 }
 
-/* Reads as "1,240 km · 12 memories · Mar 2019 to Jun 2024". A journey inside one month
-   says that month once rather than repeating it either side of "to". */
+/* Reads as "12 memories · 1,240 km · Mar 2019 to Jun 2024". How many stops comes first,
+   because it is the only part that is about the memories rather than about the map. A journey
+   inside one month says that month once rather than repeating it either side of "to". */
 export function formatJourneySummary(summary) {
   if (!summary || summary.count === 0) {
     return '';
   }
 
   const parts = [
-    formatDistanceKm(summary.distanceKm),
-    summary.count === 1 ? '1 memory' : summary.count + ' memories'
+    summary.count === 1 ? '1 memory' : summary.count + ' memories',
+    formatDistanceKm(summary.distanceKm)
   ];
 
   const first = formatMonthYear(summary.first);

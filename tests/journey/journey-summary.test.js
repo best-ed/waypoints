@@ -83,7 +83,7 @@ test('formats the summary line', () => {
     last: '2024-06-15'
   });
 
-  assert.equal(line, '1,240 km · 12 memories · Mar 2019 to Jun 2024');
+  assert.equal(line, '12 memories · 1,240 km · Mar 2019 to Jun 2024');
 });
 
 test('a thousands separator appears in a long journey', () => {
@@ -109,7 +109,7 @@ test('one memory reads in the singular', () => {
 test('a journey inside one month names it once', () => {
   const line = formatJourneySummary({ distanceKm: 629, count: 2, first: '2019-03-10', last: '2019-03-20' });
 
-  assert.equal(line, '629 km · 2 memories · Mar 2019');
+  assert.equal(line, '2 memories · 629 km · Mar 2019');
 });
 
 test('an empty summary formats to an empty string', () => {

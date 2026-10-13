@@ -34,7 +34,7 @@ import { createActiveFilters } from './ui/active-filters.js';
 import { tagCounts, allTags } from './filters/tag-counts.js';
 import { timelineBuckets, distinctDateCount } from './filters/timeline.js';
 import { journeyOrder } from './journey/journey-order.js';
-import { journeySummary } from './journey/journey-summary.js';
+import { formatJourneySummary, journeySummary } from './journey/journey-summary.js';
 import { formatMemoryDate } from './ui/format-date.js';
 import { createPlayback, IDLE, SPEEDS } from './journey/playback.js';
 import { createJourneyPath } from './map/journey-path.js';
@@ -720,6 +720,10 @@ function boot() {
     ticksElement: document.getElementById('player-ticks'),
     announceElement: document.getElementById('player-announce'),
     speedElement: document.getElementById('player-speed'),
+    endElement: document.getElementById('player-end'),
+    endSummaryElement: document.getElementById('player-end-summary'),
+    replayElement: document.getElementById('player-replay'),
+    exitElement: document.getElementById('player-exit'),
     formatDate: formatMemoryDate,
     onToggle: () => playback.toggle(),
     onPrevious: () => playback.prev(),
@@ -727,8 +731,23 @@ function boot() {
     /* Dragging the scrubber is taking the journey over, so it stops playing rather than
        continuing from wherever it was let go. */
     onScrub: (target) => playback.goTo(target, { pause: true }),
-    onSpeed: (speed) => playback.setDwellMs(SPEEDS[speed])
+    onSpeed: (speed) => playback.setDwellMs(SPEEDS[speed]),
+    /* play from finished starts over, which is the whole of what Replay means. */
+    onReplay: () => playback.play(),
+    onExit: () => exitJourney()
   });
+
+  /* What the journey was, formatted once per render rather than per playback notification.
+     The end card is the only thing that reads it. */
+  let journeySummaryLine = '';
+
+  function renderPlayer(state) {
+    journeyPlayer.render(state, {
+      isActive: journeyActive,
+      stop: stopAt(state.index),
+      summary: journeySummaryLine
+    });
+  }
 
   function visibleNow() {
     return applyFilters(store.list(), filters.getFilters());
@@ -763,8 +782,10 @@ function boot() {
       highlightProgress(playback.getState());
     }
 
+    journeySummaryLine = formatJourneySummary(journeySummary(journeyStops));
+
     journeyPanel.render({ summary: journeySummary(visible), isActive: journeyActive, total: totalMemories });
-    journeyPlayer.render(playback.getState(), { isActive: journeyActive, stop: stopAt(playback.getState().index) });
+    renderPlayer(playback.getState());
   }
 
   /* One step of playback: select it so the sidebar follows, then focusMarker moves the map
@@ -793,7 +814,7 @@ function boot() {
   }
 
   playback.subscribe((state) => {
-    journeyPlayer.render(state, { isActive: journeyActive, stop: stopAt(state.index) });
+    renderPlayer(state);
     highlightProgress(state);
 
     /* Idle is a reset rather than a position, so it must not drag the map anywhere. */

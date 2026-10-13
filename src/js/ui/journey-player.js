@@ -35,15 +35,22 @@ export function createJourneyPlayer({
   ticksElement,
   announceElement,
   speedElement,
+  endElement,
+  endSummaryElement,
+  replayElement,
+  exitElement,
   formatDate,
   onToggle,
   onPrevious,
   onNext,
   onScrub,
-  onSpeed
+  onSpeed,
+  onReplay,
+  onExit
 }) {
   let announced = '';
   let tickCount = -1;
+  let wasFinished = false;
 
   function renderTicks(count) {
     if (count === tickCount) {
@@ -64,11 +71,13 @@ export function createJourneyPlayer({
     }
   }
 
-  function render({ status, index, count }, { isActive, stop = null }) {
+  function render({ status, index, count }, { isActive, stop = null, summary = '' }) {
     containerElement.hidden = !isActive || count === 0;
 
     if (containerElement.hidden) {
       announced = '';
+      wasFinished = false;
+      endElement.hidden = true;
       return;
     }
 
@@ -105,6 +114,19 @@ export function createJourneyPlayer({
       announced = spoken;
       announceElement.textContent = spoken;
     }
+
+    const finished = status === FINISHED;
+
+    endElement.hidden = !finished;
+    endSummaryElement.textContent = finished ? summary : '';
+
+    /* On arriving at the end, not on every render while sitting there. Moving focus each time
+       anything else changed would take the keyboard off whatever the reader had reached for. */
+    if (finished && !wasFinished) {
+      replayElement.focus();
+    }
+
+    wasFinished = finished;
   }
 
   function step(handler, element) {
@@ -140,6 +162,9 @@ export function createJourneyPlayer({
 
     onSpeed(chosen);
   }
+
+  replayElement.addEventListener('click', () => onReplay());
+  exitElement.addEventListener('click', () => onExit());
 
   speedElement.addEventListener('click', (event) => {
     const option = event.target.closest('[data-speed]');
