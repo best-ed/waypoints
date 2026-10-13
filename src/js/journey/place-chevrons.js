@@ -12,21 +12,53 @@
    inside the viewport cannot fill it with arrows. */
 export const MAX_CHEVRONS = 120;
 
-function intersects(a, b, bounds) {
-  return (
-    Math.min(a.x, b.x) <= bounds.maxX &&
-    Math.max(a.x, b.x) >= bounds.minX &&
-    Math.min(a.y, b.y) <= bounds.maxY &&
-    Math.max(a.y, b.y) >= bounds.minY
-  );
+/* The stretch of a piece of the path that is inside the rectangle, as two fractions of it, or
+   null when none of it is. Liang-Barsky, because the alternative at a close zoom is walking a
+   leg that is ten million pixels long one chevron at a time to find the few hundred that show.
+   Both ends matter: a leg can enter the viewport and leave it again. */
+function visibleRange(from, to, bounds) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+
+  const edge = [-dx, dx, -dy, dy];
+  const room = [from.x - bounds.minX, bounds.maxX - from.x, from.y - bounds.minY, bounds.maxY - from.y];
+
+  let start = 0;
+  let end = 1;
+
+  for (let index = 0; index < 4; index++) {
+    if (edge[index] === 0) {
+      /* Parallel to this edge: either wholly inside it or wholly outside. */
+      if (room[index] < 0) {
+        return null;
+      }
+      continue;
+    }
+
+    const crossing = room[index] / edge[index];
+
+    if (edge[index] < 0) {
+      if (crossing > end) {
+        return null;
+      }
+      start = Math.max(start, crossing);
+    } else {
+      if (crossing < start) {
+        return null;
+      }
+      end = Math.min(end, crossing);
+    }
+  }
+
+  return { start, end };
 }
 
 /* Projected points for one line, and the smallest gap in pixels between two chevrons.
 
    The first sits half a gap in, so a path barely longer than the spacing still gets one and it
    is not jammed against the pin at either end. `bounds` is the screen rectangle worth drawing
-   in: off-screen stretches are stepped over whole rather than walked a chevron at a time,
-   because at a close zoom a journey across an ocean is millions of pixels long. */
+   in: the offsets are still counted along the whole path, so a chevron never shifts because the
+   map moved, but only the ones that land inside are produced. */
 export function placeChevrons(points, minSpacing, { bounds = null } = {}) {
   const path = Array.isArray(points) ? points : [];
   const spacing = Number.isFinite(minSpacing) && minSpacing > 0 ? minSpacing : 0;
@@ -39,7 +71,15 @@ export function placeChevrons(points, minSpacing, { bounds = null } = {}) {
   let travelled = 0;
   let nextAt = spacing / 2;
 
-  for (let index = 1; index < path.length; index++) {
+  /* Always a whole number of gaps, so skipping what cannot be seen never moves the ones that
+     can be. */
+  const skipTo = (target) => {
+    if (nextAt < target) {
+      nextAt += Math.ceil((target - nextAt) / spacing) * spacing;
+    }
+  };
+
+  for (let index = 1; index < path.length && placements.length < MAX_CHEVRONS; index++) {
     const from = path[index - 1];
     const to = path[index];
 
@@ -51,36 +91,30 @@ export function placeChevrons(points, minSpacing, { bounds = null } = {}) {
       continue;
     }
 
-    const end = travelled + length;
+    const ends = travelled + length;
+    const range = bounds ? visibleRange(from, to, bounds) : { start: 0, end: 1 };
 
-    if (bounds && !intersects(from, to, bounds)) {
-      /* Stepped over in one go. Walking it would be millions of iterations producing nothing. */
-      if (nextAt <= end) {
-        nextAt += (Math.floor((end - nextAt) / spacing) + 1) * spacing;
+    if (range) {
+      skipTo(travelled + range.start * length);
+
+      const lastVisible = travelled + range.end * length;
+      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+
+      while (nextAt <= lastVisible && placements.length < MAX_CHEVRONS) {
+        const along = (nextAt - travelled) / length;
+
+        placements.push({
+          x: from.x + dx * along,
+          y: from.y + dy * along,
+          angle
+        });
+
+        nextAt += spacing;
       }
-      travelled = end;
-      continue;
     }
 
-    const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
-
-    while (nextAt <= end && placements.length < MAX_CHEVRONS) {
-      const along = (nextAt - travelled) / length;
-
-      placements.push({
-        x: from.x + dx * along,
-        y: from.y + dy * along,
-        angle
-      });
-
-      nextAt += spacing;
-    }
-
-    travelled = end;
-
-    if (placements.length >= MAX_CHEVRONS) {
-      break;
-    }
+    skipTo(ends);
+    travelled = ends;
   }
 
   return placements;

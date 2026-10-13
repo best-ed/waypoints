@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "52839ffda839";
+self.PRECACHE_VERSION = "3f4648cc06fb";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -70,7 +70,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/journey/journey-order.js", hash: "27cfd981a5c7984aa7a6ed70ac45bcc608b215f8528b25ac83c5cd84d545058b" },
   { url: "src/js/journey/journey-summary.js", hash: "29d2a44ebbd0be72b7faeae8978b8c4ae594fa344d1bd2047be144abe122e25c" },
   { url: "src/js/journey/line-weight.js", hash: "2b081f58fcbc06f2349bca987e8c46402b4189868eb7f23e8f4a70b1ec4df145" },
-  { url: "src/js/journey/place-chevrons.js", hash: "5a20e4f7d5b079aeaa8dee1f848d7356363638fb7a88490c0fae1ed3da99c72a" },
+  { url: "src/js/journey/place-chevrons.js", hash: "90903f2667a4b8c99db4757e15dfe7f550c2371b5974170a3d8095e70223751d" },
   { url: "src/js/journey/playback.js", hash: "17c3477b8c72aafe38f837dbce44200494a1fe44104791520727a5779fe5b6b0" },
   { url: "src/js/main.js", hash: "35ae532cffcb9acf7d490f71c49bc46f51b7f836608e813d91300769263f149d" },
   { url: "src/js/map/basemap-control.js", hash: "34f9d047896b722472fec9b78a8ec7d366697b13c47252ac8f79879ea75e7959" },
