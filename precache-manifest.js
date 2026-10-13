@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "4101f74b7438";
+self.PRECACHE_VERSION = "06f70197675c";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -27,7 +27,7 @@ self.PRECACHE_FILES = [
   { url: "src/css/layout.css", hash: "0299e99651e5bc91557ac4a94e93b390872de1192238ee45166e52cfd3432075" },
   { url: "src/css/lightbox.css", hash: "68acee9697d02cd44424ce746fa39b3dc5cc03b73a622ed1c90348f3c032b695" },
   { url: "src/css/map.css", hash: "4bd81e9d3c31dee71cb79f0b29f75565f87b0de990e631a74e7646aaeacfd140" },
-  { url: "src/css/mobile.css", hash: "7b15a0ac55d9b5f68485e0f67b0e7b6529669b6433f188900f616fd40f23558f" },
+  { url: "src/css/mobile.css", hash: "d1421681fd845182a8d912882088488a71cf9f6c9d124ea6086b47ea128d5ecc" },
   { url: "src/css/offline.css", hash: "4872716544f7a7e501707f593fed4222984a1d09846f953cc1d152c79650b1d6" },
   { url: "src/css/place-search.css", hash: "022ade986d3bc03cc316cb195f0b56ff6d0192811860e38024839b7854546c7d" },
   { url: "src/css/popup.css", hash: "c66745033345412b8e1885bbdcb7154d0d75626b9c230120807b896070c1a090" },

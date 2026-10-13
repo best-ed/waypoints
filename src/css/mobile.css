@@ -89,6 +89,31 @@
     display: none;
   }
 
+  /* The player stops floating over the map and becomes a bar at the bottom of the pane. A
+     floating card at this width either covers the zoom control and the attribution or is
+     pushed so far up that it covers the map it is describing; a bar takes its own room and
+     covers nothing. Low specificity on purpose, so the two display:none rules above still
+     win when this pane is not the one being shown. */
+  .app-main {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .map {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+  }
+
+  .journey-player {
+    position: static;
+    transform: none;
+    width: auto;
+    border-radius: 0;
+    /* Clear of the home indicator, with the same padding above it either way. */
+    padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+  }
+
   .app-body[data-view='list'] .sidebar {
     width: 100%;
     max-width: none;
