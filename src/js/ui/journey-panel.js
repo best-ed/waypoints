@@ -1,9 +1,9 @@
-import { formatJourneySummary } from '../journey/journey-summary.js';
-
 /* One memory is a dot, not a journey. */
 export const MIN_JOURNEY_STOPS = 2;
 
-export function createJourneyPanel({ containerElement, toggleElement, hintElement, summaryElement, onToggle }) {
+/* All the sidebar keeps of journey mode: the way in, and the reason it is unavailable when it
+   is. The transport and the readout live on the map now, where the journey is. */
+export function createJourneyPanel({ containerElement, toggleElement, hintElement, onToggle }) {
   /* aria-disabled rather than the disabled attribute: a disabled button leaves the tab order,
      which would put the explanation of why it is unavailable out of reach of anyone using a
      keyboard or a screen reader. The click handler enforces it instead. */
@@ -33,10 +33,6 @@ export function createJourneyPanel({ containerElement, toggleElement, hintElemen
     label.textContent = isActive ? 'Exit journey' : 'Journey';
 
     hintElement.hidden = enoughStops || isActive;
-
-    const line = isActive ? formatJourneySummary(summary) : '';
-    summaryElement.textContent = line;
-    summaryElement.hidden = line === '';
   }
 
   toggleElement.addEventListener('click', () => {

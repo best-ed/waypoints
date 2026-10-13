@@ -1,7 +1,7 @@
 /* The component layer: the controls every surface is built out of.
 
    Before this, `.button` was one class with one size, and each component improvised the rest
-   - .view-option, .journey-step, .journey-play, .popup-button, .toast-action, .search-clear,
+   - .view-option, .player-step, .player-play, .popup-button, .toast-action, .search-clear,
    .filter-reset. Seven near-duplicates meant seven answers to what a hover looks like.
 
    Everything here is a class on a real element. There is no wrapper and no shadow DOM: the

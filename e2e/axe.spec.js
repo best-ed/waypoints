@@ -240,9 +240,9 @@ const STATES = {
     await openApp(page);
     if (narrow) await page.locator('#view-list').click();
     await page.locator('#journey-toggle').click();
-    await expect(page.locator('#journey-controls')).toBeVisible();
-    await page.locator('#journey-play').click();
-    await expect(page.locator('#journey-progress')).toContainText('1');
+    await expect(page.locator('#journey-player')).toBeVisible();
+    await page.locator('#player-play').click();
+    await expect(page.locator('#player-position')).toContainText('1 of');
   }
 };
 

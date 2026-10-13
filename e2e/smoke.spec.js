@@ -307,22 +307,21 @@ test('journey mode enters, plays, and leaves no timer behind on Escape', async (
   await openApp(page);
 
   await page.locator('#journey-toggle').click();
-  await expect(page.locator('#journey-controls')).toBeVisible();
-  await expect(page.locator('#journey-summary')).toContainText('memories');
+  await expect(page.locator('#journey-player')).toBeVisible();
 
-  await page.locator('#journey-play').click();
-  await expect(page.locator('#journey-progress')).toContainText('1');
+  await page.locator('#player-play').click();
+  await expect(page.locator('#player-position')).toContainText('1 of');
 
   /* Let the dwell timer fire at least once and move the playback on. */
-  await expect(page.locator('#journey-progress')).toContainText('2', { timeout: 15000 });
+  await expect(page.locator('#player-position')).toContainText('2 of', { timeout: 15000 });
 
   await page.keyboard.press('Escape');
-  await expect(page.locator('#journey-controls')).toBeHidden();
+  await expect(page.locator('#journey-player')).toBeHidden();
 
   /* Captured after the exit, not before it: leaving journey mode resets the playback, so the
      readout is expected to change once. What must not happen is it changing again. */
   await page.waitForTimeout(500);
-  const settled = await page.locator('#journey-progress').textContent();
+  const settled = await page.locator('#player-position').textContent();
 
   /* The leak, observed rather than counted. Counting setTimeout calls says nothing here -
      Leaflet schedules dozens and lets most of them fire - so what is asserted instead is the
@@ -330,9 +329,9 @@ test('journey mode enters, plays, and leaves no timer behind on Escape', async (
      The dwell is 3500ms, so this waits past two of them. */
   await page.waitForTimeout(8000);
 
-  await expect(page.locator('#journey-controls')).toBeHidden();
-  expect(await page.locator('#journey-progress').textContent()).toBe(settled);
-  /* .pin-journey, not .journey-step: the latter is the class on the Previous and Next
+  await expect(page.locator('#journey-player')).toBeHidden();
+  expect(await page.locator('#player-position').textContent()).toBe(settled);
+  /* .pin-journey, not .player-step: the latter is the class on the Previous and Next
      buttons. The pins are what must go back to being ordinary pins. */
   await expect(page.locator('.pin-journey')).toHaveCount(0);
 });

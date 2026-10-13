@@ -283,35 +283,6 @@
               A journey needs at least two memories in view.
             </p>
 
-            <p id="journey-summary" class="journey-summary" hidden></p>
-
-            <div id="journey-controls" class="journey-controls" role="group" aria-label="Journey playback" hidden>
-              <button
-                id="journey-previous"
-                class="button button-sm icon-only journey-step"
-                type="button"
-                data-icon="previous"
-                aria-label="Previous stop"
-              ></button>
-              <button
-                id="journey-play"
-                class="button button-sm journey-play"
-                type="button"
-                data-icon="play"
-                aria-label="Play journey"
-              >
-                <span class="button-label">Play</span>
-              </button>
-              <button
-                id="journey-next"
-                class="button button-sm icon-only journey-step"
-                type="button"
-                data-icon="next"
-                aria-label="Next stop"
-              ></button>
-
-              <p id="journey-progress" class="journey-progress" aria-live="polite"></p>
-            </div>
           </div>
           </div>
 
@@ -445,6 +416,47 @@
         <!-- Written in when placement starts rather than once at boot: a live region
              announces a change to its contents, not a change to its visibility. -->
         <p id="placement-hint" class="placement-hint" role="status" hidden></p>
+
+        <!--
+          The player docks to the map pane rather than living in the sidebar, because what it
+          is describing is happening on the map: the stop it names is the pin that just moved
+          under it. In the sidebar the two were a column apart, and on a narrow screen they
+          were not even on the same pane.
+        -->
+        <div id="journey-player" class="journey-player" role="group" aria-label="Journey playback" hidden>
+          <div class="player-row">
+            <div class="player-transport">
+              <button
+                id="player-previous"
+                class="button button-sm icon-only player-step"
+                type="button"
+                data-icon="previous"
+                aria-label="Previous stop"
+              ></button>
+              <button
+                id="player-play"
+                class="button icon-only player-play"
+                type="button"
+                data-icon="play"
+                aria-label="Play journey"
+              ></button>
+              <button
+                id="player-next"
+                class="button button-sm icon-only player-step"
+                type="button"
+                data-icon="next"
+                aria-label="Next stop"
+              ></button>
+            </div>
+
+            <div class="player-readout">
+              <p id="player-title" class="player-title"></p>
+              <p id="player-meta" class="player-meta"></p>
+            </div>
+
+            <p id="player-position" class="player-position"></p>
+          </div>
+        </div>
       </div>
     </main>
 

@@ -67,7 +67,7 @@ textarea {
 
 /* The user agent's [hidden] rule is display:none at the same specificity as a class, so any
    later rule setting display wins and the element stays on screen while marked hidden. Both
-   .date-range and .journey-controls are flex containers toggled by the attribute, so this has
+   .date-range and .journey-player are flex containers toggled by the attribute, so this has
    to outrank them. */
 /* An icon never shrinks and never grows: the label wraps or ellipses, the picture does not
    distort. */

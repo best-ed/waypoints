@@ -34,11 +34,12 @@ import { tagCounts, allTags } from './filters/tag-counts.js';
 import { timelineBuckets, distinctDateCount } from './filters/timeline.js';
 import { journeyOrder } from './journey/journey-order.js';
 import { journeySummary } from './journey/journey-summary.js';
+import { formatMemoryDate } from './ui/format-date.js';
 import { createPlayback, IDLE } from './journey/playback.js';
 import { createJourneyPath } from './map/journey-path.js';
 import { createJourneyChevrons } from './map/journey-chevrons.js';
 import { createJourneyPanel } from './ui/journey-panel.js';
-import { createJourneyControls } from './ui/journey-controls.js';
+import { createJourneyPlayer } from './ui/journey-player.js';
 import { createMemoryList } from './ui/memory-list.js';
 import { createThumbnailOwner } from './ui/thumbnail-owner.js';
 import { createDetailView } from './ui/detail-view.js';
@@ -671,16 +672,18 @@ function boot() {
     containerElement: document.querySelector('.journey'),
     toggleElement: document.getElementById('journey-toggle'),
     hintElement: document.getElementById('journey-hint'),
-    summaryElement: document.getElementById('journey-summary'),
     onToggle: () => toggleJourney()
   });
 
-  const journeyControls = createJourneyControls({
-    container: document.getElementById('journey-controls'),
-    playElement: document.getElementById('journey-play'),
-    previousElement: document.getElementById('journey-previous'),
-    nextElement: document.getElementById('journey-next'),
-    progressElement: document.getElementById('journey-progress'),
+  const journeyPlayer = createJourneyPlayer({
+    containerElement: document.getElementById('journey-player'),
+    playElement: document.getElementById('player-play'),
+    previousElement: document.getElementById('player-previous'),
+    nextElement: document.getElementById('player-next'),
+    titleElement: document.getElementById('player-title'),
+    metaElement: document.getElementById('player-meta'),
+    positionElement: document.getElementById('player-position'),
+    formatDate: formatMemoryDate,
     onToggle: () => playback.toggle(),
     onPrevious: () => playback.prev(),
     onNext: () => playback.next()
@@ -690,8 +693,12 @@ function boot() {
     return applyFilters(store.list(), filters.getFilters());
   }
 
+  function stopAt(index) {
+    return journeyStops[index] ?? null;
+  }
+
   function currentStopId() {
-    const stop = journeyStops[playback.getState().index];
+    const stop = stopAt(playback.getState().index);
     return stop ? stop.id : null;
   }
 
@@ -716,7 +723,7 @@ function boot() {
     }
 
     journeyPanel.render({ summary: journeySummary(visible), isActive: journeyActive, total: totalMemories });
-    journeyControls.render(playback.getState(), { isActive: journeyActive });
+    journeyPlayer.render(playback.getState(), { isActive: journeyActive, stop: stopAt(playback.getState().index) });
   }
 
   /* One step of playback: select it so the sidebar follows, then focusMarker moves the map
@@ -741,7 +748,7 @@ function boot() {
   }
 
   playback.subscribe((state) => {
-    journeyControls.render(state, { isActive: journeyActive });
+    journeyPlayer.render(state, { isActive: journeyActive, stop: stopAt(state.index) });
     highlightProgress(state);
 
     /* Idle is a reset rather than a position, so it must not drag the map anywhere. */
