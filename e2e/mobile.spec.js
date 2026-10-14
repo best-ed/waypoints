@@ -112,3 +112,17 @@ test('typing still sends nothing', async ({ page }) => {
 
   expect(requests).toBe(0);
 });
+
+test('the small icon buttons in the detail view are full size on touch', async ({ page }) => {
+  await seedLibrary(page);
+  await openApp(page);
+  await page.locator('#view-list').click();
+  await page.locator('.memory-list li button').first().click();
+  await expect(page.locator('#memory-detail')).toBeVisible();
+
+  for (const id of ['#detail-previous', '#detail-next']) {
+    const box = await page.locator(id).boundingBox();
+    expect(box.width, id + ' is ' + Math.round(box.width) + 'px wide').toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
+});

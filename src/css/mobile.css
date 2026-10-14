@@ -220,6 +220,14 @@
     min-width: 44px;
   }
 
+  /* The size variant beat the rule above on specificity - two classes against one - so every
+     small icon-only button in the app came out 32px wide with a 44px height: Previous and Next
+     in the detail view and in the player, the popup's close, the search clear, and the place
+     search's close. Restated at the same weight, which is the only thing that fixes it. */
+  .button-sm.icon-only {
+    min-width: 44px;
+  }
+
   .field-input,
   .search-input,
   .date-input,
