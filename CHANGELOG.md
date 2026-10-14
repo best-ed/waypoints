@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 (2026-10-14)
+
+A six day pass over the whole interface. Nothing about how memories are stored has changed, so
+an export from 1.0 imports into this without a migration.
 
 ### The map in dark mode
 
@@ -84,6 +87,27 @@
   longer look identical, and a photo's Remove button no longer covers the photo.
 - Boolean settings are switches.
 - Dialog actions stay on screen when the form is taller than the window.
+- Dialogs, the detail view, toasts and the end of a journey arrive and leave rather than
+  appearing. All of it is off under reduced motion.
+
+### On a phone
+
+- **The place search is an icon until you want it.** It used to be a card across the top of the
+  map, about a tenth of the screen, whether or not anybody was searching.
+- Every control that is tapped is at least 44px, including the map's zoom buttons, the pins and
+  the settings switches. Six of them were 32px wide: the rule was there and a size variant was
+  quietly beating it.
+- The journey player is a bar at the bottom of the map rather than a floating card, so it
+  covers neither the zoom control nor the attribution.
+
+### Known limits
+
+- **The map is dimmed in dark mode rather than drawn dark.** No keyless provider offers a dark
+  raster basemap. Settings turns the dimming off if you prefer the bright one.
+- The date fields are the browser's own, so they look like your operating system rather than
+  like the rest of the app.
+- Memories live in this browser on this device. There is no sync, and clearing site data
+  deletes them. Export regularly.
 
 ## 1.0.1 (2026-10-09)
 

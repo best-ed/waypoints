@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "7ec32aa966b6";
+self.PRECACHE_VERSION = "04de1e1dbc02";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -38,7 +38,7 @@ self.PRECACHE_FILES = [
   { url: "src/css/toast.css", hash: "e6073b88419e807f282f4c49c72201a0823e793b197813adf74a650ac80de01c" },
   { url: "src/css/tokens.css", hash: "0ee3334708f55a11b05d610fea12dea2338972bc386e26d10c4f265377651f7f" },
   { url: "src/fonts/fraunces-600-latin.woff2", hash: "4b3f47b6e04b00a61545f0f51415af6097e04cc9bf8abe36634a1daf400c88ad" },
-  { url: "src/js/config.js", hash: "6623c938209caf8d50d482ee6747b803796acf5c396f573ab201827bc7d79ce2" },
+  { url: "src/js/config.js", hash: "77971d4ebe9c30e3f61a012cef72a04d16994153052d06b1b0b676ab412cee04" },
   { url: "src/js/data/errors.js", hash: "cf37f88d48b6510f784f3ebbae55121fb426025080aff4f7f9901625ef285310" },
   { url: "src/js/data/make-id.js", hash: "540be621332cd51f8c6ecf66afe2a97e4b83a285d5ef42ab9416572bb348e70f" },
   { url: "src/js/data/memory-store.js", hash: "7c3aa1f1eebf0ce8342d54297f4c2d7844f94b0c7039f7f55ec12bc360f66034" },
