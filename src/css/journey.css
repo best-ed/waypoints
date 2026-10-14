@@ -253,3 +253,26 @@
   flex: none;
   gap: var(--space-2);
 }
+
+/* The end card arrives under the transport rather than appearing there. Same mechanism as the
+   detail view, and the same fallback: where the discrete transition is unsupported it is
+   simply there. */
+.player-end {
+  opacity: 1;
+  transform: none;
+  transition: opacity var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out),
+    display var(--duration-base) allow-discrete;
+}
+
+.player-end[hidden] {
+  opacity: 0;
+  transform: translateY(var(--space-2));
+}
+
+@starting-style {
+  .player-end:not([hidden]) {
+    opacity: 0;
+    transform: translateY(var(--space-2));
+  }
+}

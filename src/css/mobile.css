@@ -85,6 +85,17 @@
     display: flex;
   }
 
+  /* The pane that arrives fades up. The one leaving goes at once, and deliberately: both are
+     flex children of the same row, so holding the outgoing one in the layout for the length of
+     a transition would squeeze the incoming one to half the screen while it faded. An
+     animation rather than a transition, because the pane was display:none a frame ago and a
+     transition cannot run from there. */
+  .app-body[data-view='list'] .sidebar,
+  .app-body:not([data-view='list']) .app-main,
+  body[data-detail] .app-body .sidebar {
+    animation: pane-in var(--duration-base) var(--ease-out);
+  }
+
   .app-body[data-view='list'] .app-main {
     display: none;
   }
@@ -310,5 +321,11 @@
      the popup that the same tap just opened, and then will not go away. */
   .leaflet-tooltip {
     display: none !important;
+  }
+}
+
+@keyframes pane-in {
+  from {
+    opacity: 0;
   }
 }

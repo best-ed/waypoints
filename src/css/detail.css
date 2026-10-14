@@ -9,6 +9,31 @@
   flex-direction: column;
   min-height: 0;
   background-color: var(--color-surface);
+
+  /* Opening a memory is the one navigation in this app, so it arrives from the side the list
+     it replaced is on rather than appearing in place. Transitions outrank even an !important
+     declaration, which is what lets this animate out of [hidden] at all; where the discrete
+     half is unsupported the rule is dropped and the view switches instantly, as before.
+
+     Focus is unaffected: detail-view.js moves it when it opens and when it closes, and neither
+     waits on a transition. */
+  opacity: 1;
+  transform: none;
+  transition: opacity var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out),
+    display var(--duration-base) allow-discrete;
+}
+
+.detail[hidden] {
+  opacity: 0;
+  transform: translateX(var(--space-4));
+}
+
+@starting-style {
+  .detail:not([hidden]) {
+    opacity: 0;
+    transform: translateX(var(--space-4));
+  }
 }
 
 /* Pinned, so Back and the two step buttons stay reachable however long the note is. The
