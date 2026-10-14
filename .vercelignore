@@ -6,6 +6,7 @@ node_modules
 
 tests
 e2e
+visual
 playwright-report
 test-results
 playwright.config.js

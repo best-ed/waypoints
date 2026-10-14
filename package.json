@@ -10,8 +10,9 @@
     "test": "node --test --test-timeout=10000 \"tests/**/*.test.js\"",
     "precache": "node scripts/build-precache.js",
     "serve:prod": "node scripts/serve.mjs",
-    "test:e2e": "playwright test",
-    "test:e2e:smoke": "playwright test --grep @smoke"
+    "test:e2e": "playwright test --project=chromium --project=webkit",
+    "test:e2e:smoke": "playwright test --project=chromium --project=webkit --grep @smoke",
+    "test:visual": "playwright test --project=visual"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

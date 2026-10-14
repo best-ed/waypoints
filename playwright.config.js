@@ -8,7 +8,8 @@ const PORT = Number(process.env.PORT || 5174);
 const BASE_URL = 'http://127.0.0.1:' + PORT;
 
 export default defineConfig({
-  testDir: './e2e',
+  /* Both suites live under here; each project names the one it runs. */
+  testDir: '.',
   /* Each test seeds its own state and shares nothing, so they can run together. */
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
@@ -28,13 +29,34 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testDir: './e2e',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } }
     },
     {
       /* WebKit is not Safari, but it is the only way to run WebKit's storage backend here, and
          that backend is the reason photos are stored as bytes rather than Blobs. */
       name: 'webkit',
+      testDir: './e2e',
       use: { ...devices['Desktop Safari'], viewport: { width: 1280, height: 900 } }
+    },
+    {
+      /* Screenshots, Chromium only and deliberately not part of npm run test:e2e: a baseline
+         is a record of a decision, and a pixel difference is a question for a person rather
+         than a build failure. It is excluded from CI for the same reason, plus a practical
+         one - these baselines are win32 and a Linux runner would compare against the wrong
+         platform's files. CLAUDE.md says how to generate the Linux set. */
+      name: 'visual',
+      testDir: './visual',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 900 },
+        /* Every transition and animation in the app is on the duration tokens, which this
+           takes to zero. A frame caught mid-transition is a different frame every run. */
+        reducedMotion: 'reduce',
+        /* The app's own storage is per origin, and the sandbox keys keep a visual run away
+           from anything real; this keeps each test away from the one before it. */
+        storageState: undefined
+      }
     }
   ],
 
