@@ -269,10 +269,17 @@ const STATES = {
    Leaflet builds its close control as <a href="#close"> and "#close" matches no element; the
    popup carries a real button now, so the exemption is gone and the state passes without it. */
 
+/* The two states the smoke suite carries: the page as it opens, and a memory open in it. They
+   are the states every other one is reached through, so a violation in either is a violation
+   everywhere. */
+const SMOKE_STATES = new Set(['default', 'detail with photos']);
+
 for (const [name, reach] of Object.entries(STATES)) {
   for (const theme of THEMES) {
     for (const size of WIDTHS) {
-      test(`axe: ${name}, ${theme}, ${size.label}`, async ({ page }) => {
+      const tag = SMOKE_STATES.has(name) ? { tag: '@smoke' } : {};
+
+      test(`axe: ${name}, ${theme}, ${size.label}`, tag, async ({ page }) => {
         await page.setViewportSize({ width: size.width, height: size.height });
         await page.emulateMedia({ colorScheme: theme });
 

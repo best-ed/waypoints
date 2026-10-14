@@ -16,7 +16,7 @@ import {
    paths that only break once a real browser, real storage and the production headers are all
    involved at once. Each one seeds its own state and shares nothing. */
 
-test('boots with an empty library and offers somewhere to start', async ({ page }) => {
+test('boots with an empty library and offers somewhere to start', { tag: '@smoke' }, async ({ page }) => {
   await page.goto(BASE);
 
   await expect(page.locator('#welcome')).toBeVisible();
@@ -60,7 +60,7 @@ test('the first memory brings the whole sidebar back', async ({ page }) => {
   await expect(page.locator('.journey')).toBeHidden();
 });
 
-test('adds a memory by placing a pin', async ({ page }) => {
+test('adds a memory by placing a pin', { tag: '@smoke' }, async ({ page }) => {
   /* Suggestions off, so placing a pin sends nothing anywhere and the test does not depend on
      a reverse geocode it did not ask for. */
   await page.addInitScript(() => {
@@ -92,7 +92,7 @@ test('adds a memory by placing a pin', async ({ page }) => {
   expect(Number.isFinite(stored[0].lat)).toBe(true);
 });
 
-test('a photo survives a reload, on whichever engine is running', async ({ page }) => {
+test('a photo survives a reload, on whichever engine is running', { tag: '@smoke' }, async ({ page }) => {
   /* The one that guards the storage shape. WebKit's IndexedDB cannot hold a Blob, so if this
      ever regresses to storing Blobs it fails here and nowhere else. */
   await seedLibrary(page, [memory('a', 'Photo memory', '2025-01-01', -1.29, 36.82, ['x'])]);
@@ -208,7 +208,7 @@ test('deletes a memory and undoes it, keeping the same record', async ({ page })
   expect(restored.updatedAt).toBe(original.updatedAt);
 });
 
-test('a text filter narrows the list and comes back from the url', async ({ page }) => {
+test('a text filter narrows the list and comes back from the url', { tag: '@smoke' }, async ({ page }) => {
   await seedLibrary(page);
   await openApp(page);
 
@@ -402,7 +402,7 @@ test('imports a file it just exported, changing nothing', async ({ page }) => {
   expect(stored.filter((m) => m.id === 'm1')).toHaveLength(1);
 });
 
-test('a hostile import file pollutes nothing and raises no dialog', async ({ page }) => {
+test('a hostile import file pollutes nothing and raises no dialog', { tag: '@smoke' }, async ({ page }) => {
   await seedLibrary(page);
   await openApp(page);
 
@@ -560,7 +560,7 @@ test('the placement hint appears while placing and leaves with the mode', async 
   await expect(hint).toBeHidden();
 });
 
-test('an explicit theme is applied before the first paint', async ({ page }) => {
+test('an explicit theme is applied before the first paint', { tag: '@smoke' }, async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem(
       'waypoints:settings',

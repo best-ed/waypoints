@@ -22,7 +22,7 @@ async function waitForWorker(page) {
   });
 }
 
-test('boots offline after one online load, and says it is offline', async ({ page, context, browserName }) => {
+test('boots offline after one online load, and says it is offline', { tag: '@smoke' }, async ({ page, context, browserName }) => {
   test.skip(Boolean(needsOfflineServing(browserName)), needsOfflineServing(browserName) || '');
 
   await seedLibrary(page);

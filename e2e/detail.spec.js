@@ -19,7 +19,7 @@ const NEWEST = 'Just a plain day';
 const SECOND = 'Nairobi rooftop sunset';
 const OLDEST = 'Karura forest walk';
 
-test('a card opens the memory, and Back returns focus to the card', async ({ page }) => {
+test('a card opens the memory, and Back returns focus to the card', { tag: '@smoke' }, async ({ page }) => {
   await seedLibrary(page);
   await openApp(page);
 
@@ -46,7 +46,7 @@ test('a card opens the memory, and Back returns focus to the card', async ({ pag
   expect(focused.text).toContain(NEWEST);
 });
 
-test('the detail view shows the whole memory, and the popup only previews it', async ({ page }) => {
+test('the detail view shows the whole memory, and the popup only previews it', { tag: '@smoke' }, async ({ page }) => {
   await seedLibrary(page, [
     memory('only', 'The ridge at the long rains', '2025-03-04', -1.35, 36.64, ['trail', 'rain'], {
       note: 'Walked up from the gate.\nThe cloud came in an hour later.',
