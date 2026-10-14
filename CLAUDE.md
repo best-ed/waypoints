@@ -1156,6 +1156,44 @@ duration still applies the end state, which is the point. Two overrides remain a
 about duration: the cluster's hover scale is a state change that would still snap, and the
 plugin's own transitions are declared in its stylesheet with its own numbers.
 
+### What moves
+
+Five things, and every one of them is on the tokens, so the reduced-motion switch above covers
+all five without any of them knowing about it. **No motion carries information that is not also
+there without it**: each of these says again, in movement, something the layout already says.
+
+| What | How |
+|---|---|
+| dialogs and the lightbox | fade, a 2% scale and a `--space-2` rise, in and out |
+| the detail view | fade and a `--space-4` slide from the side the list was on |
+| the pane switch on narrow | the arriving pane fades up |
+| toasts | rise in, fade out |
+| the end-of-journey card | fade and a `--space-2` rise |
+| arriving at a journey stop | a scale pulse on the pin |
+
+**Dialogs and the detail view are progressive enhancement, and the enhancement is the whole
+mechanism.** A transition cannot run from `display: none`, so `@starting-style` gives the open
+frame something to come from and `transition-behavior: allow-discrete` on `display` and
+`overlay` keeps the element painted until the fade has finished. Where either is unsupported
+both rules are dropped and the surface opens and closes instantly, which is what it did before.
+
+Two things worth knowing if any of this is touched:
+
+- **The scrim has to be transitioned with the panel.** Without the discrete half on
+  `::backdrop`, closing the import preview dropped its scrim in one frame while the panel was
+  still fading, and the Settings dialog behind it flashed to full brightness and back.
+- **Transitions outrank `!important`.** That is what lets `.detail` and `.player-end` animate
+  out of `[hidden]`, which `base.css` sets to `display: none !important`.
+
+The toast uses animations rather than transitions, because a node that was not in the document
+a frame ago has nothing to transition from. `ui/toast.js` waits for `animationend` rather than
+holding a duration of its own, so the stylesheet owns how long it takes; the timer in there is
+a backstop for a browser that never fires the event and says so.
+
+**The pane switch fades the arriving pane and lets the leaving one go at once.** A true
+crossfade needs both in the layout at the same time, and they are flex children of one row, so
+the pane being faded up would spend the whole transition at half the width of the screen.
+
 ### Icons
 
 `src/js/ui/icons.js`. Twenty-one icons on a 24px grid, strokes only at 2px with round caps and
@@ -1308,6 +1346,12 @@ The breakpoint is 720px, where the sidebar and a usable map stop fitting side by
   memory opens its detail view, which is full screen here and needs no switch; **Show on map**
   and **Move** switch to Map first, because flying to a marker on a map of the wrong size lands
   in the wrong place - every path that reveals the map calls `invalidateSize`.
+- **The place search is an icon.** At rest it was a full-width card about 70px tall sitting
+  exactly where the map's own content is: a tenth of the screen given permanently to a control
+  used occasionally. It is a 44px button here, and opening it spans the pane with the results
+  as a sheet beneath. Escape or the close button puts it away and hands focus back to the icon.
+  `isNarrow` and `createIcon` are injected into `map/place-search-control.js`, because `map/`
+  does not get to ask the DOM about the layout and `ui/icons.js` is not its to import.
 - **The journey player is a bar, not a card.** It floats over the map on a wide screen; at this
   width a floating card either covers the zoom control and the attribution or is pushed far
   enough up that it covers the map it is describing, so it takes its own room at the bottom of
@@ -1320,7 +1364,23 @@ The breakpoint is 720px, where the sidebar and a usable map stop fitting side by
   bottom of the layout hides under the URL bar until it scrolls away.
 - **Safe areas.** `viewport-fit=cover` plus `env(safe-area-inset-*)` on the header, the dialogs
   and the toast region - the fixed edges.
-- **Touch.** 44px minimum under `(pointer: coarse)`. The timeline thumb is the only target
+- **Touch.** 44px minimum under `(pointer: coarse)`. Two traps, both found by sweeping every
+  audit state at 375, 390 and 360 with touch emulation on rather than by reading the stylesheet:
+
+  - **A size variant beats the rule.** `.button` carries the 44px floor at one class;
+    `.button-sm.icon-only` sets `min-width: 2rem` at two. Six controls came out 32px wide with
+    a 44px height before that was restated at the same weight.
+  - **Some controls cannot simply be made bigger.** A switch at 44px square is not a switch,
+    and a map pin that size covers the place it is marking. Those grow a transparent 44px box
+    centred on them instead, which is the timeline thumb's trick from the other direction. The
+    pin's is centred on its head, because its element is anchored at the point.
+
+  **An element box cannot show a grown hit area**, so the test that guards this hit-tests four
+  points 21px out with `elementFromPoint` rather than measuring `getBoundingClientRect`. On the
+  axes, not at the corners: the corner of a 44px box is 29px from the centre, so a round button
+  would fail a corner test however big it was. One more test taps an empty corner of the map and
+  asserts placement still lands, because a bigger catchment around every pin is exactly the kind
+  of fix that quietly eats the surface underneath it. The timeline thumb is the only target
   there, since the input carries `pointer-events: none` so both handles of the pair stay
   reachable; it gets a 44px box with a transparent border and `background-clip: content-box`,
   so the padding does the hitting and the visible disc stays small.
@@ -1556,8 +1616,74 @@ the map and opens a popup through the cluster plugin, and with several pins stac
 it occasionally never produced a popup on WebKit under parallel load. The cluster path has its
 own scenarios; it is a slow and flaky way in to something else.
 
+### Two suites
+
+`npm run test:e2e:smoke` is the subset that guards the paths that would make the app useless if
+they broke: boot, add, a photo round trip on both engines, the detail view, filters restored
+from the url, the hostile import file, an offline boot, the theme applied before the first
+paint, and axe on the default and detail states. 33 tests in about 33 seconds, against four
+minutes for the whole suite.
+
+**Tagged with `{ tag: '@smoke' }` rather than split into files**, so a test lives next to the
+ones it shares a fixture with and a tag is one word to add or to take away. The axe loop reads
+a set of state names rather than tagging each generated test by hand.
+
 CI runs the unit tests first, before the browsers are installed - they need none, they are fast,
-and a failure should not wait on a few hundred megabytes of download.
+and a failure should not wait on a few hundred megabytes of download. Then **smoke on a push and
+the full suite on a pull request into `main`**, which is where the cost is worth paying.
+
+---
+
+## Visual Regression
+
+`visual/`, a third Playwright project, Chromium only, run with `npm run test:visual`. It is
+**deliberately not part of `npm run test:e2e` and not run in CI**: a baseline is a record of a
+decision, and a pixel difference is a question for a person rather than a build failure.
+
+Thirteen states: the default view wide in both themes, both panes on a phone, the first run, a
+memory with photos, the form with tags and photos, settings, the player wide and narrow, the end
+card, the filters panel open, and nothing matching.
+
+Five things move between runs if nothing is done about them, and all five are handled in
+`visual/fixtures.js` rather than per test:
+
+- **the clock**, frozen with `page.clock` before any navigation, because the form fills in
+  today's date and the list groups by year
+- **the data**, a fixed hand-written library under the **sandbox** keys. A generator seeded with
+  a constant would also be reproducible, but a list you can read is a list whose screenshot you
+  can check by eye, and the sandbox keys mean a visual run cannot write where memories live
+- **the fonts**, through `document.fonts.ready`, or a shot catches the system stack before
+  Fraunces arrives and which one you get depends on how warm the disk cache is
+- **motion**, through the project's `reducedMotion: 'reduce'`, which takes the duration tokens
+  to zero. A frame caught mid-transition is a different frame every run
+- **the caret**, which blinks
+
+Tiles come from the e2e fixture tile, so the map is one image repeated and never a request.
+
+`maxDiffPixelRatio` is **0.002**. Font hinting and the map's rasterising differ by a few glyph
+edges between runs of the same build, which is about 0.1% of a 1280x900 frame; the smallest
+change this exists to catch is a control moving, which is thousands of pixels and a whole
+percent of the frame.
+
+### Baselines
+
+Snapshots keep Playwright's platform suffix, so `default-wide-light-visual-win32.png` is the
+Windows set and a run on another operating system writes its own rather than failing against
+pixels it was never going to match.
+
+**The committed baselines are win32.** To generate the Linux set when CI is unblocked:
+
+```bash
+docker run --rm -v "$PWD":/work -w /work   mcr.microsoft.com/playwright:v1.63.0-noble   sh -c "npm ci && npx playwright test --project=visual --update-snapshots"
+```
+
+The image tag has to match the Playwright version in `package-lock.json`, or the browser build
+differs from the one the baselines were taken with. Commit the `-linux` files alongside the
+win32 ones; both sets live in `visual/states.spec.js-snapshots/` and neither replaces the other.
+
+A diff is reviewed as a picture, not as a number. If the change is wanted, rerun with
+`--update-snapshots` and commit the new baseline **in the same commit as the change that moved
+it**, so the history says what moved and why.
 
 ---
 
@@ -1607,6 +1733,35 @@ Deleting is immediate, not a confirmation dialog:
 The captured record is what makes undo honest. A new toast replaces the one before it and
 the earlier deletion simply stands; there is no undo stack. The toast region is
 `aria-live="polite"` so the deletion is announced.
+
+---
+
+## Releasing
+
+The version lives in **two** places, `package.json` and `src/js/config.js`, and
+`tests/meta/version.test.js` keeps them in step - two places is one too many, and the test is
+what makes it safe.
+
+In order:
+
+1. `docs/ux-audit.md` gets a status line for anything the release closed or deliberately left
+   open.
+2. The README's **What it does** and **Known limits** are brought up to date, and the test
+   counts with them. No inflated claims: a limit stated before somebody finds it costs nothing,
+   and one found first costs the whole document's credibility.
+3. The screenshots are regenerated **from sandbox data only**, with `?sandbox` and the sandbox
+   storage keys, so nothing in the script can reach real memories. The banner in the pictures
+   says which mode they were taken in.
+4. `CHANGELOG.md`: Unreleased becomes the version, dated with the real date. Written for
+   somebody using the app, not for somebody reading the diff.
+5. The version is bumped in both places and `npm run precache` is run, because the manifest
+   hashes every shipped file and `config.js` is one of them.
+6. Lighthouse, mobile and desktop, three runs each, compared with the previous release.
+7. The three gates: a clean tree, the full unit and end-to-end suites, and the attribution scan
+   over `origin/main..` the branch.
+
+**Merging and tagging are separate from all of this**, and happen after a manual pass, which is
+what the section below is about.
 
 ---
 
