@@ -18,6 +18,71 @@
   background-color: var(--color-backdrop);
 }
 
+/* ---- arriving and leaving ---------------------------------------------------- */
+
+/* A dialog is a surface that arrives and then leaves, and until now it did both instantly.
+
+   Progressive enhancement, and the enhancement is the whole mechanism. A transition cannot run
+   from display:none, so without allow-discrete there is nothing to animate out of or into:
+   @starting-style gives the open frame something to come from, and transitioning display and
+   overlay as discrete properties keeps the element painted until the fade has finished. Where
+   either is unsupported the rules below are simply dropped and the dialog opens and closes the
+   way it does today, which is the behaviour this replaces rather than breaks.
+
+   The rise is small on purpose. A dialog that travels is a dialog you wait for.
+
+   Reduced motion needs nothing here: the durations are the tokens, which are zero, and a zero
+   duration still applies the end state. */
+.dialog,
+.lightbox {
+  --dialog-rise: var(--space-2);
+
+  opacity: 1;
+  transition: opacity var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out),
+    overlay var(--duration-base) allow-discrete,
+    display var(--duration-base) allow-discrete;
+}
+
+/* The closed state, which is also where the open transition starts from and where the close
+   transition ends. */
+.dialog:not([open]),
+.lightbox:not([open]) {
+  opacity: 0;
+  transform: translateY(var(--dialog-rise)) scale(0.98);
+}
+
+@starting-style {
+  .dialog[open],
+  .lightbox[open] {
+    opacity: 0;
+    transform: translateY(var(--dialog-rise)) scale(0.98);
+  }
+}
+
+/* The scrim fades with the panel rather than being switched off underneath it. Without the
+   discrete half of this, closing the import preview dropped its scrim in one frame while the
+   panel was still fading, and Settings behind it flashed to full brightness and back. */
+.dialog::backdrop,
+.lightbox::backdrop {
+  opacity: 1;
+  transition: opacity var(--duration-base) var(--ease-out),
+    overlay var(--duration-base) allow-discrete,
+    display var(--duration-base) allow-discrete;
+}
+
+.dialog:not([open])::backdrop,
+.lightbox:not([open])::backdrop {
+  opacity: 0;
+}
+
+@starting-style {
+  .dialog[open]::backdrop,
+  .lightbox[open]::backdrop {
+    opacity: 0;
+  }
+}
+
 /* A dialog that opens over another dialog rather than over the app.
 
    The import preview was the same width as Settings and sat in the same place, so its backdrop
