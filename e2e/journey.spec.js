@@ -21,22 +21,28 @@ async function enterJourney(page, { narrow = false } = {}) {
 }
 
 /* Where the map is, once it has stopped moving. focusMarker flies, and a transform read
-   mid-flight is a moment in an animation rather than a position. */
+   mid-flight is a moment in an animation rather than a position.
+
+   Three equal reads in a row, not two: under parallel load on WebKit a fly can stall long
+   enough between two reads to look finished and then carry on, which is exactly how this read
+   a position that was still an animation. */
 async function settledTransform(page) {
   const read = () =>
     page.evaluate(() => document.querySelector('.leaflet-map-pane')?.style.transform ?? '');
 
   let previous = await read();
+  let stable = 0;
 
-  for (let attempt = 0; attempt < 20; attempt++) {
-    await page.waitForTimeout(250);
+  for (let attempt = 0; attempt < 40; attempt++) {
+    await page.waitForTimeout(300);
     const current = await read();
 
-    if (current === previous) {
+    stable = current === previous ? stable + 1 : 0;
+    previous = current;
+
+    if (stable >= 2) {
       return current;
     }
-
-    previous = current;
   }
 
   return previous;
