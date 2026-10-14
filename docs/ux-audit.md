@@ -4,7 +4,8 @@ Taken from 60 screenshots of the running app at 1280px and 375px, light and dark
 production headers, with 60 seeded memories and three carrying real photos. Every finding below
 is something visible in a picture, not something inferred from reading the stylesheets.
 
-Ranked by how much it costs a person using this. Nothing here is fixed in this commit.
+Ranked by how much it costs a person using this. Nothing was fixed in the commit that wrote
+it; the status of every finding as of 1.1.0 is at the bottom.
 
 ---
 
@@ -218,3 +219,78 @@ reads as a competent prototype rather than something made deliberately.
 
 The order that fixes the most per change: the dark map, then the sidebar's balance, then a type
 scale and a component layer so the rest stops drifting apart.
+
+---
+
+## Status at 1.1.0
+
+Every finding above, with the commit that closed it or the reason it is still open. The commits
+are on `ui-1.1`.
+
+| # | Finding | Status | Where |
+|---|---|---|---|
+| 1 | Dark mode wraps a blazing white map | Fixed, with a stated limit | `d784bc2` |
+| 2 | The filters own the sidebar | Fixed | `ef764da`, `91018bc` |
+| 3 | The first run is bleak | Fixed | `38e8d36` |
+| 4a | The photo picker hides photos behind their Remove buttons | Fixed | `27521be` |
+| 4b | The dialog's actions are cut off with photos attached | Fixed | `af2047d` |
+| 5 | The Import hint and its button overlap | Fixed | `27521be` |
+| 6 | Nothing establishes hierarchy | Fixed | `ae73c4c`, `eace44e` |
+| 7 | No action looks like the action | Fixed | `27521be` |
+| 8 | Icons are missing everywhere but one button | Fixed | `7d5ce2c` |
+| 9 | Filter chips and display tags are the same component | Fixed | `f7aa3bb` |
+| 10 | Two controls do the same job, 150px apart | Fixed | `ef764da`, `5a0814e` |
+| 11 | The import preview opens over Settings with no separation | Fixed | `6559459` |
+| 12 | The place search eats the map on a phone | Fixed | `0cfb3da` |
+| 13a | Spacing is close but not rhythmic | Fixed | `dae800b` |
+| 13b | The date inputs are raw | **Open** | see below |
+| 14 | The map popup is white in dark mode | Fixed | `e022503` |
+| 15a | Elevation is inconsistent | Fixed | `e022503` |
+| 15b | Three labels for one thing in 90px | Fixed | `ef764da` |
+| 15c | `0 of 60 · search` is a machine's summary | Fixed | `ef764da` |
+| 15d | No memory in the list shows its photo | Fixed | `91018bc` |
+| 15e | The sandbox banner is the loudest thing on screen | Fixed | `359a08a` |
+| 15f | Focus, hover and pressed states differ per component | Fixed | `27521be` |
+| 15g | No motion tokens | Fixed | `5bae648` |
+
+### 1, and what "with a stated limit" means
+
+There is no keyless dark basemap. CARTO's Dark Matter needed an API key as of 7 October 2026,
+which was verified against the provider rather than assumed, and no replacement is free to use
+without one. So dark mode **dims the light map** rather than drawing a dark one: `map.css`
+inverts and desaturates the tile pane alone, leaving the pins, the journey path and the popups
+in their own panes untouched.
+
+It is an approximation and not the thing itself, which is exactly why it is a setting. Someone
+who finds the result worse than a bright map can switch it off in Settings. The README says
+this in the same words.
+
+Putting a real dark basemap back is a key away: two urls in `BASEMAPS`, the host in the CSP and
+in `TILE_HOSTS`, and a test derives the policy hosts from `BASEMAPS` so a basemap the policy
+would block fails the suite rather than the deployment.
+
+### 13b, and why it is open
+
+The date fields are native `<input type="date">`. The format they display - `mm/dd/yyyy` here,
+`dd/mm/yyyy` elsewhere - and the calendar button beside it belong to the browser and the
+operating system's locale, and neither is addressable from CSS beyond the few vendor
+pseudo-elements that differ per engine.
+
+Replacing them with a date picker of our own would mean writing one, which is a month of work
+to do properly: keyboard entry, locale, a calendar grid that is actually navigable with a
+screen reader, and the whole of it then maintained. The native control is the better choice for
+a personal app, and the cost of it is that it looks like the operating system rather than like
+the rest of this. The dates the app *displays* are formatted by `ui/format-date.js` and do read
+as the app's own.
+
+### What changed overall
+
+The audit's closing paragraph said the app lacked a point of view: no type scale, no elevation
+model, no icon vocabulary, no component layer, so every surface improvised and none of them
+agreed. All four exist now and are enforced by tests rather than by habit: the contrast list
+fails the suite when a colour token appears without a decision attached, the precache test
+fails when a shipped file changes without the manifest, and axe runs over fifteen states in two
+themes at two widths.
+
+The three things that moved the most, in the order they were done: the dark map, the sidebar's
+balance, and the type scale with the component layer under it.
