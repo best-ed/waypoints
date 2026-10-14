@@ -8,6 +8,7 @@ import {
   openPopup,
   seedLibrary,
   seedSettings,
+  settled,
   mockNominatim,
   generatePhotoBytes,
   memory,
@@ -60,7 +61,7 @@ const STATES = {
     await page.locator('#add-memory').click();
     const box = await page.locator('#map').boundingBox();
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-    await expect(page.locator('#memory-dialog')).toBeVisible();
+    await settled(page, '#memory-dialog');
   },
 
   /* The tag suggestions, which are a listbox over a combobox: the one popup in the app that
@@ -73,7 +74,7 @@ const STATES = {
     await openApp(page);
     await openDetail(page, { narrow });
     await page.locator('#detail-edit').click();
-    await expect(page.locator('#memory-dialog')).toBeVisible();
+    await settled(page, '#memory-dialog');
 
     await page.locator('#memory-tags').click();
     await page.locator('#memory-tags').type('t');
@@ -91,7 +92,7 @@ const STATES = {
     await page.locator('#add-memory').click();
     const box = await page.locator('#map').boundingBox();
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-    await expect(page.locator('#memory-dialog')).toBeVisible();
+    await settled(page, '#memory-dialog');
 
     const jpeg = await generatePhotoBytes(page);
     await page.locator('#memory-photo-input').setInputFiles(
@@ -113,7 +114,7 @@ const STATES = {
     await page.locator('#add-memory').click();
     const box = await page.locator('#map').boundingBox();
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-    await expect(page.locator('#memory-dialog')).toBeVisible();
+    await settled(page, '#memory-dialog');
 
     await page.locator('#memory-title').fill('Worth keeping');
     await page.locator('#memory-cancel').click();
@@ -145,7 +146,7 @@ const STATES = {
     await seedLibrary(page);
     await openApp(page);
     await page.locator('#open-settings').click();
-    await expect(page.locator('#settings-dialog')).toBeVisible();
+    await settled(page, '#settings-dialog');
   },
 
   async lightbox(page, { narrow }) {
@@ -165,7 +166,7 @@ const STATES = {
     await expect(page.locator('#memory-dialog')).toBeHidden();
 
     await page.locator('.detail-hero-button').click();
-    await expect(page.locator('#lightbox')).toBeVisible();
+    await settled(page, '#lightbox');
   },
 
   /* The state that shipped broken in 1.0.0. Leaflet paints the popup wrapper white from its

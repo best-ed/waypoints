@@ -148,6 +148,24 @@ export async function seedSettings(page, settings) {
   }, settings);
 }
 
+/* A dialog fades and rises on the way in, and "visible" is true from the first frame of that.
+   Anything measuring what is painted - axe's colour contrast, a screenshot - has to wait for it
+   to arrive, or it measures a panel at 0.4 opacity against whatever is behind it.
+
+   The opacity, not a timeout: the duration is a token and reduced motion takes it to zero. */
+export async function settled(page, selector) {
+  await expect(page.locator(selector)).toBeVisible();
+
+  await page.waitForFunction(
+    (target) => {
+      const node = document.querySelector(target);
+      return Boolean(node) && getComputedStyle(node).opacity === '1';
+    },
+    selector,
+    { timeout: 5000 }
+  );
+}
+
 export async function openApp(page, search = '') {
   await page.goto(BASE + search);
   await page.waitForFunction(
@@ -167,7 +185,8 @@ export async function openDetail(page, { narrow = false, index = 0 } = {}) {
   }
 
   await page.locator('.memory-list li button').nth(index).click();
-  await expect(page.locator('#memory-detail')).toBeVisible();
+  /* It slides and fades in now, and "visible" is true from the first frame of that. */
+  await settled(page, '#memory-detail');
 }
 
 /* A popup, which is now reached from the map rather than from the list. Seed one memory, or
