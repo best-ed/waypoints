@@ -1298,7 +1298,11 @@ function boot() {
     map,
     onSearch: (query) => runPlaceSearch(query),
     onChoose: (result) => resultMarker.show(result),
-    onClear: () => resultMarker.clear()
+    onClear: () => resultMarker.clear(),
+    /* map/ does not get to ask the DOM about the layout, and ui/icons.js is not its to
+       import. Both are handed over here, which is what main.js is for. */
+    isNarrow: () => viewSwitch.isNarrow(),
+    createIcon
   });
 
   async function runPlaceSearch(query) {

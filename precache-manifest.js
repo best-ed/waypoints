@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "06f70197675c";
+self.PRECACHE_VERSION = "61dcb8949667";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -29,7 +29,7 @@ self.PRECACHE_FILES = [
   { url: "src/css/map.css", hash: "4bd81e9d3c31dee71cb79f0b29f75565f87b0de990e631a74e7646aaeacfd140" },
   { url: "src/css/mobile.css", hash: "d1421681fd845182a8d912882088488a71cf9f6c9d124ea6086b47ea128d5ecc" },
   { url: "src/css/offline.css", hash: "4872716544f7a7e501707f593fed4222984a1d09846f953cc1d152c79650b1d6" },
-  { url: "src/css/place-search.css", hash: "022ade986d3bc03cc316cb195f0b56ff6d0192811860e38024839b7854546c7d" },
+  { url: "src/css/place-search.css", hash: "7dcfc33d7e1df303b921c6984fc9a293a58959c64f82ebac9896de01e7b638df" },
   { url: "src/css/popup.css", hash: "c66745033345412b8e1885bbdcb7154d0d75626b9c230120807b896070c1a090" },
   { url: "src/css/primitives.css", hash: "f1967b3df54d48c4af1313fa2fcd1a3fe477956f4cb1f111f0b89ca9000c22f9" },
   { url: "src/css/sandbox.css", hash: "adf83da6e52b818a2a351a03e3070b7c7cdf6da3ec67576b0750cd910106df3f" },
@@ -72,7 +72,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/journey/line-weight.js", hash: "2b081f58fcbc06f2349bca987e8c46402b4189868eb7f23e8f4a70b1ec4df145" },
   { url: "src/js/journey/place-chevrons.js", hash: "90903f2667a4b8c99db4757e15dfe7f550c2371b5974170a3d8095e70223751d" },
   { url: "src/js/journey/playback.js", hash: "596765c4e1079117d7f0bfcc5b23719bc03da957a32630ecce2bb266d8a06894" },
-  { url: "src/js/main.js", hash: "a3f6e96360f69a905d1bac21300ab18d22406b7ab2f1d498a7f62fed12f51222" },
+  { url: "src/js/main.js", hash: "a6ca3423f7910ad5cd0a575ae7aeeaaca2484d999ff118bc1b7801c9ebf338ff" },
   { url: "src/js/map/arrival-pulse.js", hash: "ce067ca050d45aeec84474f877ba82bb5f9820edb448ef931cb8a359361adb5f" },
   { url: "src/js/map/basemap-control.js", hash: "34f9d047896b722472fec9b78a8ec7d366697b13c47252ac8f79879ea75e7959" },
   { url: "src/js/map/basemap-preference.js", hash: "19e95114e821d4e1c12a8c167e99a435da65639ab41f03eb05c1df0f68868436" },
@@ -85,7 +85,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/map/markers-layer.js", hash: "25ffbb91ae05cd124c3f695f9d4af93f44faa3e8ef6832f18ac2185bd1551b8c" },
   { url: "src/js/map/move-mode.js", hash: "01d6216451a769baa4ba2064ba550d66051d9ca1ed6401c1b79e3e7abee015dd" },
   { url: "src/js/map/pin-icon.js", hash: "a22817590e2f81096e52f16f9c47c21f49e95fceb039be99f978de9792a0368e" },
-  { url: "src/js/map/place-search-control.js", hash: "e7d3eb56a5381e01780f5d59854bcdb9382a50aaaf8508e771ca58e2a678e04d" },
+  { url: "src/js/map/place-search-control.js", hash: "04951e0187f09d6d2a4ccb7029162a3cf8405d5894f1d22e3cf787d2ab258206" },
   { url: "src/js/map/placement-mode.js", hash: "002de09075b9200a5fb4c354face88c9c976ff48a5dff9b35719039887bbe146" },
   { url: "src/js/map/result-marker.js", hash: "0f184d7efdbbb3996982f4b60fd81559f0ca476c16089db68cd0127a144cdccd" },
   { url: "src/js/map/warm-tile-cache.js", hash: "a53b3212536714970fa8a78cc0c76eae0fce650ba01d8d30945eed861dd4af3a" },
