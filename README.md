@@ -24,15 +24,27 @@ journey line are left alone. It is an approximation of a dark map, not a dark ma
 ## What it does
 
 - **Pin a memory** anywhere on the map, with a title, a date, a note, tags and up to six photos.
+- **Read one in full** without leaving the app: choosing a memory opens it where the list was,
+  with its photos large, its note whole, and Edit, Move, Show on map and Delete to hand.
+  Previous and Next step through whatever the list is currently showing.
+- **Link to a memory.** Opening one puts it in the URL, so it can be bookmarked or sent to
+  yourself, and the browser's Back button closes it the way Back closes anything.
 - **Photos** are resized and re-encoded in the browser, with EXIF rotation applied, and stored
-  on your device. They never leave it.
+  on your device. They never leave it. **The first one is the cover**, and you can reorder them
+  by dragging or from the keyboard.
+- **Tags are offered as you type**, from the ones you already use, so a library does not end up
+  with "trail" and "trails" in it.
+- **A half-written memory is hard to lose.** Closing the form while there is something unsaved
+  asks first, and so does reloading the page. A form you have not touched closes without a word.
 - **Find things again** by text, by tag, or by date range. Tags are a union: picking a second
   one widens the result. Every filter lives in the URL, so a filtered view can be bookmarked.
 - **A timeline** under the filters shows when your memories happened, and doubles as a range
   slider.
 - **Journey mode** joins the visible memories in date order, draws the route along great
-  circles, and plays it back one stop at a time.
-- **Place search** finds somewhere by name and offers to put a memory there.
+  circles, and plays it back through a player over the map: play and pause, a scrubber across
+  the stops, and a speed. Opening a memory while it plays takes the journey with you.
+- **Place search** finds somewhere by name and offers to put a memory there. On a phone it is
+  an icon until you want it.
 - **Export and import** a single JSON file, with or without the photos inside it.
 - **Works offline** once it has been loaded: a service worker caches the app and the map tiles
   you have already seen.
@@ -58,16 +70,45 @@ Two flags are useful while working on it:
 | `?sw` | Registers the service worker, which is off by default on a development host so a cached page cannot answer while you are editing one. Loading without the flag unregisters it again. |
 
 ```bash
-npm test             # unit tests, node --test, no browser
-npm run test:e2e     # Playwright, Chromium and WebKit
-npm run serve:prod   # the app behind the real production headers, on :5174
-npm run precache     # regenerate the service worker's file list after changing a shipped file
+npm test                # unit tests, node --test, no browser
+npm run test:e2e        # Playwright, Chromium and WebKit
+npm run test:e2e:smoke  # the subset that guards the core flows, about thirty seconds
+npm run test:visual     # screenshot comparison, Chromium only
+npm run serve:prod      # the app behind the real production headers, on :5174
+npm run precache        # regenerate the service worker's file list after changing a shipped file
 ```
 
 `npm run test:e2e` starts `serve:prod` itself, so every end-to-end test runs under the same
 Content-Security-Policy and cache headers as the deployment.
 
-There are 850 unit tests and 82 end-to-end tests across the two engines.
+There are 1,019 unit tests, 268 end-to-end tests across the two engines, and 13 visual
+baselines. The visual baselines are platform specific and the committed set is Windows, so a
+run on another operating system writes its own.
+
+## Known limits
+
+Things that are the way they are on purpose, or that are not finished. None of them is a
+surprise waiting to happen.
+
+- **Dark mode dims the map rather than drawing a dark one.** No keyless provider offers a dark
+  raster basemap: the one that did started requiring an API key on 7 October 2026, verified
+  against the provider rather than assumed. So the light tiles have their colours turned over
+  instead. Pins, photos and the journey line are in their own layers and are left alone. It is
+  an approximation, which is why **Settings -> Dim the map in dark mode** turns it off.
+- **The date fields look like your operating system**, because they are the browser's own date
+  inputs. The format they show and the calendar button beside them are not ours to style. Every
+  date the app *displays* is formatted by the app.
+- **Storage is this browser on this device.** There is no sync, and clearing site data deletes
+  your memories. Export regularly.
+- **`localhost` and the deployed address are different origins**, so memories made in one are
+  not visible in the other.
+- **Photos are capped at six per memory** and resized to 1600px on the longest edge. The
+  original file is not kept.
+- **Journey mode is comfortable to about two thousand stops.** Beyond that, entering it takes
+  longer than the 300ms budget the rest of the app is held to.
+- **Install prompts only appear on Chromium-based browsers**, because that is where
+  `beforeinstallprompt` exists. Safari installs from its own share sheet, and there is
+  deliberately no panel of instructions about another browser's menus.
 
 ## Your data
 
