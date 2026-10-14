@@ -1,4 +1,4 @@
-import { test, expect, openApp, seedLibrary, mockNominatim } from './fixtures.js';
+import { test, expect, openApp, seedLibrary, seedSettings, mockNominatim } from './fixtures.js';
 
 /* What only happens below the breakpoint. The rest of the suite runs at 1280 and would never
    see any of it. */
@@ -125,4 +125,138 @@ test('the small icon buttons in the detail view are full size on touch', async (
     expect(box.width, id + ' is ' + Math.round(box.width) + 'px wide').toBeGreaterThanOrEqual(44);
     expect(box.height).toBeGreaterThanOrEqual(44);
   }
+});
+
+/* Every target a thumb has to hit, measured as a thumb would: a 44px box centred on the
+   control, with all four of its corners resolving to that control. Several of these are drawn
+   smaller than 44px on purpose - a switch at 44px square is not a switch - and grow their hit
+   area instead, which an element box cannot show. */
+const TOUCHABLE = [
+  '#view-map',
+  '#view-list',
+  '#add-memory',
+  '#open-settings',
+  '.place-search-toggle',
+  '.leaflet-control-zoom-in',
+  '.leaflet-control-zoom-out'
+];
+
+test('the controls on the map can be hit with a thumb', async ({ page }) => {
+  await openMap(page);
+
+  const tooSmall = await page.evaluate((selectors) => {
+    const bad = [];
+
+    for (const selector of selectors) {
+      const node = document.querySelector(selector);
+      if (!node) {
+        bad.push(selector + ': not found');
+        continue;
+      }
+
+      const rect = node.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      /* On the axes, not at the corners. Several of these are circles, and the corner of a
+         44px box is 29px from the centre of a 22px circle: a round button would fail a corner
+         test however big it was. Four points at 21px still prove 42px of reach each way. */
+      const reach = 21;
+
+      for (const [dx, dy] of [
+        [-reach, 0],
+        [reach, 0],
+        [0, -reach],
+        [0, reach]
+      ]) {
+        const hit = document.elementFromPoint(x + dx, y + dy);
+        /* The control itself or something inside it. An ancestor does not count: landing on
+           the container a control sits in is landing next to the control. */
+        if (!hit || !(hit === node || node.contains(hit))) {
+          bad.push(selector + ': ' + Math.round(rect.width) + 'x' + Math.round(rect.height));
+          break;
+        }
+      }
+    }
+
+    return bad;
+  }, TOUCHABLE);
+
+  expect(tooSmall).toEqual([]);
+});
+
+test('the settings switches can be hit with a thumb', async ({ page }) => {
+  await openMap(page);
+  await page.locator('#open-settings').click();
+  await expect(page.locator('#settings-dialog')).toBeVisible();
+
+  const tooSmall = await page.evaluate(() => {
+    const bad = [];
+
+    for (const node of document.querySelectorAll('#settings-dialog .switch')) {
+      const rect = node.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+
+      for (const [dx, dy] of [
+        [0, -21],
+        [0, 21]
+      ]) {
+        const hit = document.elementFromPoint(x + dx, y + dy);
+        if (hit !== node) {
+          bad.push(node.id + ': ' + Math.round(rect.width) + 'x' + Math.round(rect.height));
+          break;
+        }
+      }
+    }
+
+    return bad;
+  });
+
+  expect(tooSmall).toEqual([]);
+});
+
+/* The pin is drawn at 26x34 and has to stay that size: a marker big enough to be a comfortable
+   target covers the place it is marking. The hit area is grown around it instead. */
+test('a map pin can be hit with a thumb without being drawn any bigger', async ({ page }) => {
+  await openMap(page);
+
+  const pin = page.locator('.leaflet-marker-icon.pin').first();
+  const box = await pin.boundingBox();
+
+  expect(Math.round(box.width)).toBeLessThan(44);
+
+  const reachable = await page.evaluate(() => {
+    const node = document.querySelector('.leaflet-marker-icon.pin');
+    const rect = node.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    /* The hit box is centred on the head, which is what a thumb aims at, not on the point. */
+    const y = rect.top + rect.height * 0.4;
+
+    return [
+      [-21, 0],
+      [21, 0],
+      [0, -21],
+      [0, 21]
+    ].every(([dx, dy]) => {
+      const hit = document.elementFromPoint(x + dx, y + dy);
+      return hit === node || node.contains(hit);
+    });
+  });
+
+  expect(reachable).toBe(true);
+});
+
+/* The bigger catchment must not swallow the map itself. */
+test('the map still takes a tap between the pins', async ({ page }) => {
+  /* Placing a pin reverse geocodes it, and this test is about the tap landing, not about a
+     lookup it never asked for. */
+  await seedSettings(page, { suggestPlaceNames: false });
+  await openMap(page);
+  await page.locator('#add-memory').click();
+
+  const map = await page.locator('#map').boundingBox();
+  /* A corner of the pane, well clear of any seeded pin. */
+  await page.mouse.click(map.x + 30, map.y + map.height - 80);
+
+  await expect(page.locator('#memory-dialog')).toBeVisible();
 });

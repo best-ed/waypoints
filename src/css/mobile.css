@@ -235,6 +235,40 @@
     min-height: 44px;
   }
 
+  /* Leaflet draws these at 30px, which is its own number from 2011 and not something our
+     stylesheet has any reason to inherit. They are a boxed control with nothing beside them,
+     so they can simply be the size they need to be. */
+  /* .leaflet-touch is on the container as soon as Leaflet sees a touch device, and its own
+     rule for these is two classes and an element. Matched here rather than fought with. */
+  .leaflet-touch .leaflet-control-zoom a,
+  .leaflet-control-zoom a {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+  }
+
+  /* Drawn smaller than 44px on purpose, so the hit area grows instead of the drawing. A switch
+     at 44px square is not a switch, and a map pin that size covers the place it is marking.
+     Both get a transparent box centred on them, the same trick the timeline thumb uses from
+     the other direction. An element box cannot show this, so the test that guards it hit-tests
+     the four corners rather than measuring getBoundingClientRect. */
+  .switch::before,
+  .pin::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+
+  /* The pin is anchored at its point, so a box centred on the element sits half a pin low.
+     Centred on the head instead, which is what a thumb aims at. */
+  .pin::after {
+    top: 40%;
+  }
+
   /* The thumb is the target here, not the input: the input carries pointer-events: none so
      both handles of the pair stay reachable, which means the input's own 2px box is not
      something a thumb can be aimed at. So the thumb gets the full 44px, with a transparent
