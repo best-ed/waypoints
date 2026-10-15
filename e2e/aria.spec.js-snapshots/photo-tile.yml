@@ -1,0 +1,6 @@
+- listitem:
+  - text: Cover
+  - button "Remove photo 1"
+  - button "Move photo 1 earlier" [disabled]
+  - button "Move photo 1 later"
+  - button "Make photo 1 the cover" [disabled]

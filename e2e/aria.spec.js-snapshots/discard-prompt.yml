@@ -1,0 +1,4 @@
+- alert:
+  - paragraph: Discard changes?
+  - button "Keep editing"
+  - button "Discard"

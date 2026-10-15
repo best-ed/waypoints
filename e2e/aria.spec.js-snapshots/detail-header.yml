@@ -1,0 +1,4 @@
+- button "Back to list"
+- group "Step through the memories":
+  - button "Previous memory" [disabled]
+  - button "Next memory"

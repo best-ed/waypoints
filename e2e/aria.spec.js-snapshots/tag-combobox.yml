@@ -1,0 +1,3 @@
+- combobox "Tags" [expanded]: t
+- listbox "Matching tags":
+  - option "trail"
