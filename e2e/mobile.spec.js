@@ -127,93 +127,166 @@ test('the small icon buttons in the detail view are full size on touch', async (
   }
 });
 
-/* Every target a thumb has to hit, measured as a thumb would: a 44px box centred on the
-   control, with all four of its corners resolving to that control. Several of these are drawn
-   smaller than 44px on purpose - a switch at 44px square is not a switch - and grow their hit
-   area instead, which an element box cannot show. */
-const TOUCHABLE = [
-  '#view-map',
-  '#view-list',
-  '#add-memory',
-  '#open-settings',
-  '.place-search-toggle',
-  '.leaflet-control-zoom-in',
-  '.leaflet-control-zoom-out'
+/* ---- the sweep ------------------------------------------------------------- */
+
+/* Every visible interactive element in a state, measured the way a thumb meets it.
+
+   Not getBoundingClientRect: several controls are drawn smaller than 44px on purpose and grow
+   a transparent hit box instead, which an element box cannot show. Four points 21px out from
+   the centre, on the axes rather than at the corners, because the corner of a 44px box is 29px
+   from the centre of a round button and a circle would fail however big it was. */
+const REACH = 21;
+
+/* Everything that is interactive but is not a touch target, each with the reason. The list is
+   the point: a control added later that is too small has to be argued for here before this
+   suite will go green. */
+const EXEMPT = [
+  {
+    selector: '.skip-link',
+    why: 'off screen until it takes focus, and reached by keyboard only'
+  },
+  {
+    selector: '.photo-input',
+    why: 'visually hidden; the label in front of it is the target and is swept'
+  },
+  {
+    selector: '.leaflet-control-attribution a',
+    why: "OpenStreetMap's own credit line, whose size is set by the licence it satisfies"
+  },
+  {
+    selector: '.leaflet-marker-icon',
+    why: 'anchored at its point, so its hit box is centred on its head rather than on its own middle; measured by the pin test below, which knows where to aim'
+  }
 ];
 
-test('the controls on the map can be hit with a thumb', async ({ page }) => {
-  await openMap(page);
+const EXEMPT_SELECTOR = EXEMPT.map((entry) => entry.selector).join(', ');
 
-  const tooSmall = await page.evaluate((selectors) => {
-    const bad = [];
+const INTERACTIVE =
+  'a[href], button, input, select, textarea, summary, [role="button"], [role="option"], [role="switch"], [tabindex]:not([tabindex="-1"])';
 
-    for (const selector of selectors) {
-      const node = document.querySelector(selector);
-      if (!node) {
-        bad.push(selector + ': not found');
-        continue;
-      }
+async function undersized(page) {
+  return page.evaluate(
+    ([selector, exempt, reach]) => {
+      const bad = [];
 
-      const rect = node.getBoundingClientRect();
-      const x = rect.left + rect.width / 2;
-      const y = rect.top + rect.height / 2;
-      /* On the axes, not at the corners. Several of these are circles, and the corner of a
-         44px box is 29px from the centre of a 22px circle: a round button would fail a corner
-         test however big it was. Four points at 21px still prove 42px of reach each way. */
-      const reach = 21;
+      const name = (node) => {
+        const id = node.id ? '#' + node.id : '';
+        const cls =
+          typeof node.className === 'string' && node.className
+            ? '.' + node.className.trim().split(/\s+/).slice(0, 2).join('.')
+            : '';
+        const label = (node.getAttribute('aria-label') || node.textContent || '').trim().slice(0, 30);
+        return node.tagName.toLowerCase() + id + cls + (label ? ' "' + label + '"' : '');
+      };
 
-      for (const [dx, dy] of [
-        [-reach, 0],
-        [reach, 0],
-        [0, -reach],
-        [0, reach]
-      ]) {
-        const hit = document.elementFromPoint(x + dx, y + dy);
-        /* The control itself or something inside it. An ancestor does not count: landing on
-           the container a control sits in is landing next to the control. */
-        if (!hit || !(hit === node || node.contains(hit))) {
-          bad.push(selector + ': ' + Math.round(rect.width) + 'x' + Math.round(rect.height));
-          break;
+      const shown = (node) => {
+        const style = getComputedStyle(node);
+        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+          return false;
+        }
+        const rect = node.getBoundingClientRect();
+        /* Off the bottom of a scroller is still a target; off the viewport entirely is not
+           something a thumb can reach without scrolling to it first. */
+        return rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight;
+      };
+
+      /* A modal dialog makes everything behind it inert, and inert is the correct answer for
+         those controls rather than a fault: elementFromPoint lands on the dialog, as a thumb
+         would. So when one is open, only what is inside it is swept. */
+      const modal = [...document.querySelectorAll('dialog[open]')].pop();
+      const root = modal ?? document;
+
+      for (const node of root.querySelectorAll(selector)) {
+        if (!shown(node) || (exempt && node.matches(exempt))) {
+          continue;
+        }
+
+        const rect = node.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+
+        const reachable = [
+          [-reach, 0],
+          [reach, 0],
+          [0, -reach],
+          [0, reach]
+        ].every(([dx, dy]) => {
+          const hit = document.elementFromPoint(x + dx, y + dy);
+          return Boolean(hit) && (hit === node || node.contains(hit));
+        });
+
+        if (!reachable) {
+          bad.push(name(node) + ' is ' + Math.round(rect.width) + 'x' + Math.round(rect.height));
         }
       }
-    }
 
-    return bad;
-  }, TOUCHABLE);
+      return bad;
+    },
+    [INTERACTIVE, EXEMPT_SELECTOR, REACH]
+  );
+}
 
-  expect(tooSmall).toEqual([]);
-});
+const STATES = {
+  async 'the map'(page) {
+    await openMap(page);
+  },
 
-test('the settings switches can be hit with a thumb', async ({ page }) => {
-  await openMap(page);
-  await page.locator('#open-settings').click();
-  await expect(page.locator('#settings-dialog')).toBeVisible();
+  async 'the list'(page) {
+    await seedLibrary(page);
+    await openApp(page);
+    await page.locator('#view-list').click();
+  },
 
-  const tooSmall = await page.evaluate(() => {
-    const bad = [];
+  async 'a memory'(page) {
+    await seedLibrary(page);
+    await openApp(page);
+    await page.locator('#view-list').click();
+    await page.locator('.memory-list li button').first().click();
+    await expect(page.locator('#memory-detail')).toBeVisible();
+  },
 
-    for (const node of document.querySelectorAll('#settings-dialog .switch')) {
-      const rect = node.getBoundingClientRect();
-      const x = rect.left + rect.width / 2;
-      const y = rect.top + rect.height / 2;
+  async 'the add dialog'(page) {
+    await seedSettings(page, { suggestPlaceNames: false });
+    await seedLibrary(page, []);
+    await openApp(page);
+    await page.locator('#view-map').click();
+    await page.locator('#add-memory').click();
+    const map = await page.locator('#map').boundingBox();
+    await page.mouse.click(map.x + map.width * 0.5, map.y + map.height * 0.5);
+    await expect(page.locator('#memory-dialog')).toBeVisible();
+  },
 
-      for (const [dx, dy] of [
-        [0, -21],
-        [0, 21]
-      ]) {
-        const hit = document.elementFromPoint(x + dx, y + dy);
-        if (hit !== node) {
-          bad.push(node.id + ': ' + Math.round(rect.width) + 'x' + Math.round(rect.height));
-          break;
-        }
-      }
-    }
+  async settings(page) {
+    await openMap(page);
+    await page.locator('#open-settings').click();
+    await expect(page.locator('#settings-dialog')).toBeVisible();
+  },
 
-    return bad;
+  async 'the journey player'(page) {
+    await seedLibrary(page);
+    await openApp(page);
+    await page.locator('#view-list').click();
+    await page.locator('#journey-toggle').click();
+    await page.locator('#view-map').click();
+    await expect(page.locator('#journey-player')).toBeVisible();
+  },
+
+  async 'the place search open'(page) {
+    await openMap(page);
+    await page.locator('.place-search-toggle').click();
+    await expect(page.locator('.place-search-panel')).toBeVisible();
+  }
+};
+
+for (const [state, reach] of Object.entries(STATES)) {
+  test('every target in ' + state + ' can be hit with a thumb', async ({ page }) => {
+    await reach(page);
+    /* Transitions move things, and a control caught mid-slide is measured where it is not. */
+    await page.waitForTimeout(400);
+
+    expect(await undersized(page), 'undersized targets, or add them to EXEMPT with a reason').toEqual([]);
   });
-
-  expect(tooSmall).toEqual([]);
-});
+}
 
 /* The pin is drawn at 26x34 and has to stay that size: a marker big enough to be a comfortable
    target covers the place it is marking. The hit area is grown around it instead. */
