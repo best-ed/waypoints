@@ -1,4 +1,12 @@
-import { test, expect, openApp, seedLibrary, seedSettings, mockNominatim } from './fixtures.js';
+import {
+  test,
+  expect,
+  openApp,
+  seedLibrary,
+  seedSettings,
+  mockNominatim,
+  generatePhotoBytes
+} from './fixtures.js';
 
 /* What only happens below the breakpoint. The rest of the suite runs at 1280 and would never
    see any of it. */
@@ -154,6 +162,10 @@ const EXEMPT = [
     why: "OpenStreetMap's own credit line, whose size is set by the licence it satisfies"
   },
   {
+    selector: '.photo-move',
+    why: 'three controls share one photo tile, and three 44px boxes is 132px against a 129px tile at this width; they are 44 tall and divide the row between them with no gap, and the tile beside them is the next target'
+  },
+  {
     selector: '.leaflet-marker-icon',
     why: 'anchored at its point, so its hit box is centred on its head rather than on its own middle; measured by the pin test below, which knows where to aim'
   }
@@ -201,22 +213,34 @@ async function undersized(page) {
           continue;
         }
 
+        /* Scrolled to first, because that is what anybody does before tapping something:
+           a control near the bottom of a dialog has part of its box outside the viewport,
+           where elementFromPoint answers null and says nothing about the control. */
+        node.scrollIntoView({ block: 'center', inline: 'nearest' });
+
         const rect = node.getBoundingClientRect();
         const x = rect.left + rect.width / 2;
         const y = rect.top + rect.height / 2;
 
-        const reachable = [
+        let blocked = null;
+
+        for (const [dx, dy] of [
           [-reach, 0],
           [reach, 0],
           [0, -reach],
           [0, reach]
-        ].every(([dx, dy]) => {
+        ]) {
           const hit = document.elementFromPoint(x + dx, y + dy);
-          return Boolean(hit) && (hit === node || node.contains(hit));
-        });
+          if (!(hit && (hit === node || node.contains(hit)))) {
+            blocked = dx + ',' + dy + ' -> ' + (hit ? name(hit) : 'nothing');
+            break;
+          }
+        }
 
-        if (!reachable) {
-          bad.push(name(node) + ' is ' + Math.round(rect.width) + 'x' + Math.round(rect.height));
+        if (blocked) {
+          bad.push(
+            name(node) + ' is ' + Math.round(rect.width) + 'x' + Math.round(rect.height) + ' (' + blocked + ')'
+          );
         }
       }
 
@@ -254,6 +278,12 @@ const STATES = {
     const map = await page.locator('#map').boundingBox();
     await page.mouse.click(map.x + map.width * 0.5, map.y + map.height * 0.5);
     await expect(page.locator('#memory-dialog')).toBeVisible();
+  },
+
+  /* The form with photos in it, which the empty one above never shows: the per-tile move
+     controls are only there once there is something to move. */
+  async 'the add dialog with photos'(page) {
+    await openFormWithPhotos(page, 3);
   },
 
   async settings(page) {
@@ -332,4 +362,106 @@ test('the map still takes a tap between the pins', async ({ page }) => {
   await page.mouse.click(map.x + 30, map.y + map.height - 80);
 
   await expect(page.locator('#memory-dialog')).toBeVisible();
+});
+
+/* ---- reordering photos with a thumb ----------------------------------------- */
+
+/* **Dragging a tile is pointer only**, and that is not a gap this test papers over: HTML5 drag
+   and drop is never started by touch input, in any browser. The form has always offered Move
+   earlier, Move later and Make cover for exactly this reason, and on a phone they are the way
+   to do it. The drag path is covered under a mouse in form.spec.js. */
+async function openFormWithPhotos(page, count) {
+  await seedSettings(page, { suggestPlaceNames: false });
+  await seedLibrary(page, []);
+  await openApp(page);
+  await page.locator('#view-map').click();
+
+  const jpeg = await generatePhotoBytes(page);
+
+  await page.locator('#add-memory').click();
+  const map = await page.locator('#map').boundingBox();
+  await page.mouse.click(map.x + map.width * 0.5, map.y + map.height * 0.5);
+  await expect(page.locator('#memory-dialog')).toBeVisible();
+
+  await page.locator('#memory-photo-input').setInputFiles(
+    Array.from({ length: count }, (unused, index) => ({
+      name: index + '.jpg',
+      mimeType: 'image/jpeg',
+      buffer: Buffer.from(jpeg, 'base64')
+    }))
+  );
+
+  await expect(page.locator('.photo-tile')).toHaveCount(count);
+}
+
+const photoOrder = (page) =>
+  page.locator('.photo-tile').evaluateAll((tiles) => tiles.map((tile) => tile.dataset.photoId));
+
+test('a photo is made the cover with a tap', async ({ page }) => {
+  await openFormWithPhotos(page, 3);
+
+  const before = await photoOrder(page);
+
+  await page.locator('.photo-tile').nth(2).locator('[data-move="cover"]').tap();
+
+  expect(await photoOrder(page)).toEqual([before[2], before[0], before[1]]);
+  await expect(page.locator('.photo-tile').first()).toContainText('Cover');
+});
+
+test('Move earlier and Move later step a photo with a tap', async ({ page }) => {
+  await openFormWithPhotos(page, 3);
+
+  const before = await photoOrder(page);
+
+  await page.locator('.photo-tile').nth(0).locator('[data-move="later"]').tap();
+  expect(await photoOrder(page)).toEqual([before[1], before[0], before[2]]);
+
+  await page.locator('.photo-tile').nth(2).locator('[data-move="earlier"]').tap();
+  expect(await photoOrder(page)).toEqual([before[1], before[2], before[0]]);
+});
+
+test('a move is announced, and focus follows the photo', async ({ page }) => {
+  await openFormWithPhotos(page, 3);
+
+  await page.locator('.photo-tile').nth(2).locator('[data-move="cover"]').tap();
+
+  await expect(page.locator('#memory-photos-status')).toContainText('cover');
+  /* The grid is rebuilt, so the button that was pressed is a different node: focus has to be
+     put back on the one that moved, or a second press is a hunt. */
+  await expect(page.locator('.photo-tile').first().locator('[data-move="cover"]')).toBeFocused();
+});
+
+/* ---- the browser's own Back -------------------------------------------------- */
+
+test('the Back button closes a memory and lands on the pane it was opened from', async ({ page }) => {
+  await seedLibrary(page);
+  await openApp(page);
+  await page.locator('#view-list').click();
+
+  await page.locator('.memory-list li button').first().click();
+  await expect(page.locator('#memory-detail')).toBeVisible();
+  /* The map pane goes with the switch at this width: there is nothing to switch between. */
+  await expect(page.locator('#journey-toggle')).toBeHidden();
+
+  await page.goBack();
+
+  await expect(page.locator('#memory-detail')).toBeHidden();
+  /* Back on the list, not dropped onto the map. */
+  await expect(page.locator('.memory-list li')).toHaveCount(5);
+  await expect(page.locator('#view-list')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page).toHaveURL(/\/index\.html$/);
+});
+
+test('Back from a memory opened on the map lands on the map', async ({ page }) => {
+  await openMap(page);
+
+  await page.locator('.leaflet-marker-icon').first().dispatchEvent('click');
+  await page.locator('.popup-open').click();
+  await expect(page.locator('#memory-detail')).toBeVisible();
+
+  await page.goBack();
+
+  await expect(page.locator('#memory-detail')).toBeHidden();
+  await expect(page.locator('#view-map')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#map')).toBeVisible();
 });
