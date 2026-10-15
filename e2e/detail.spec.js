@@ -491,3 +491,46 @@ test('stepping quickly through memories does not hoard object URLs', async ({ pa
   expect(stats.live).toBeLessThanOrEqual(3);
   expect(stats.peak).toBeLessThan(20);
 });
+
+/* A link arriving cold, in a context that has never had this app open: no history to go back
+   through, no module in the cache, no worker. That is how a link someone was sent is actually
+   followed, and it is a different code path from the one the tests above exercise, which open
+   the app and then change the url underneath it. */
+test('a link followed in a fresh context opens the memory it names', async ({ browser }) => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+
+  await seedLibrary(page);
+  await openApp(page, '?memory=m3');
+
+  await expect(page.locator('#memory-detail')).toBeVisible();
+  await expect(page.locator('#detail-title')).toHaveText('Hell Gate hike');
+
+  const withMemory = await page.evaluate(() => window.history.length);
+
+  /* The same context again without the link, to say what the length would have been. Opening
+     from ?memory= at load must add nothing: that entry is the one the page arrived on, and a
+     push there puts a second entry with the same url on top of the first. */
+  const plain = await context.newPage();
+  await seedLibrary(plain);
+  await openApp(plain);
+  const withoutMemory = await plain.evaluate(() => window.history.length);
+
+  expect(withMemory).toBe(withoutMemory);
+
+  await context.close();
+});
+
+test('a link to a memory that is not there leaves the app on the list', async ({ browser }) => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+
+  await seedLibrary(page);
+  await openApp(page, '?memory=was-deleted-last-year');
+
+  await expect(page.locator('#memory-detail')).toBeHidden();
+  await expect(page.locator('.memory-list li')).toHaveCount(5);
+  expect(await page.evaluate(() => window.location.search)).toBe('');
+
+  await context.close();
+});

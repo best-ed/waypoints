@@ -483,3 +483,66 @@ test('the import preview is clearly in front of Settings', async ({ page }) => {
   await expect(page.locator('#import-dialog')).toBeHidden();
   await expect(page.locator('#settings-dialog')).toBeVisible();
 });
+
+/* ---- the one exit the dialog cannot intercept -------------------------------- */
+
+/* beforeunload is the browser's own question and the only way to see it is to ask the browser
+   to leave. page.close({ runBeforeUnload: true }) is that: without the flag Playwright closes
+   the page without running the handler at all, and the test would pass whether or not one was
+   ever registered.
+
+   Chromium only. WebKit does not surface the dialog to Playwright, which is a harness limit
+   rather than anything about the app, and the handler's own lifecycle - added on open, removed
+   on close - is what the two tests below are really about. */
+const beforeUnloadIsVisible = (browserName) =>
+  browserName === 'chromium'
+    ? false
+    : 'Playwright does not surface a beforeunload dialog on this engine';
+
+test('a dirty form asks the browser before the tab goes', async ({ context, browserName }) => {
+  test.skip(Boolean(beforeUnloadIsVisible(browserName)), beforeUnloadIsVisible(browserName) || '');
+
+  const page = await context.newPage();
+  await startClean(page);
+  await page.goto(BASE);
+  await openAdd(page);
+  await page.locator('#memory-title').fill('Half a memory');
+
+  const asked = new Promise((resolve) => {
+    page.on('dialog', (dialog) => {
+      resolve(dialog.type());
+      return dialog.dismiss();
+    });
+  });
+
+  await page.close({ runBeforeUnload: true });
+
+  expect(await asked).toBe('beforeunload');
+});
+
+test('a form that has been closed asks nothing', async ({ context, browserName }) => {
+  test.skip(Boolean(beforeUnloadIsVisible(browserName)), beforeUnloadIsVisible(browserName) || '');
+
+  const page = await context.newPage();
+  await startClean(page);
+  await page.goto(BASE);
+  await openAdd(page);
+  await page.locator('#memory-title').fill('Half a memory');
+
+  /* Out through the guard, which is the path that has to take the listener with it. */
+  await page.locator('#memory-cancel').click();
+  await page.locator('#memory-discard-confirm').click();
+  await expect(page.locator('#memory-dialog')).toBeHidden();
+
+  let asked = null;
+  page.on('dialog', (dialog) => {
+    asked = dialog.type();
+    return dialog.dismiss();
+  });
+
+  await page.close({ runBeforeUnload: true });
+  /* A beforeunload dialog arrives within a frame of the close; this is well past that. */
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
+  expect(asked, 'a tab sitting on the map must not ask anything on its way out').toBe(null);
+});
