@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "04de1e1dbc02";
+self.PRECACHE_VERSION = "1dc9ecea20b0";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -90,7 +90,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/map/result-marker.js", hash: "0f184d7efdbbb3996982f4b60fd81559f0ca476c16089db68cd0127a144cdccd" },
   { url: "src/js/map/warm-tile-cache.js", hash: "a53b3212536714970fa8a78cc0c76eae0fce650ba01d8d30945eed861dd4af3a" },
   { url: "src/js/photos/import-photos.js", hash: "897f3a332adb77dbfd6781f2fe27add60aa3585d196585d42c7a568041aed49c" },
-  { url: "src/js/photos/indexeddb-backend.js", hash: "fe6a0e0159dc2fabb29b056d0e3706e2c6a6c55d1b104ecf685328baf6eb4868" },
+  { url: "src/js/photos/indexeddb-backend.js", hash: "24d4ddd3e3287df65cc9f0d54dd93d45d52d8f36e5a5ff068bc56d9598405582" },
   { url: "src/js/photos/orphans.js", hash: "d61c8e2716e63e1c9dff7c04e26b1b59fe7b55a998c3f53c3fa890b82f746f44" },
   { url: "src/js/photos/photo-repository.js", hash: "3952fca515e6829463dc5133f50416e03aeae0bf1aa33b2b9bd8d7d9d7094b89" },
   { url: "src/js/photos/photo-rules.js", hash: "74ceeb8db532729a2c0a149df15090169c2c268ed6f5065b1e2573111c0578de" },
