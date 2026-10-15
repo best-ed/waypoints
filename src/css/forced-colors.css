@@ -75,6 +75,22 @@
   /* ---- tag chips ----------------------------------------------------------- */
   /* The pressed state is the important one: without this a selected chip and an unselected
      one are the same two colours, and the filter looks like it is doing nothing. */
+  /* ---- the one filled button ------------------------------------------------ */
+  /* Add memory and Save lost their labels entirely: the user agent replaces the author
+     colours on a control that sets both, and what it chose left the text the same colour as
+     the fill under it. Said here in system colours, as every other state that carried meaning
+     through a colour we picked already is. */
+  .button-primary {
+    background-color: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+
+  /* The icon inside it follows the label, and would otherwise be left behind. */
+  .button-primary .icon {
+    stroke: HighlightText;
+  }
+
   .tag-chip {
     background-color: ButtonFace;
     color: ButtonText;

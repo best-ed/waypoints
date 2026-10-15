@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "0eb1425bb262";
+self.PRECACHE_VERSION = "86dd5c932bd2";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -22,7 +22,7 @@ self.PRECACHE_FILES = [
   { url: "src/css/cluster.css", hash: "76aacce96f0f5233af3edab8255dc63949105b7821be85205973ab9e26b94159" },
   { url: "src/css/detail.css", hash: "ded00ac8768c8c98e451de9e9ddf3297c88a37cf8f172592aa4740fe656a7ad7" },
   { url: "src/css/dialog.css", hash: "0b1d065ff0737592a924dbb2b5a3f3041baeb04230d6d7f88acc52e58271684b" },
-  { url: "src/css/forced-colors.css", hash: "98c390b668cb223d3a49642a16a6ebd28a24c50f0b6b7bbb789e456c26faac7d" },
+  { url: "src/css/forced-colors.css", hash: "c1f90c8131b1851dff405c995f1a65f247bc1e88ac5917e642051d8af277248e" },
   { url: "src/css/journey.css", hash: "975d7dda77ffbc313f71d048a672c24ccf553838690109f718d5aa3c886998a7" },
   { url: "src/css/layout.css", hash: "0299e99651e5bc91557ac4a94e93b390872de1192238ee45166e52cfd3432075" },
   { url: "src/css/lightbox.css", hash: "68acee9697d02cd44424ce746fa39b3dc5cc03b73a622ed1c90348f3c032b695" },
