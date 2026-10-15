@@ -5,6 +5,13 @@ import { readFileSync } from 'node:fs';
    error or a blocked resource is a failure wherever it happens, and a suite that only notices
    when a test remembers to look is a suite that stops noticing. */
 
+/* A real 256x256 tile, which is the size Leaflet draws one at.
+
+   It used to be a 2x2 PNG, on the reasoning that the bytes do not matter when nothing looks at
+   the picture. Firefox disagreed: every tile logged "Image corrupt or truncated" and the global
+   console-error guard failed all seventeen smoke tests on that engine. Chromium and WebKit
+   scaled the 2x2 up without complaint, so it went unnoticed until there was a third engine.
+   Proven by swapping the file and nothing else: 18 console errors became 0. */
 const TILE = readFileSync(new URL('./fixtures/tile.png', import.meta.url));
 const SEARCH = readFileSync(new URL('./fixtures/nominatim-search.json', import.meta.url), 'utf8');
 const REVERSE = readFileSync(new URL('./fixtures/nominatim-reverse.json', import.meta.url), 'utf8');
