@@ -4,17 +4,22 @@ import { test, expect, seedLibrary, BASE } from './fixtures.js';
    running against. Each test has its own context, so a worker registered here never leaks into
    another test. */
 
-/* Playwright's WebKit installs and precaches exactly as Chromium does - 111 entries either
-   way - and serves through the worker while online. What it will not do is answer from the
-   cache once offline emulation is on: the fetch throws "Load failed" and a reload dies with an
-   internal error. That is the harness, not the app, so the two tests that need a dead network
-   run on Chromium and the registration behaviour is still checked on both.
+/* Two engines install and precache exactly as Chromium does and serve through the worker while
+   online. Neither will answer from the cache once Playwright's offline emulation is on, and
+   each fails in its own way: WebKit's fetch throws "Load failed" and the reload dies with an
+   internal error, and Firefox refuses the navigation outright with NS_ERROR_OFFLINE before the
+   worker is ever consulted. Both are the harness cutting the connection below the layer the
+   worker lives in, rather than anything the app does.
 
-   Real Safari is the open question, and it is on the manual list for the deployed site. */
+   So the two tests that need a dead network run on Chromium, and everything up to that point -
+   registering, installing, filling the precache, serving while online - is still checked on
+   all three. Real Safari and real Firefox are the open question, and they are on the manual
+   list for the deployed site. */
 const needsOfflineServing = (browserName) =>
-  browserName === 'webkit'
-    ? "Playwright's WebKit does not serve from the service worker cache while offline"
-    : false;
+  ({
+    webkit: "Playwright's WebKit does not serve from the service worker cache while offline",
+    firefox: "Playwright's Firefox refuses the navigation with NS_ERROR_OFFLINE before the worker sees it"
+  })[browserName] ?? false;
 
 async function waitForWorker(page) {
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, {

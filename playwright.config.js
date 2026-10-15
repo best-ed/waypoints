@@ -40,6 +40,17 @@ export default defineConfig({
       use: { ...devices['Desktop Safari'], viewport: { width: 1280, height: 900 } }
     },
     {
+      /* Firefox runs the smoke subset only, and so is not named by npm run test:e2e.
+
+         A third engine over the whole suite would be four more minutes for the paths the other
+         two already cover, while the subset is exactly the set worth knowing works everywhere:
+         boot, add, a photo round trip, the detail view, filters from the url, a hostile import,
+         an offline boot and the theme before the first paint. */
+      name: 'firefox',
+      testDir: './e2e',
+      use: { ...devices['Desktop Firefox'], viewport: { width: 1280, height: 900 } }
+    },
+    {
       /* Screenshots, Chromium only and deliberately not part of npm run test:e2e: a baseline
          is a record of a decision, and a pixel difference is a question for a person rather
          than a build failure. It is excluded from CI for the same reason, plus a practical
