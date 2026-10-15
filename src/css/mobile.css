@@ -246,6 +246,33 @@
     min-height: 44px;
   }
 
+  /* Three controls per photo need room a 5rem thumbnail does not have. At 375 the tiles were
+     84px and the row of Move earlier, Move later and Make cover was 140px, so it hung out of
+     both sides of the tile - and .photo-tile clips its overflow, which left the third control
+     with no centre to tap at all. Two columns gives the row somewhere to be.
+
+     Selectors written to outrank .photo-move in dialog.css, which loads after this file: at
+     equal specificity it won, which is why these were 24px tall under a rule that says 44. */
+  #memory-photos.photo-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Same story, same cause: a size of its own at one class, in a file that loads after this
+     one. Over a 129px tile a 44px square is room it can have. */
+  .photo-tile .photo-remove {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* 44px tall, and sharing the tile's width between them with no dead space in between. They
+     cannot also be 44 wide: three of those is 132px against a 129px tile. That exemption is
+     listed in the sweep with this reason rather than left to be discovered. */
+  .photo-actions .photo-move {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+  }
+
   /* The scrubber is a plain range and was 22px tall: the timeline's handles were given the
      room and this one, added later, was not. The track keeps its own thickness and centres in
      the taller box, so what is drawn is unchanged and what can be grabbed is the whole of it.
