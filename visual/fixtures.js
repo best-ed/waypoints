@@ -149,4 +149,16 @@ export async function seedPhotos(page) {
   await settle(page);
 }
 
+/* Overrides the settings this fixture seeds, before anything on the page runs. addInitScript
+   calls run in the order they were added, so this one lands on top of the fixture's. */
+export async function withSettings(page, settings) {
+  await page.addInitScript(
+    ([key, values]) => {
+      const current = JSON.parse(window.localStorage.getItem(key) ?? '{}');
+      window.localStorage.setItem(key, JSON.stringify({ ...current, ...values }));
+    },
+    [SANDBOX_SETTINGS_KEY, settings]
+  );
+}
+
 export { expect };

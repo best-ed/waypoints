@@ -1,4 +1,4 @@
-import { test, expect, openApp, seedPhotos, settle } from './fixtures.js';
+import { test, expect, openApp, seedPhotos, settle, withSettings } from './fixtures.js';
 
 /* One screenshot per state that would be obviously wrong if it changed by accident. These are
    not assertions about what is correct - axe and the e2e suite do that - they are a record of
@@ -163,4 +163,31 @@ test('nothing matches', async ({ page }) => {
   await settle(page);
 
   await shoot(page, 'no-results.png');
+});
+
+/* ---- the dark map, both ways ------------------------------------------------ */
+
+/* There is no dark basemap to use, so dark mode turns the light tiles over instead: map.css
+   inverts and desaturates the tile pane alone, leaving pins, photos and the journey line in
+   their own panes untouched. It is an approximation rather than the thing itself, which is why
+   it is a setting, and these are the two sides of that setting.
+
+   The pair is the point. One of them on its own says nothing: what has to stay true is that
+   the dimming reaches the tiles and nothing else. */
+test('the dark map, dimmed', async ({ page }) => {
+  await page.setViewportSize(WIDE);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await withSettings(page, { dimMapInDark: true });
+  await openApp(page);
+
+  await shoot(page, 'dark-map-dimmed.png');
+});
+
+test('the dark map, with the dimming off', async ({ page }) => {
+  await page.setViewportSize(WIDE);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await withSettings(page, { dimMapInDark: false });
+  await openApp(page);
+
+  await shoot(page, 'dark-map-undimmed.png');
 });
