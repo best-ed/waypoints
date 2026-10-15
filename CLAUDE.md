@@ -1587,8 +1587,22 @@ in testing that production would apply.
 
 ## End-to-end Tests
 
-`e2e/`, Playwright, Chromium and WebKit, run with `npm run test:e2e` against `serve:prod`. About
-a minute and a half for both engines.
+`e2e/`, Playwright, run with `npm run test:e2e` against `serve:prod`. Chromium and WebKit over
+the whole suite, about four minutes; Firefox over the smoke subset only.
+
+**A third engine earns its place by what it finds.** Firefox's first run failed all seventeen
+smoke tests, and two of the three causes were real:
+
+- `navigator.storage.persist()` is answered with a permission prompt there, and where nothing
+  can answer it the promise never settles. `put` awaited it, so saving the first photo of a
+  session left the dialog open with Save busy forever, having written both the photo and the
+  memory. Chromium and WebKit resolve it immediately, which is why this shipped twice.
+- The fixture tile was a 2x2 PNG. Leaflet draws a tile at 256px, and Firefox rejects that scale
+  with "Image corrupt or truncated" on every tile, which the console-error guard turned into
+  every test failing. The fixture is a real 256px tile now.
+- The third is the harness: Playwright's Firefox refuses an offline navigation with
+  `NS_ERROR_OFFLINE` before the worker is consulted, the same shape as WebKit's inability to
+  serve from the cache offline.
 
 Curated, not exhaustive. The unit suite covers the pure logic; these are the paths that only
 break once a real browser, real storage and the production headers are all involved at once.
@@ -1631,6 +1645,84 @@ a set of state names rather than tagging each generated test by hand.
 CI runs the unit tests first, before the browsers are installed - they need none, they are fast,
 and a failure should not wait on a few hundred megabytes of download. Then **smoke on a push and
 the full suite on a pull request into `main`**, which is where the cost is worth paying.
+
+### What each suite is for
+
+| Suite | What it answers | Where |
+|---|---|---|
+| `npm test` | the pure logic: what counts as dirty, what the suggestions are, what a move does to a list, what the path looks like | `tests/`, node, no browser |
+| `npm run test:e2e:smoke` | would the app be unusable if this broke, on any of three engines | tagged `@smoke` |
+| `npm run test:e2e` | every path that needs a real browser, real storage and the production headers at once | `e2e/` |
+| `npm run test:visual` | what it looks like, including forced colours and the dimmed dark map | `visual/`, Chromium |
+
+Inside `e2e/`, by file: `smoke.spec.js` the core flows, `detail.spec.js` the view and its deep
+links, `form.spec.js` the dialog including paste, drop and the discard guard, `journey.spec.js`
+the player, `mobile.spec.js` everything below the breakpoint, `offline.spec.js` the worker,
+`axe.spec.js` fifteen states in two themes at two widths, and `aria.spec.js` the accessible
+trees.
+
+### The touch sweep
+
+`mobile.spec.js` walks every visible interactive element in seven states and asserts each can
+be hit with a thumb. Three things make it worth having rather than a list of control names:
+
+- **It hit-tests rather than measuring.** Four points 21px out from the centre, on the axes
+  rather than at the corners, because several controls are drawn smaller than 44px on purpose
+  and grow a transparent box instead, and because the corner of a 44px box is 29px from the
+  centre of a round button.
+- **A modal dialog makes everything behind it inert**, which is the right answer for those
+  controls rather than a fault, so only what is inside it is swept while one is open.
+- **The exemptions are a list with a reason each** - the skip link, the hidden file input, the
+  attribution line, the pins and the three move controls that share a photo tile. A control
+  added later that is too small has to be argued for there before the suite goes green.
+
+It found three real faults on its first run that a list of names had missed for a week: the
+journey scrubber at 22px, Remove at 44x28, and the move controls overflowing a tile that clips
+them, which left Make cover with no centre to tap on any photo.
+
+### Accessibility tree snapshots
+
+`aria.spec.js` locks the roles, names and states of the components this release added. They are
+**not a substitute for a screen reader** and do not pretend to be: a tree can be perfectly
+shaped and still read badly. What they catch is an `aria-label` dropped in a refactor, which
+leaves a control that looks right and can no longer be reached by name.
+
+Scoped tightly on purpose. A snapshot of a whole page changes whenever anything moves, and a
+snapshot nobody trusts is one everybody updates without reading.
+
+---
+
+## What Is Still Checked By Hand
+
+Everything below is deliberately not automated, each for a reason. The list is short on purpose:
+anything that can be a test should be one.
+
+- **A real screen reader.** NVDA, VoiceOver and the Android reader, over the detail view, the
+  form and the player. The aria snapshots say the tree is shaped right; only a reader says
+  whether it is bearable to listen to.
+- **Real Windows High Contrast.** The forced colours baselines are taken through Playwright's
+  `forcedColors: 'active'`, which sets the flag without a real high contrast theme behind it.
+  In that emulation **every control with a background of its own draws its label as a solid
+  block**, in both the light and the dark system palette - Chromium painting an opaque backplate
+  behind the text. It happens even where the background is itself a system colour, which is the
+  canonical pattern and is not supposed to fail, so it needs confirming on a Windows machine
+  before the stylesheet is changed to work around it.
+- **Real Safari and real Firefox offline.** Both harnesses cut the connection below the layer
+  the worker lives in, so the offline-serving tests run on Chromium. Installing, precaching and
+  serving while online are checked on all three.
+- **A real phone.** Touch emulation gets the media queries and the hit testing right and says
+  nothing about a thumb on glass, a soft keyboard over a sticky footer, or the address bar
+  moving under `100dvh`.
+- **Photos from a real camera.** HEIC off an iPhone, EXIF rotation, and a 12 megapixel file
+  through the resize pipeline. The suite uses a drawn JPEG, which exercises the code and not the
+  decoder.
+- **A real Nominatim.** Every test mocks it, and the fixture fails any test that reaches it.
+  What is never exercised is the live service's own rate limiting, timeouts and odd responses.
+- **Dragging a photo on a phone.** It cannot work: HTML5 drag and drop is never started by touch
+  input in any browser, which is why the form carries Move earlier, Move later and Make cover.
+  Those are tested under touch; the drag is tested under a mouse.
+- **The deployed site.** The headers are exercised by `serve:prod`, but the deployment's own
+  edge, its cache and its certificate are not.
 
 ---
 
