@@ -6,7 +6,7 @@
 
    tests/pwa/precache.test.js regenerates this and compares, so a file cannot change
    without it. Run npm run precache. */
-self.PRECACHE_VERSION = "86dd5c932bd2";
+self.PRECACHE_VERSION = "2b847642a55a";
 
 self.PRECACHE_FILES = [
   { url: "icons/apple-touch-icon-180.png", hash: "e547d65c14ff9c2814b09d3754b87967a1997a67eb7ee17fbbeac4a3f4f24758" },
@@ -48,6 +48,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/data/storage.js", hash: "76659ae35dc8641ee8de62138edbcc531065a628ec5d83ad9478003f895a913b" },
   { url: "src/js/data/validate.js", hash: "894b1df37ca48345793b4242d142935e9d5c45952e8760d32d261d0e07756975" },
   { url: "src/js/dev/dev-api.js", hash: "e8c236e749e9d36cb8e348db0f4c1cb2e625d657eed12e9528684f4ae17a3425" },
+  { url: "src/js/dev/map-probe.js", hash: "6d0c9cd823613ed98a9f71d6d9042ac6876e929d6e570c8764cb71ec851c824f" },
   { url: "src/js/dev/sandbox.js", hash: "8a2b4d08cc6f5e0427a08cd569f433316af78cb7f5ef01bb2176046baa40d432" },
   { url: "src/js/dev/seed-memories.js", hash: "69baa746fd6fbd3203cb5d18d63ea76498961f72128cce419a11016ad65da33f" },
   { url: "src/js/filters/apply-filters.js", hash: "660ff437259579cdd306ec351d4f0567af184ab0a2e8b61244e31a5d5e1813e6" },
@@ -72,7 +73,7 @@ self.PRECACHE_FILES = [
   { url: "src/js/journey/line-weight.js", hash: "2b081f58fcbc06f2349bca987e8c46402b4189868eb7f23e8f4a70b1ec4df145" },
   { url: "src/js/journey/place-chevrons.js", hash: "90903f2667a4b8c99db4757e15dfe7f550c2371b5974170a3d8095e70223751d" },
   { url: "src/js/journey/playback.js", hash: "596765c4e1079117d7f0bfcc5b23719bc03da957a32630ecce2bb266d8a06894" },
-  { url: "src/js/main.js", hash: "a6ca3423f7910ad5cd0a575ae7aeeaaca2484d999ff118bc1b7801c9ebf338ff" },
+  { url: "src/js/main.js", hash: "2c56a102dcf9f3ad636309e08f70d1c471b3adbd5bcc91476d8c2297a1fe6914" },
   { url: "src/js/map/arrival-pulse.js", hash: "ce067ca050d45aeec84474f877ba82bb5f9820edb448ef931cb8a359361adb5f" },
   { url: "src/js/map/basemap-control.js", hash: "34f9d047896b722472fec9b78a8ec7d366697b13c47252ac8f79879ea75e7959" },
   { url: "src/js/map/basemap-preference.js", hash: "19e95114e821d4e1c12a8c167e99a435da65639ab41f03eb05c1df0f68868436" },

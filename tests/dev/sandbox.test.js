@@ -9,6 +9,7 @@ import {
   SANDBOX_PARAM
 } from '../../src/js/dev/sandbox.js';
 import { buildDevApi, isDevHost } from '../../src/js/dev/dev-api.js';
+import { createMapMovementProbe } from '../../src/js/dev/map-probe.js';
 import { STORAGE_KEY, CORRUPT_KEY_PREFIX } from '../../src/js/data/schema.js';
 import { SETTINGS_KEY } from '../../src/js/data/settings-store.js';
 import { DATABASE_NAME } from '../../src/js/photos/indexeddb-backend.js';
@@ -127,6 +128,66 @@ test('seed appears only on a development host in sandbox mode', () => {
 
   assert.equal(api.seed, seed);
   assert.equal(api.clearSandbox, clearSandbox);
+});
+
+/* The same guard over the map movement probe. It cannot write anything, which is exactly the
+   argument that would let it leak onto a real host if nobody wrote this down: the rule is that
+   a test hook is unreachable off a development host, not that it is harmless there. */
+test('no map probe at all off a development host', () => {
+  assert.equal(createMapMovementProbe({ devHost: false }), null);
+  assert.equal(createMapMovementProbe({}), null);
+  assert.equal(createMapMovementProbe(), null);
+});
+
+test('a development host gets a probe, with or without sandbox', () => {
+  /* Unlike seed(), this is not gated on sandbox: the suite runs almost entirely without the
+     flag, and a counter has nothing to destroy. */
+  const probe = createMapMovementProbe({ devHost: true });
+
+  assert.equal(typeof probe.record, 'function');
+  assert.equal(typeof probe.recordEnd, 'function');
+  assert.equal(typeof probe.movesStarted, 'function');
+  assert.equal(typeof probe.isIdle, 'function');
+  assert.equal(typeof probe.reset, 'function');
+});
+
+test('the probe is idle until something starts, and again once it ends', () => {
+  const probe = createMapMovementProbe({ devHost: true });
+
+  assert.equal(probe.isIdle(), true, 'nothing has started');
+
+  probe.record();
+  assert.equal(probe.isIdle(), false, 'a movement is running');
+
+  probe.recordEnd();
+  assert.equal(probe.isIdle(), true, 'it finished');
+});
+
+test('the probe counts what it is told about and nothing else', () => {
+  const probe = createMapMovementProbe({ devHost: true });
+
+  assert.equal(probe.movesStarted(), 0, 'nothing has moved yet');
+
+  probe.record();
+  probe.record();
+  assert.equal(probe.movesStarted(), 2);
+
+  probe.reset();
+  assert.equal(probe.movesStarted(), 0);
+  assert.equal(probe.isIdle(), true, 'reset zeroes both counters');
+
+  probe.record();
+  assert.equal(probe.movesStarted(), 1, 'reset is a reset, not a stop');
+});
+
+test('two probes do not share a count', () => {
+  const one = createMapMovementProbe({ devHost: true });
+  const other = createMapMovementProbe({ devHost: true });
+
+  one.record();
+
+  assert.equal(one.movesStarted(), 1);
+  assert.equal(other.movesStarted(), 0);
 });
 
 test('the store methods are still there in sandbox mode', () => {

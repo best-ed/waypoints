@@ -81,6 +81,7 @@ import {
 } from './sw-register.js';
 import { warmTileCache } from './map/warm-tile-cache.js';
 import { buildDevApi, isDevHost } from './dev/dev-api.js';
+import { createMapMovementProbe } from './dev/map-probe.js';
 import { generateSeedMemories } from './dev/seed-memories.js';
 import { writeEnvelope } from './data/storage.js';
 import { processImage } from './photos/process-image.js';
@@ -1611,6 +1612,23 @@ function boot() {
 
   if (devApi) {
     window.waypoints = devApi;
+  }
+
+  /* The end-to-end suite's one honest answer to "did the map move". Behind the same dev-host
+     guard as the console API above, and null off one, so nothing is attached and no listener
+     is added on a real host.
+
+     Only the two reading functions go on the window: record is ours to call. */
+  const mapProbe = createMapMovementProbe({ devHost: isDevHost(window.location.hostname) });
+
+  if (mapProbe) {
+    map.on('movestart', mapProbe.record);
+    map.on('moveend', mapProbe.recordEnd);
+    window.waypointsMapProbe = {
+      movesStarted: mapProbe.movesStarted,
+      isIdle: mapProbe.isIdle,
+      reset: mapProbe.reset
+    };
   }
 
   /* Last, and deliberately not awaited: registering is housekeeping, and nothing above it
