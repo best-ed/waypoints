@@ -19,6 +19,46 @@ const NEWEST = 'Just a plain day';
 const SECOND = 'Nairobi rooftop sunset';
 const OLDEST = 'Karura forest walk';
 
+/* Did the map move, and has it finished moving. Asked of the map through the probe in
+   src/js/dev/map-probe.js rather than inferred: Leaflet re-bases the pane's transform to 0,0
+   on a view reset, so reading that says nothing, and a loop that samples a position until it
+   stops changing can decide it is stable before the animation has started. */
+const movesStarted = (page) => page.evaluate(() => window.waypointsMapProbe.movesStarted());
+
+const resetMoves = (page) => page.evaluate(() => window.waypointsMapProbe.reset());
+
+async function waitForMove(page) {
+  await page.waitForFunction(() => window.waypointsMapProbe.movesStarted() >= 1, null, {
+    timeout: 20000
+  });
+}
+
+async function mapIsStill(page) {
+  await page.waitForFunction(() => window.waypointsMapProbe.isIdle(), null, { timeout: 20000 });
+}
+
+/* Quiet for a stretch, not merely idle in this instant: Leaflet opens the pin's popup at the
+   end of a fly and a popup with autoPan pans again afterwards, in a task scheduled after the
+   fly's own moveend. */
+const QUIET_MS = 600;
+
+async function mapHasSettled(page) {
+  await mapIsStill(page);
+
+  for (let attempt = 0; attempt < 20; attempt++) {
+    await resetMoves(page);
+    await page.waitForTimeout(QUIET_MS);
+
+    if ((await movesStarted(page)) === 0) {
+      return;
+    }
+
+    await mapIsStill(page);
+  }
+
+  throw new Error('the map never stopped moving on its own');
+}
+
 test('a card opens the memory, and Back returns focus to the card', { tag: '@smoke' }, async ({ page }) => {
   await seedLibrary(page);
   await openApp(page);
@@ -342,12 +382,21 @@ test('focus follows to the pin once the map has settled, and the pin stays put',
   await page.locator('#detail-show').click();
   await expect(page.locator('.leaflet-popup')).toBeVisible();
 
+  /* The fly, then the popup's own pan, then quiet. Counting starts from there. */
+  await waitForMove(page);
+  await mapHasSettled(page);
+
   await expect
     .poll(() => page.evaluate(() => document.activeElement?.className ?? ''), { timeout: 10000 })
     .toContain('leaflet-marker-icon');
 
-  /* And taking focus did not move the map out from under the popup: panInside finds the pin
-     already inside its padding once the fly has put it there. */
+  /* And taking focus moved nothing. Leaflet 1.9 pans the map when a marker takes focus
+     (Marker._panOnFocus); the point of waiting for the fly to land first is that panInside
+     then finds the pin already inside its padding and does nothing at all. Asked of the map
+     rather than inferred from where the popup ended up: a pan that put it back where it
+     started would be invisible to a position check. */
+  expect(await movesStarted(page), 'focusing the pin must not pan the map').toBe(0);
+
   const centred = await page.evaluate(() => {
     const map = document.getElementById('map').getBoundingClientRect();
     const popup = document.querySelector('.leaflet-popup').getBoundingClientRect();
@@ -356,6 +405,25 @@ test('focus follows to the pin once the map has settled, and the pin stays put',
 
   expect(centred.popupLeft, JSON.stringify(centred)).toBeGreaterThanOrEqual(centred.mapLeft);
   expect(centred.popupRight, JSON.stringify(centred)).toBeLessThanOrEqual(centred.mapRight);
+});
+
+/* The control the test above is about, pressed on its own, so that a zero there is known to be
+   a silent map rather than a silent probe. */
+test('the probe sees Show on map move the map on a narrow screen', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 760 });
+  await seedLibrary(page, [
+    memory('a', 'Over here', '2025-01-01', -1.3521, 36.6412),
+    memory('b', 'Over there', '2024-01-01', -1.2864, 36.8172)
+  ]);
+  await openApp(page);
+
+  await openDetail(page, { narrow: true });
+  await mapHasSettled(page);
+
+  await page.locator('#detail-show').click();
+  await waitForMove(page);
+
+  expect(await movesStarted(page)).toBeGreaterThanOrEqual(1);
 });
 
 test('dragging the map first keeps focus where the reader left it', async ({ page }) => {
@@ -395,19 +463,11 @@ test('Show on map lands the pin in the middle, not against the edge', async ({ p
   await page.locator('#detail-show').click();
   await expect(page.locator('.leaflet-popup')).toBeVisible();
 
-  /* Settled, because flyTo animates and the assertion is about where it ended up. */
-  await page.waitForFunction(
-    () => {
-      const popup = document.querySelector('.leaflet-popup');
-      if (!popup) return false;
-      const left = popup.getBoundingClientRect().left;
-      const settled = window.__lastLeft === left;
-      window.__lastLeft = left;
-      return settled;
-    },
-    null,
-    { timeout: 10000 }
-  );
+  /* Settled, because flyTo animates and the assertion is about where it ended up. The map is
+     asked rather than watched: this used to poll the popup's left edge until two reads agreed,
+     which is true a moment before the animation starts as well as after it ends. */
+  await waitForMove(page);
+  await mapHasSettled(page);
 
   const placed = await page.evaluate(() => {
     const map = document.getElementById('map').getBoundingClientRect();
