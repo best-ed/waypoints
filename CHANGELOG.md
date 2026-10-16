@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0 (2026-10-14)
+## 1.1.0 (2026-10-16)
 
 A six day pass over the whole interface. Nothing about how memories are stored has changed, so
 an export from 1.0 imports into this without a migration.
