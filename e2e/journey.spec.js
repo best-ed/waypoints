@@ -20,32 +20,62 @@ async function enterJourney(page, { narrow = false } = {}) {
   await expect(page.locator('#journey-player')).toBeVisible();
 }
 
-/* Where the map is, once it has stopped moving. focusMarker flies, and a transform read
-   mid-flight is a moment in an animation rather than a position.
+/* Did the map move. Asked of the map rather than inferred from anything.
 
-   Three equal reads in a row, not two: under parallel load on WebKit a fly can stall long
-   enough between two reads to look finished and then carry on, which is exactly how this read
-   a position that was still an animation. */
-async function settledTransform(page) {
-  const read = () =>
-    page.evaluate(() => document.querySelector('.leaflet-map-pane')?.style.transform ?? '');
+   This used to read the map pane's CSS transform and compare it before and after. It does not
+   mean what it looks like it means: Leaflet's _resetView begins by setting the pane back to
+   0,0 and compensates by repositioning its layers, so the transform changes when nothing
+   moved and stays put when things did. Sampling a pin's position instead is worse - the loop
+   can decide a position is stable before an animation has even started.
 
-  let previous = await read();
-  let stable = 0;
+   src/js/dev/map-probe.js counts Leaflet's own movestart, which fires synchronously as any
+   setView, flyTo, fitBounds or panTo begins. Zero means no movement was ever started. */
+const movesStarted = (page) => page.evaluate(() => window.waypointsMapProbe.movesStarted());
 
-  for (let attempt = 0; attempt < 40; attempt++) {
-    await page.waitForTimeout(300);
-    const current = await read();
+const resetMoves = (page) => page.evaluate(() => window.waypointsMapProbe.reset());
 
-    stable = current === previous ? stable + 1 : 0;
-    previous = current;
+/* A movement has begun. Needed before waiting for one to finish: idle is also what the probe
+   says a moment before anything starts, so waiting only for idle after pressing something can
+   return before the thing has happened. */
+async function waitForMove(page) {
+  await page.waitForFunction(() => window.waypointsMapProbe.movesStarted() >= 1, null, {
+    timeout: 20000
+  });
+}
 
-    if (stable >= 2) {
-      return current;
+/* Every movement that started has finished. */
+async function mapIsStill(page) {
+  await page.waitForFunction(() => window.waypointsMapProbe.isIdle(), null, { timeout: 20000 });
+}
+
+/* Quiet for a stretch, not merely idle in this instant, and this is where the counting starts
+   from.
+
+   A fly does not finish the map's work. Leaflet opens the stop's popup at the end of one, and
+   a popup with autoPan pans the map to fit itself in a task scheduled after the fly's own
+   moveend - so the probe is honestly idle in between, and a reset there leaves two movements
+   to be counted that nobody asked for. Measured: two, every time, with nothing touched at all.
+
+   So this waits for a window with no movement started in it before handing back a zeroed
+   counter. The probe still answers the question exactly; this only decides when the question
+   starts being asked. */
+const QUIET_MS = 600;
+
+async function mapHasSettled(page) {
+  await mapIsStill(page);
+
+  for (let attempt = 0; attempt < 20; attempt++) {
+    await resetMoves(page);
+    await page.waitForTimeout(QUIET_MS);
+
+    if ((await movesStarted(page)) === 0) {
+      return;
     }
+
+    await mapIsStill(page);
   }
 
-  return previous;
+  throw new Error('the map never stopped moving on its own');
 }
 
 test('the player names the stop it is on, by title and date', async ({ page }) => {
@@ -181,20 +211,65 @@ test('the journey draws two polylines, not one per leg', async ({ page }) => {
 test('opening a memory moves the playhead to it, paused, without flying the map', async ({ page }) => {
   await enterJourney(page);
 
+  /* Slow, so there is a window to measure in. A journey at Normal flies again every 3.5
+     seconds, and under parallel load the map is then never quiet for long enough to start
+     counting from. Six seconds leaves room, and the speed control is a real one. */
+  await page.locator('[data-speed="slow"]').click();
+
   await page.locator('#player-play').click();
   await expect(page.locator('#player-play')).toHaveAttribute('aria-label', 'Pause journey');
 
-  const before = await settledTransform(page);
+  /* Playing flies to stop 1, and the popup that lands with it pans again afterwards. Both
+     have to be over and the counter zeroed before this test counts anything. */
+  await waitForMove(page);
+  await mapHasSettled(page);
 
   /* The list is newest first, so the first card is the last stop in the journey. */
   await page.locator('.memory-list li button').first().click();
   await expect(page.locator('#memory-detail')).toBeVisible();
+  /* Opening a memory puts focus on its heading, which is the app saying it has finished. */
+  await expect(page.locator('#detail-title')).toBeFocused();
 
   await expect(page.locator('#player-position')).toHaveText('5 of 5');
   await expect(page.locator('#player-title')).toHaveText('Just a plain day');
   await expect(page.locator('#player-play')).toHaveAttribute('aria-label', 'Play journey');
 
-  expect(await settledTransform(page)).toBe(before);
+  /* Past the point where a fly started by an async read would have begun. The photos for the
+     view are fetched from IndexedDB after the heading takes focus, and a movement kicked off
+     by whatever that returned would start after every assertion above had passed. */
+  await page.waitForTimeout(1000);
+
+  expect(await movesStarted(page), 'opening a memory must not move the map').toBe(0);
+});
+
+/* The two controls above it that are supposed to move the map. Without these the zero in the
+   test above says only that the probe is quiet, which a probe wired to nothing also is. */
+test('the probe sees Show on map move the map', async ({ page }) => {
+  await enterJourney(page);
+
+  await page.locator('.memory-list li button').first().click();
+  await expect(page.locator('#memory-detail')).toBeVisible();
+
+  await mapHasSettled(page);
+
+  await page.locator('#detail-show').click();
+  await waitForMove(page);
+  await mapIsStill(page);
+
+  expect(await movesStarted(page), 'Show on map is the control that moves the map').toBeGreaterThanOrEqual(1);
+});
+
+test('the probe sees a playback step move the map', async ({ page }) => {
+  await enterJourney(page);
+
+  await mapHasSettled(page);
+
+  await page.locator('#player-next').click();
+  await expect(page.locator('#player-position')).toHaveText('2 of 5');
+  await waitForMove(page);
+  await mapIsStill(page);
+
+  expect(await movesStarted(page), 'a step flies to the next stop').toBeGreaterThanOrEqual(1);
 });
 
 test('closing the detail view leaves the journey where it was', async ({ page }) => {
