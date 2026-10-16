@@ -3,6 +3,7 @@ name: CI
 on:
   push:
   pull_request:
+    branches: [main]
 
 # A second push to the same branch makes the first run pointless.
 concurrency:
@@ -50,7 +51,18 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium webkit
 
-      - name: End to end tests
+      # A push runs the subset that guards the core flows: boot, add, a photo round trip on
+      # both engines, the detail view, filters restored from the url, a hostile import, an
+      # offline boot, the theme before the first paint, and axe on the two states every other
+      # one is reached through. About thirty seconds.
+      - name: End to end tests (smoke)
+        if: github.event_name == 'push'
+        run: npm run test:e2e:smoke
+
+      # The whole suite before anything reaches main. It is four minutes, which is worth
+      # paying once per pull request and not once per commit.
+      - name: End to end tests (full)
+        if: github.event_name == 'pull_request'
         run: npm run test:e2e
 
       - name: Upload the Playwright report

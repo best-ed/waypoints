@@ -7,7 +7,7 @@
   background-color: var(--color-sandbox);
   color: var(--color-sandbox-contrast);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   text-align: center;
   position: relative;
   z-index: var(--z-header);

@@ -36,6 +36,7 @@ e2e/              Playwright specs and their fixtures
 vercel.json       the deployment's cache and security headers
 .vercelignore     what the deployment leaves behind
 src/css/          stylesheets
+src/fonts/        the display face and its licence
 src/js/           ES modules
 src/js/data/      schema, normalization, validation, storage, the memory store
 src/js/map/       everything that touches Leaflet
@@ -283,11 +284,311 @@ exactly one place that revokes it:
 | Pool | Revoked when |
 |------|--------------|
 | form picker | the dialog's `close` event, on every path out |
-| popup strip | `popupclose`, and when the next popup opens |
+| popup cover | `popupclose`, and when the next popup opens |
+| detail view | it renders a different memory, and when it closes |
 | lightbox | the lightbox's `close` event |
+
+The list is the exception and has an owner rather than a pool. See **Thumbnails, and the one
+owner rule**.
 
 Do not revoke an individual URL anywhere else. If a new surface shows blobs, give it its
 own pool and one teardown.
+
+---
+
+## The Sidebar
+
+The sidebar is for finding memories. It is not the thing anyone came to look at, and in 1.0
+it behaved as though it were: at 1280 the first memory's title sat 618px down an 860px
+viewport, with three cards visible under a heading, a search box, thirteen tag chips, two date
+fields, a histogram, a count and a journey control. **Sixty-eight percent of it was controls
+before a single memory.** It is 341px now, and eight cards.
+
+The order, top to bottom, and why:
+
+1. **Search.** Always visible. It is the one control people reach for without being prompted.
+2. **Active filter chips.** One per tag, one for the date range, each removing itself, plus
+   Clear all when there is more than one. **Above the disclosure on purpose**: what is
+   narrowing the list has to be visible whether or not the panel is open, or a collapsed panel
+   hides the reason the list is short.
+3. **The Filters disclosure**, with a badge counting active dimensions. Tag chips, date inputs
+   and the timeline live inside. Closed by default, open when the URL arrived carrying
+   filters, and the state is remembered per viewer under its own key.
+4. **The count**, which says how many and nothing else.
+5. **Journey**, hidden entirely below two memories in the library.
+
+**There is exactly one clear-filters control.** There were two - a "Reset filters" link in the
+header and a "Clear filters" button in the empty state - visible at the same time, doing the
+same thing, with different labels and different shapes. The no-results state uses the same
+label and shape as the chips row, because it is the same action. The search box had the same
+problem in miniature, with `type="search"` drawing its own cross beside ours; the native one is
+suppressed, since ours can be named and reached by keyboard.
+
+`filters/describe-filters.js` is pure and turns a filter state into chip descriptors. **Each
+descriptor carries the patch that removes it** rather than a kind the caller switches on, so
+nothing else has to know that a date chip clears both ends while a tag chip clears only itself.
+
+### The list
+
+Grouped by year, newest first, with a sticky heading. The scroller is a `div` holding an `h3`
+and a `ul` per year, so **a card is an `li` inside a list**. The first attempt made the
+headings `li`s in a flat list, which is invalid inside a `div` and quietly broke every
+`.memory-list li` selector in the suite by counting headings as memories.
+
+A card is a cover thumbnail or a drawn placeholder, the title in the display face, and one
+muted line of date, place and tag count, cut rather than wrapped so every card is the same
+height whatever someone's place name is. It is still **one button named by the title alone**;
+the meta line is reached through `aria-describedby`, because it is description and not name.
+
+Headings, lists and cards all go through the same keyed walk, so a group that stays put is
+never torn out from under anything with focus inside it. Selecting a card scrolls it clear of
+the sticky heading: `block: nearest` alone puts it flush with the top of the scroller, which is
+exactly where the heading is.
+
+### Thumbnails, and the one owner rule
+
+Every other surface has a pool with one place that revokes it. The list cannot work that way,
+because rows come and go and there is no moment when they are all finished with, so
+`ui/thumbnail-owner.js` owns them instead and is **bounded in two directions**:
+
+- **At most four reads in flight.** Flinging a thousand rows would otherwise queue a thousand
+  IndexedDB reads, and the rows you actually stopped on would be behind all of them.
+- **At most forty-eight URLs held**, least recently asked for evicted first. A URL that is
+  never revoked keeps its blob alive.
+
+A read whose row left before it landed **never becomes a URL at all**, which is the case that
+leaks: created with nothing left to revoke it. Rows ask when they enter an `IntersectionObserver`
+with about a screen of margin, and give the URL back when they leave.
+
+Measured on 1000 seeded memories with a distinct photo each: a fast scroll of the whole 94,000
+pixels peaked at **17 live URLs** and settled to 10. The cap is never reached, because
+releasing on exit does the work. Measuring this with a handful of shared photo ids proves
+nothing - the owner keys on the photo id, so twenty ids can never produce more than twenty URLs
+whatever the scroll does.
+
+### The first run
+
+An empty library hides the search, the filters, the chips, the timeline and the journey, and
+shows a welcome instead: a heading, one sentence, a primary "Add your first memory" that starts
+placement, and "Import a backup" that opens Settings at the import control.
+
+**This is about the library being empty, never about a filter excluding everything.** Swapping
+the search box for a welcome the moment someone mistypes would be a good way to lose what they
+were looking for. At 375 the app opens on the List pane when there is nothing saved, because
+the welcome is in that pane and the map has nothing on it; at boot only, so it never overrides
+a choice made during the session.
+
+Journey is not shown at all below two memories in the library, rather than shown unavailable
+with a reason. **A reason only helps once the thing is reachable.** Above two it keeps the
+existing disabled-with-reason behaviour when a filter leaves fewer than two in view.
+
+---
+
+## The Detail View
+
+A memory used to be a 280px popup floating over a map that moves. Everything it holds was in
+there: the note in full, the tags, and Edit, Move and Delete side by side at 11px. The popup
+is a **preview** now, and `ui/detail-view.js` is where a memory is actually read.
+
+- **The popup** is the cover thumbnail, the title, one line of date and place, and Open. It is
+  enough to recognise the pin you clicked and nothing more. Leaflet's own close control is off
+  (`closeButton: false`): it builds one as `<a href="#close">`, "#close" matches no element,
+  and 1.0.1 had to switch axe's `skip-link` rule off for the open-popup state because of it.
+  Our content carries a real button. That exemption is gone and the state passes without it.
+- **The view** takes the sidebar's place rather than opening over it, so the map it describes
+  is still beside it on a wide screen. On a narrow one it takes both panes and the Map/List
+  switch goes with them: there is nothing to switch between while one memory is open.
+- **Choosing a card opens the memory.** It used to fly the map and open a popup, which was the
+  only thing a click could do when the popup was the whole of a memory. The pin still
+  highlights, through the same selection state, and **Show on map** is there for when moving
+  the map is the point.
+- **Previous and Next** step through `list.getOrder()`, which is the filtered set in the
+  sidebar's own order. Not the store's, which is the opposite, and not the whole library:
+  stepping out of the filtered set would land on a memory the list behind the view does not
+  show. `ui/neighbours.js` is pure and returns null at either end.
+- The step buttons use `aria-disabled`, not `disabled`, for the reason the journey controls
+  do. Note that Playwright will not click an `aria-disabled` button, so a test that presses one
+  at the end of the order has to dispatch the event.
+- A filter that excludes the open memory **closes the view**, in the same place the selection
+  is cleared. Previous and Next would have nowhere to go and Back would return to a list
+  without it.
+- Everything above the list is hidden rather than unmounted, so Back finds the search box, the
+  open filters panel and the list's scroll position exactly as they were.
+- Back returns focus to the card it was opened from, to the pin if it was opened from one, and
+  to the sidebar's heading if that card has gone. The heading carries `tabindex="-1"` for it.
+
+### Its photos
+
+The hero is the first photo's full image at 16:10, cropped, with a strip of thumbnails under
+it at two or more. A memory with none gets **no hero at all**, not a frame around nothing.
+
+This view owns an object URL pool and revokes it in exactly two places: when it renders a
+different memory, and when it closes. The list cannot work that way - its rows come and go and
+there is no moment when they are all finished with, which is what `ui/thumbnail-owner.js` is
+for - but one memory at a time has exactly that moment.
+
+**Every render carries a token.** Reading the blobs takes a moment and holding Next steps
+faster than that, so a read for a memory three back can land in a view showing something else.
+The token is checked **before a single URL is created**, never after: a URL created for a view
+that has gone is the case that leaks, because nothing is left to revoke it. Measured over
+thirty rapid Next presses, the live count does not move.
+
+### History
+
+**Opening a memory is navigation.** It is the one thing in this app that is, and Back should
+mean "back to the list" because that is what it means everywhere else.
+
+| what happened | what it does to the history |
+|---|---|
+| opening from a card or a popup | `pushState` |
+| stepping with Previous or Next | `replaceState` |
+| a filter changing | `replaceState`, as before |
+| opening from `?memory=` at load | nothing; that entry already exists |
+
+Stepping replaces because thirty presses of Next would otherwise put thirty entries between
+the reader and the page they arrived from, and Back would walk them out one memory at a time.
+
+Closing goes **back through** the entry if opening pushed one, and `popstate` then does the
+closing; otherwise the entry is rewritten where it stands. A memory opened from a link is
+already the entry the page loaded on, and calling `back()` there leaves the app. The first
+version pushed on that path too, which put a second entry with the same URL on top of the
+first, so Back to list walked onto a URL that still named the memory and reopened the view it
+had just closed.
+
+`popstate` reads the URL it landed on rather than anything remembered here, so Forward works
+for free. `filters/memory-url.js` is pure and holds the param.
+
+**The memory id is read out of the URL before the filters are restored.** Restoring them
+notifies, which rewrites the query string from the live state, in which no memory is open yet.
+Read afterwards, the id is gone: `?q=trail&memory=x` opened nothing, and the id had been
+dropped from the URL by the time anything looked for it.
+
+An id that is unknown, deleted or **excluded by the filters in the same URL** is dropped from
+the URL and opens nothing. A URL is edited, shared and half-remembered, and none of that is an
+error anyone can act on.
+
+---
+
+## The Form
+
+One dialog for adding and for editing, and the only place in the app where somebody is
+writing rather than reading. Everything below follows from that: what is typed has to be hard
+to lose, and the form has to say what it will store rather than what was typed at it.
+
+The order is **title, date, place, note, tags, photos**: what the memory is, then when and
+where, then what there is to say about it. The note used to sit above the place, which put the
+longest field in the form between the date and the thing the date belongs to. The title is the
+one field holding the name of a memory, so it carries `--font-display` like every other memory
+title.
+
+- **The note grows with what is in it**, up to a cap in the stylesheet, then scrolls.
+  `ui/autogrow.js` measures; the ceiling is `max-height` on `.field-textarea`, so the number
+  lives with the rest of the sizing. It has to be refitted after `showModal`, because a
+  textarea that is still `display: none` measures its content as nothing and comes back one
+  row tall.
+- **The footer is sticky at both widths.** The dialog's padding is a custom property because
+  the footer pulls itself out to the same edges, and on a narrow screen both change together
+  to clear the safe areas. Two numbers that have to agree, stated once.
+- **An error clears the moment its field is right**, rather than waiting for the next submit to
+  admit it. The reverse is deliberately not done: nothing new is reported while someone is
+  still typing, because a title is empty for as long as it takes to type the first letter and
+  saying so is just shouting. It runs the store's own validator over the whole form rather than
+  a per-field copy of the rules.
+- **Ctrl+Enter and Cmd+Enter save** from anywhere, including the note, where plain Enter has to
+  keep meaning a new line. `requestSubmit`, not `submit()`, which skips the submit event and
+  everything the handler does.
+
+### Tags
+
+A token input, not a line of commas. The old field asked somebody to hold the whole list in
+their head as a string: no way to see what you had, no way to take one off without editing
+around it, and no way to learn that the library already says "trail" and not "trails". The
+store has always normalized the result, so "Trail, trail , TRAIL" quietly became one tag while
+the field went on claiming there were three.
+
+**Committing lowercases.** A token shows what will be stored; the alternative is a field
+showing "Trail" over a memory holding "trail".
+
+- Enter, comma and Tab commit. Tab only when there is something to commit, so it still leaves
+  the field. Enter is always swallowed, open list or not, or it would submit the memory.
+- Backspace in an empty input takes the last token off.
+- The input has **no `name`**: the tokens are what the memory has, not whatever is half typed,
+  so `readValues` reads the list and `FormData` must never see the box.
+- Blur commits what is in the box. Losing a tag because somebody reached for Save is the kind
+  of small theft nobody reports.
+- The suggestions are the ARIA 1.2 combobox pattern: focus stays in the input throughout and
+  `aria-activedescendant` says which option is current, because moving real focus into a
+  listbox takes the keyboard away from the field being typed into. Escape closes the popup and
+  is stopped there, so the first Escape is for the list and the next one is for the dialog.
+- `ui/suggest-tags.js` is pure: prefix matches first, then substring, diacritic-insensitive
+  through the same `normalizeText` the search uses. An empty input offers the library rather
+  than nothing, because the first thing anyone wants from a tag field is a reminder of what
+  they have been calling things.
+
+**A watched edge**: `commit` clears the input, which is right for the thing it has just taken
+and wrong for a caller that has already put the remainder back. Splitting on a comma therefore
+commits first and restores the remainder afterwards. In the other order, everything after the
+last comma was thrown away, which the existing "adds a memory by placing a pin" test caught.
+
+### Photos
+
+**The first photo is the cover, and nothing in the record says so.** `photoIds` is already an
+ordered list and the schema says nothing about what the order means; giving it a meaning costs
+nothing, while a cover field would have to be validated, migrated and kept honest against a
+list it could contradict. `ui/move-photo.js` is pure and clamps rather than refusing, because
+"move later" on the last photo is a thing people press and the answer is that nothing happens.
+
+- Reorder by dragging a tile, or with **Move earlier**, **Move later** and **Make cover** on
+  each one. Native drag and drop, so the browser does the picking up: there is nothing of ours
+  to animate and nothing for reduced motion to turn off.
+- After a keyboard move, **focus follows the photo** rather than staying at the position it
+  left. Without that, moving a photo three places is three presses and two hunts for the
+  button again.
+- Moves are announced in a polite region: "Photo 3 is now the cover".
+- A tile carries `data-index` for a drop to read and `data-photo-id` for identity. The grid is
+  rebuilt on every change and every object URL with it, so the `src` of an image says nothing
+  about which photo is in a tile.
+- **Dropping and pasting both end up in `handleFiles`**, where the cap, the per-file checks and
+  the error reporting already live. Nothing about a file changes because of how it arrived.
+  Paste is listened for on the dialog, because nobody aims at a drop zone before pressing
+  Ctrl+V, and the default is left alone unless the clipboard is actually carrying files, so a
+  paste of text into the note stays text.
+- The drop zone ignores a drag that carries no `Files`, or the whole area would light up as an
+  import target while a tile is being moved three pixels across it.
+- Everything else is unchanged: six photos, per-file errors, rollback on a failed save, and
+  changes applying only on save.
+
+### Leaving without saving
+
+`ui/form-dirty.js` compares through **the store's own normalizer**, so the question is the one
+that matters: would saving this write anything different? Trailing whitespace is not a change
+and neither is "Trail" over "trail", because both would store the same thing. Asking "discard
+your changes?" over a difference that could never reach the record is worse than not asking: it
+teaches people to dismiss the question. Photos are compared as an ordered list, so a reorder
+counts.
+
+The prompt is **inside the dialog**, not `confirm()`, which is a second modal on top of a modal
+that cannot be styled, cannot be read in the voice of this app, and on some platforms arrives
+with the browser's name on it. It swaps with the actions row rather than stacking, so the
+footer stays the same height. **Keep editing takes focus**, because the question is only ever
+asked when there is something to lose.
+
+Escape is held at the dialog's `cancel` event, which is the one place it can be caught before
+the dialog closes. A second Escape answers the question the safe way. `beforeunload` covers the
+one exit the dialog cannot intercept; it is added when the form opens and removed when it
+closes, so a tab sitting on the map never asks anything on its way out.
+
+**The baseline moves with anything the app fills in.** A reverse-geocoded place name is not
+something anybody typed, and asking whether they want to discard it is how a guard trains
+people to press Discard without reading.
+
+### Stacked dialogs
+
+The import preview is the only dialog that opens over another one. It was the same width as
+Settings, in the same place, with the same shadow and the same scrim, so the two read as one
+panel with a white block punched into it. `.dialog-stacked` gives it the lightbox's heavier
+scrim and `--elevation-3`, and under forced colours a heavier border, since a forced palette
+has no scrim to spend and no shadow to raise anything with.
 
 ---
 
@@ -297,9 +598,10 @@ The sidebar list and the map never call each other. Both talk to `ui/selection.j
 holds one id and notifies subscribers:
 
 ```
-list click  -> selection.select(id) -> list marks it, then main.js flies the map
-marker open -> selection.select(id) -> list marks it and scrolls it into view
-marker close -> selection.clear()   -> list unmarks it
+list click   -> openDetail(id) -> selection.select(id) -> list marks it, pin highlights
+Show on map  -> selection.select(id) -> list marks it, then main.js flies the map
+marker open  -> selection.select(id) -> list marks it and scrolls it into view
+marker close -> selection.clear()    -> list unmarks it
 ```
 
 Three details keep this from looping or fighting itself:
@@ -309,8 +611,9 @@ Three details keep this from looping or fighting itself:
 - `popupclose` only clears the selection if the closing popup still owns it. Switching
   markers closes the old popup *after* the new id is selected, so an unguarded clear
   would wipe the new selection.
-- The fly-to lives on the list-click path, not in the selection subscriber. Clicking a
-  marker directly should not move the map out from under the user.
+- The fly-to lives on the paths that ask for it, Show on map and a journey step, not in the
+  selection subscriber. Clicking a marker, or opening a memory, should not move the map out
+  from under the user.
 
 `map/` and `ui/` still do not import each other. `main.js` wires them, and passes
 `prefersReducedMotion()` into `focusMarker` rather than letting `map/` read the DOM.
@@ -533,56 +836,128 @@ tile response is opaque and the worker cannot tell a tile from an error page.
 ## Journey Mode
 
 Connects the visible memories chronologically and plays them back. `journey/` is pure - no DOM,
-no Leaflet - so the ordering, the geometry and the state machine are all unit tested.
+no Leaflet - so the ordering, the geometry, the drawn path, the chevron spacing, the line weight
+and the state machine are all unit tested.
 
 - `journeyOrder` sorts by date then `createdAt`, ascending: the opposite of the sidebar, which
   reads newest first. Memories without usable coordinates are dropped.
-- `journeySegments` pairs consecutive stops and **drops a pair pinned at the same spot**. A
-  zero-length polyline renders as a stray dot and would still collect a chevron. Segment indices
-  stay those of the ordered list, so a dropped segment never renumbers the steps.
+- `journeySegments` pairs consecutive stops and **drops a pair pinned at the same spot**. It is
+  what the distance is summed over, so two memories at one address add nothing to the total,
+  which is also what the map shows.
 - Distance is haversine against the mean Earth radius, within about 0.3% of the geodesic, which
   is well inside what a summary line needs.
 
+### The player
+
+The transport lives over the bottom of the map, not in the sidebar. It used to be three small
+buttons and the text "1 / 60" a column away from the pin they were talking about, and on a
+narrow screen not even on the same pane as the map they were driving. **The sidebar keeps the
+way in and the reason it is unavailable, and nothing else.**
+
+It holds Play/Pause, Previous and Next, the current stop's title in the display face with its
+date, "3 of 12", a scrubber and a speed control.
+
+- **The scrubber is a range over the stop indices**, so how far through a journey you are is
+  visible rather than inferred from a number. Dragging or arrowing it goes to that stop and
+  pauses. Ticks come from a `datalist`, which is what a range reads a scale from, and only at
+  thirty stops or fewer: past that they are a grey smear rather than a scale.
+- Its `aria-valuetext` says "Stop 3 of 12: <title>, <date>" and Firefox honours it. **Chromium
+  ignores `aria-valuetext` on a native range** and announces the raw number, exactly as it does
+  on the timeline, so the same text also goes into a live region the input points at. The region
+  is written only when the text changes, or the stop would be re-announced every time the play
+  button swapped its icon.
+- **Speed is Slow, Normal and Fast over the dwell**: 6s, 3.5s, 2s. Per session and deliberately
+  not persisted, because it is a way of watching one journey rather than a preference about the
+  app. Leaving journey mode puts it back to Normal.
+- `setDwellMs` is the **second** place the dwell timer is set, and is paired with the single
+  clear site for the same reason `moveTo` is. The fuzz test that proves at most one timer is ever
+  outstanding has it among the operations it shuffles. It notifies nobody: a notification would
+  fly the map back to the stop already on screen.
+- Space and Enter are left to the browser on each button. Overriding Space across the group meant
+  pressing it on Previous started playback, which is not what a button announcing itself as
+  "Previous" should do. Left and Right step stops, which the scrubber does natively.
+- The toggle and the step buttons use `aria-disabled`, not the `disabled` attribute. A disabled
+  button leaves the tab order, which would put the explanation of why it is unavailable out of
+  reach, and would drop focus when stepping to the last stop disables the button just pressed.
+  Note that Playwright will not click an `aria-disabled` button, so a test that presses one at an
+  end has to dispatch the event, or reach the last stop through the scrubber.
+- **Below 720px it stops floating and becomes a bar at the bottom of the map pane.** A floating
+  card at that width either covers the zoom control and the attribution or is pushed far enough
+  up that it covers the map it is describing. The Map and List switch is at the top of the screen
+  either way.
+
 ### Drawing
 
-Anything over 300km is interpolated along the great circle, one point per 200km up to a cap of
-64. Interpolating lat and lng separately would draw a straight line in the projection, which over
-thousands of kilometres is visibly not the path anything takes.
+**Two polylines, not one per leg**: what is behind the playhead and what is ahead of it.
+Fifty-nine legs were fifty-nine SVG paths for what is conceptually one line, each simplified in
+isolation, which at low zoom over long distances came out as a band of overlapping strokes
+rather than a route. Measured with sixty memories spread worldwide: 59 path elements at world
+zoom and 59 at a 50km scale bar, against 1 and 2 now.
 
-Longitudes are then **unwrapped**: each point is shifted by whole turns until it is within 180
-degrees of the one before. Leaflet draws exactly the longitudes it is given, so a path crossing
-the antimeridian continues past it - Honolulu to Nairobi ends at -323, not -157. Without this it
-is drawn the long way back across Asia and Africa.
+`journey/continuous-path.js` builds the run and is pure.
 
-One polyline per segment, so playback can restyle the part already travelled without redrawing
-the rest. Colours and widths are tokens; Leaflet writes stroke as a presentation attribute, which
-CSS overrides.
+- Anything over 300km is interpolated along the great circle, one point per 200km up to a cap of
+  64. Interpolating lat and lng separately would draw a straight line in the projection, which
+  over thousands of kilometres is visibly not the path anything takes.
+- Longitudes are **unwrapped** within a leg: each point is shifted by whole turns until it is
+  within 180 degrees of the one before, so a path crossing the antimeridian continues past it.
+  Leaflet draws exactly the longitudes it is given, and without this Honolulu to Nairobi is drawn
+  the long way back across Asia and Africa.
+- That is also the one place continuity genuinely breaks, and it is **always at a stop**: a leg
+  can end at a longitude the next leg does not start at, because the next one is anchored to the
+  real world again. The run is cut there and the drawing continues as a second ring of the same
+  polyline. The alternative is either a line drawn the wrong way round the planet or a path that
+  drifts a whole turn per crossing and ends up two copies of the world away from anything anyone
+  is looking at.
+- `splitPathAtStop` returns both halves as lists of lines, with the current stop in both, so they
+  meet at the pin rather than leaving a gap. A line left with one point is dropped: it has
+  nothing to draw.
+- **`smoothFactor` is 3**, not Leaflet's default of 1. It simplifies in screen space, so at low
+  zoom the thousands of points that land inside the same pixel stop being handed to the browser.
+  Tuned by looking at the low-zoom screenshots, not by reasoning about it.
+- **The line weight is the one thing the stylesheet does not state.** It answers how far out the
+  map is, which CSS cannot see, so `journey/line-weight.js` supplies it and Leaflet writes it as
+  a presentation attribute. Three pixels is right over a city and a band over a continent.
 
-Direction chevrons sit at the midpoint of each drawn path, rotated by the angle between
-**projected screen points** rather than a geographic bearing - Mercator stretches north-south as
-latitude rises, so a true bearing would sit visibly off the line. `latLngToLayerPoint` rounds to
-whole pixels, so a short bracket can collapse onto one pixel when zoomed out; the fallback widens
-to the segment's own endpoints, and the angles are recomputed on `zoomend`. Chevrons are
-`aria-hidden`, non-interactive and out of the tab order: the order is already carried by the
-numbered pins and the progress readout.
+### Chevrons
 
-Note when verifying by hand that Leaflet simplifies a polyline at low zoom and clips it to the
-padded viewport, so a drawn path is not always the full point list it was given.
+Placed **every eighty pixels along what is still ahead**, not one per leg. One per leg put thirty
+inside a city somebody went back and forth in and none at all across the Pacific: the spacing
+followed the data rather than what anyone can see.
+
+- `journey/place-chevrons.js` is pure and works in screen space, which is also where the rotation
+  has always come from: Mercator stretches north-south as latitude rises, so a true bearing sits
+  visibly off the line.
+- It is given the pane as a rectangle and **solves for the visible stretch of each piece**
+  rather than walking it. At a close zoom a leg across an ocean is ten million pixels long, and
+  stepping along it a chevron at a time would be a hundred thousand iterations producing nothing.
+  Offsets are counted along the whole path and skipped in whole gaps, so a chevron never shifts
+  because the map moved.
+- **None at all below zoom 4**, where the whole world is in the pane and a chevron every eighty
+  pixels is confetti. A cap of 120 guards the case where a path folds back on itself inside the
+  viewport.
+- They are recomputed on `zoomend` and `moveend`, and on every change of the playhead, because
+  all three change which stretch is ahead and where it is.
+- Still `aria-hidden`, non-interactive and out of the tab order: the order is already carried by
+  the numbered pins and the player's readout.
 
 ### Playback
 
 A state machine over `idle`, `playing`, `paused` and `finished`, holding an index, with
-`setTimeout` and `clearTimeout` injected so tests drive the 3500ms dwell with a fake clock.
+`setTimeout` and `clearTimeout` injected so tests drive the dwell with a fake clock.
 
 `prev` at the first stop and `next` at the last are **silent** no-ops - no state change and no
 notification, so a held arrow key cannot spam the live region. Reaching the last stop while
-playing ends in `finished`, and playing again from there restarts at 0.
+playing ends in `finished`, and playing again from there restarts at 0, which is the whole of
+what Replay means.
 
 **No timer outlives the state that started it**, and this is structural rather than remembered:
 every transition goes through one `moveTo`, which clears any pending dwell before doing anything
-else, and the single `setTimeout` call site is reached only when the new status is `playing`. A
-test fuzzes 400 orderings of the controls and asserts at most one timer is ever outstanding.
-Exiting journey mode calls `reset`, which is one such transition.
+else. A test fuzzes 400 orderings of the controls and asserts at most one timer is ever
+outstanding.
+
+`goTo` takes a `pause` option, because the scrubber needs both in one transition: as two calls
+the map flew to where the journey already was before flying to where it was dragged.
 
 Each step selects the memory - so the sidebar follows - then flies to it and opens its popup.
 Selecting *before* opening is what stops the outgoing popup's close from clearing the incoming
@@ -595,9 +970,45 @@ listener: placement and move mode attach their own Escape handlers to `document`
 this one needs the first look so it can stand aside, rather than also exiting after one of them
 has already cancelled itself.
 
-The toggle and the step buttons use `aria-disabled`, not the `disabled` attribute. A disabled
-button leaves the tab order, which would put the explanation of why it is unavailable out of
-reach, and would drop focus when stepping to the last stop disables the button just pressed.
+### Arriving, and the end
+
+**Arriving at a stop pulses its pin.** Flying the map and opening a popup says plenty on a sparse
+map and nothing at all where the next stop is forty pixels from the last one. The scale goes on
+the pin's wrapper rather than on `.pin-body`, which already carries one for hover and selection:
+on the wrapper the two compose instead of one cancelling the other. The duration is a motion
+token, so reduced motion takes it to zero and nothing moves; under forced colours there is no
+colour to pulse with, so the pin takes a thicker edge for as long as the pulse would have lasted.
+`map/arrival-pulse.js` only puts the class on and takes it off, and reads a layout property
+between the remove and the add, or stepping inside the previous pulse would restart nothing.
+
+**Finishing shows an end card** in the player: what the journey was, with Replay and Exit. Focus
+moves to Replay on arriving at the end, not on every render while sitting there, which would take
+the keyboard off whatever had been reached for.
+
+The summary reads "12 memories · 1,240 km · Mar 2019 to Jun 2024". How many stops comes first,
+because it is the only part of it that is about the memories rather than about the map. A journey
+inside one month says that month once rather than repeating it either side of "to".
+
+### Journey mode and the detail view
+
+**Opening a memory moves the playhead to it, paused.** It used to pause playback and leave the
+player reading a different stop, so the two things on screen disagreed about where the journey
+was. The map is not flown: nobody asked to go anywhere, and on a wide screen it is already beside
+the view. A memory the journey does not contain - the filters can differ from the order the view
+was opened from - can still only mean playback should stop.
+
+Closing the view leaves the journey and the player exactly as they were. On a wide screen the two
+coexist; below 720px the detail view hides the map pane as it already does, and the player, which
+lives in that pane, goes with it and comes back with it.
+
+Journey and move modes move the markers onto a plain layer group and back, because a step cannot
+be numbered or dragged while it is folded into a cluster. `move-mode` reports `onEnd` so an
+Escape revert restores clustering too, and journey mode owns the unclustered state while it is
+on, so a move ending inside it must not switch clustering back on underneath it.
+
+When verifying by hand: Leaflet simplifies a polyline at low zoom and clips it to the padded
+viewport, so a drawn path is not always the point list it was given, and an off-screen chevron
+can look detached from a line that is no longer drawn there.
 
 ---
 
@@ -699,6 +1110,133 @@ nothing writes nothing and notifies nobody, since a re-render would be pure chur
 
 ---
 
+## Design System
+
+The direction is a field journal: warm, calm, personal. Restraint over decoration - no
+gradients, no glass, and a shadow only where something is genuinely above something else.
+
+Everything below lives in `src/css/tokens.css` and `src/css/primitives.css`. A component
+stylesheet should be layout and nothing else; the moment it states a colour, a size or a
+duration of its own, there are two answers to the same question.
+
+### The scales
+
+- **Type.** A modular scale at 1.2 anchored at 1rem, from `--text-2xs` to `--text-xl`, with
+  line heights that tighten as the type gets bigger and named weights. No `font-size` or
+  `font-weight` literal appears anywhere else.
+- **Display face.** Fraunces 600, self-hosted and subset to Latin, on `--font-display`. It is
+  for **headings and the titles of memories only** - the app title, dialog and section
+  headings, a memory's title in the list and in its popup, and the journey summary. Body copy,
+  controls, hints, dates and anything numeric stay on the system stack. A serif at 13px in a
+  button costs legibility and buys nothing.
+- **Space.** A 4px scale, `--space-0` to `--space-8`. The only literals left are below the
+  base step: two visually-hidden clips, a segmented control's collapsed border, the hairline
+  between histogram bars, a 1px cap on a 3px bar, and the device safe-area insets.
+- **Radius.** Three steps and a pill: `sm` for something small and boxy, `md` for panels and
+  inputs, `lg` for a surface that floats.
+
+### Elevation
+
+Three levels, and each means something: `--elevation-1` floats over the map and stays there,
+`--elevation-2` has taken over, `--elevation-3` arrives and then leaves.
+
+**In the dark the shadow is not the mechanism.** Black on near-black has no contrast to spend,
+which is why 1.0 made the shadows heavier and the dialogs still read flat. Height there comes
+from the surface getting lighter as it rises - `--color-surface`, then `--color-surface-raised`,
+then `--color-surface-overlay` - and the shadow only softens the edge.
+
+### Motion
+
+`--duration-fast` for a control answering a pointer, `--duration-base` for something changing
+size or position, `--duration-slow` for a surface arriving, plus two easing curves.
+
+**Reduced motion is handled once**, by taking the three duration tokens to zero on `:root`. No
+individual rule remembers, and a rule written later is covered the day it is written. A zero
+duration still applies the end state, which is the point. Two overrides remain and neither is
+about duration: the cluster's hover scale is a state change that would still snap, and the
+plugin's own transitions are declared in its stylesheet with its own numbers.
+
+### What moves
+
+Five things, and every one of them is on the tokens, so the reduced-motion switch above covers
+all five without any of them knowing about it. **No motion carries information that is not also
+there without it**: each of these says again, in movement, something the layout already says.
+
+| What | How |
+|---|---|
+| dialogs and the lightbox | fade, a 2% scale and a `--space-2` rise, in and out |
+| the detail view | fade and a `--space-4` slide from the side the list was on |
+| the pane switch on narrow | the arriving pane fades up |
+| toasts | rise in, fade out |
+| the end-of-journey card | fade and a `--space-2` rise |
+| arriving at a journey stop | a scale pulse on the pin |
+
+**Dialogs and the detail view are progressive enhancement, and the enhancement is the whole
+mechanism.** A transition cannot run from `display: none`, so `@starting-style` gives the open
+frame something to come from and `transition-behavior: allow-discrete` on `display` and
+`overlay` keeps the element painted until the fade has finished. Where either is unsupported
+both rules are dropped and the surface opens and closes instantly, which is what it did before.
+
+Two things worth knowing if any of this is touched:
+
+- **The scrim has to be transitioned with the panel.** Without the discrete half on
+  `::backdrop`, closing the import preview dropped its scrim in one frame while the panel was
+  still fading, and the Settings dialog behind it flashed to full brightness and back.
+- **Transitions outrank `!important`.** That is what lets `.detail` and `.player-end` animate
+  out of `[hidden]`, which `base.css` sets to `display: none !important`.
+
+The toast uses animations rather than transitions, because a node that was not in the document
+a frame ago has nothing to transition from. `ui/toast.js` waits for `animationend` rather than
+holding a duration of its own, so the stylesheet owns how long it takes; the timer in there is
+a backstop for a browser that never fires the event and says so.
+
+**The pane switch fades the arriving pane and lets the leaving one go at once.** A true
+crossfade needs both in the layout at the same time, and they are flex children of one row, so
+the pane being faded up would spend the whole transition at half the width of the screen.
+
+### Icons
+
+`src/js/ui/icons.js`. Twenty-one icons on a 24px grid, strokes only at 2px with round caps and
+joins, `currentColor`, no fills and no colour of their own. Built with `createElementNS` from
+shape data, so there is no markup template for a value to be interpolated into.
+
+**An icon is decoration.** It is `aria-hidden`, and the accessible name stays on the control.
+That is what lets the header show an icon and a label where there is room and the icon alone
+where there is not, without the button's name changing. The markup names the icon it wants
+through `data-icon` and `applyIcons` turns that into a node once, at boot.
+
+A button whose label changes under it writes to its `.button-label` span. Setting `textContent`
+on the button itself would take the icon with it.
+
+Draw a new one against the set at 40, 24, 18 and 14px before keeping it. Two of these were
+redrawn after doing that: the settings faders ran together into a smudge below 20px laid out
+horizontally, and the offline cloud needed one bump rather than two.
+
+### Primitives
+
+- **Buttons.** `primary`, `secondary` (what a plain `.button` is), `ghost` and `icon-only`, in
+  two sizes, with one answer each for hover, active, focus-visible, `aria-disabled`, pressed
+  and busy. `.button` is `inline-flex`, which is also what lets a `<label class="button">`
+  have a line box its padding can affect.
+- **Form controls.** One height, one border, one focus treatment for text, textarea, select,
+  date and checkbox. The select keeps its native arrow: replacing it needs `appearance: none`
+  and a background image, and the only way to draw one is a data URI with a colour written
+  into it.
+- **Switch.** A real checkbox with `role="switch"`, drawn as a track and a thumb. Under forced
+  colours the drawing is handed back to the user agent, because a forced palette has no way to
+  make a custom track and thumb both legible.
+- **Chips.** One family, two roles, and the point is telling them apart without clicking.
+  `.chip-filter` is a control holding state: an edge, a fill when on, a count badge.
+  `.chip-tag` is a label: no edge, a tinted bed, quieter and smaller.
+
+**A component rule that fights a primitive usually loses in a way nobody notices.** Three did:
+`.photo-add` set `display: inline-block` and stacked the icon on the label, the plain checkbox
+rule was more specific than `.switch` and squashed it to a dot, and `.journey-play` had no
+hover so the generic one painted the page background under text coloured for a teal fill. Give
+the component the states it needs, or exclude it from the generic rule by name.
+
+---
+
 ## Colour and Theme
 
 **No colour literal appears anywhere outside `tokens.css`.** No hex, no `rgb()`, no named
@@ -752,9 +1290,22 @@ never computes contrast at runtime and `src/` is what ships.
 
 ### Dark basemap
 
-**There isn't one.** No keyless provider offers a dark raster basemap, and the one that did now
-wants an API key (see **Basemaps**), so dark mode draws the light map. The interface is dark
-around it.
+**There isn't one**, so the light one is dimmed instead. No keyless provider offers a dark
+raster basemap and the one that did now wants an API key (see **Basemaps**).
+
+`map.css` applies `invert(1) hue-rotate(180deg)` with brightness, contrast and saturation
+pulled down, **to the tile pane alone**. Markers, popups, the journey path and the draft pin
+live in their own Leaflet panes and are untouched, which is what keeps the rust pins and the
+teal route reading as themselves over it. The numbers were chosen by looking at Nairobi at
+zoom 12 until water read dark blue and parks read muted green, not by reasoning about them.
+
+Three things gate it, and all three are in the stylesheet rather than in script: the dark
+theme, declared both ways as everything else is; the `data-dim-map` attribute, which carries
+the `dimMapInDark` setting and defaults to on; and forced colours, where it is off entirely
+because the palette has already been decided. The filter is a custom property so the forced
+colours case can override it on the same selectors rather than through a specificity trick.
+
+It is an approximation of a dark map and not a dark map, which is why it is a setting.
 
 The swap itself still works and is one `if`: a basemap with a `darkUrl` has it applied through
 `setUrl` on the **existing** layer, never by rebuilding it - a rebuild makes Leaflet's
@@ -792,8 +1343,19 @@ The breakpoint is 720px, where the sidebar and a usable map stop fitting side by
   down to the icon. The title may ellipsis; the controls may not be pushed off.
 - **Map and List.** `data-view` on the app body, read entirely by CSS. Above the breakpoint the
   attribute is **removed**, so a wide layout can never be left with a hidden map. Choosing a
-  memory in List switches to Map first, because flying to a marker on a map of the wrong size
-  lands in the wrong place - every path that reveals the map calls `invalidateSize`.
+  memory opens its detail view, which is full screen here and needs no switch; **Show on map**
+  and **Move** switch to Map first, because flying to a marker on a map of the wrong size lands
+  in the wrong place - every path that reveals the map calls `invalidateSize`.
+- **The place search is an icon.** At rest it was a full-width card about 70px tall sitting
+  exactly where the map's own content is: a tenth of the screen given permanently to a control
+  used occasionally. It is a 44px button here, and opening it spans the pane with the results
+  as a sheet beneath. Escape or the close button puts it away and hands focus back to the icon.
+  `isNarrow` and `createIcon` are injected into `map/place-search-control.js`, because `map/`
+  does not get to ask the DOM about the layout and `ui/icons.js` is not its to import.
+- **The journey player is a bar, not a card.** It floats over the map on a wide screen; at this
+  width a floating card either covers the zoom control and the attribution or is pushed far
+  enough up that it covers the map it is describing, so it takes its own room at the bottom of
+  the pane instead. It lives in the map pane, so the detail view hides it and gives it back.
 - **The sidebar header is not sticky on narrow.** It holds the search, the chips, the dates,
   the timeline and the journey controls, which together are taller than a phone screen; sticky
   pinned all of it over the list and nothing below could be reached.
@@ -802,7 +1364,23 @@ The breakpoint is 720px, where the sidebar and a usable map stop fitting side by
   bottom of the layout hides under the URL bar until it scrolls away.
 - **Safe areas.** `viewport-fit=cover` plus `env(safe-area-inset-*)` on the header, the dialogs
   and the toast region - the fixed edges.
-- **Touch.** 44px minimum under `(pointer: coarse)`. The timeline thumb is the only target
+- **Touch.** 44px minimum under `(pointer: coarse)`. Two traps, both found by sweeping every
+  audit state at 375, 390 and 360 with touch emulation on rather than by reading the stylesheet:
+
+  - **A size variant beats the rule.** `.button` carries the 44px floor at one class;
+    `.button-sm.icon-only` sets `min-width: 2rem` at two. Six controls came out 32px wide with
+    a 44px height before that was restated at the same weight.
+  - **Some controls cannot simply be made bigger.** A switch at 44px square is not a switch,
+    and a map pin that size covers the place it is marking. Those grow a transparent 44px box
+    centred on them instead, which is the timeline thumb's trick from the other direction. The
+    pin's is centred on its head, because its element is anchored at the point.
+
+  **An element box cannot show a grown hit area**, so the test that guards this hit-tests four
+  points 21px out with `elementFromPoint` rather than measuring `getBoundingClientRect`. On the
+  axes, not at the corners: the corner of a 44px box is 29px from the centre, so a round button
+  would fail a corner test however big it was. One more test taps an empty corner of the map and
+  asserts placement still lands, because a bigger catchment around every pin is exactly the kind
+  of fix that quietly eats the surface underneath it. The timeline thumb is the only target
   there, since the input carries `pointer-events: none` so both handles of the pair stay
   reachable; it gets a 44px box with a transparent border and `background-clip: content-box`,
   so the padding does the hitting and the visible disc stays small.
@@ -1009,8 +1587,22 @@ in testing that production would apply.
 
 ## End-to-end Tests
 
-`e2e/`, Playwright, Chromium and WebKit, run with `npm run test:e2e` against `serve:prod`. About
-a minute and a half for both engines.
+`e2e/`, Playwright, run with `npm run test:e2e` against `serve:prod`. Chromium and WebKit over
+the whole suite, about four minutes; Firefox over the smoke subset only.
+
+**A third engine earns its place by what it finds.** Firefox's first run failed all seventeen
+smoke tests, and two of the three causes were real:
+
+- `navigator.storage.persist()` is answered with a permission prompt there, and where nothing
+  can answer it the promise never settles. `put` awaited it, so saving the first photo of a
+  session left the dialog open with Save busy forever, having written both the photo and the
+  memory. Chromium and WebKit resolve it immediately, which is why this shipped twice.
+- The fixture tile was a 2x2 PNG. Leaflet draws a tile at 256px, and Firefox rejects that scale
+  with "Image corrupt or truncated" on every tile, which the console-error guard turned into
+  every test failing. The fixture is a real 256px tile now.
+- The third is the harness: Playwright's Firefox refuses an offline navigation with
+  `NS_ERROR_OFFLINE` before the worker is consulted, the same shape as WebKit's inability to
+  serve from the cache offline.
 
 Curated, not exhaustive. The unit suite covers the pure logic; these are the paths that only
 break once a real browser, real storage and the production headers are all involved at once.
@@ -1038,8 +1630,152 @@ the map and opens a popup through the cluster plugin, and with several pins stac
 it occasionally never produced a popup on WebKit under parallel load. The cluster path has its
 own scenarios; it is a slow and flaky way in to something else.
 
+### Two suites
+
+`npm run test:e2e:smoke` is the subset that guards the paths that would make the app useless if
+they broke: boot, add, a photo round trip on both engines, the detail view, filters restored
+from the url, the hostile import file, an offline boot, the theme applied before the first
+paint, and axe on the default and detail states. 33 tests in about 33 seconds, against four
+minutes for the whole suite.
+
+**Tagged with `{ tag: '@smoke' }` rather than split into files**, so a test lives next to the
+ones it shares a fixture with and a tag is one word to add or to take away. The axe loop reads
+a set of state names rather than tagging each generated test by hand.
+
 CI runs the unit tests first, before the browsers are installed - they need none, they are fast,
-and a failure should not wait on a few hundred megabytes of download.
+and a failure should not wait on a few hundred megabytes of download. Then **smoke on a push and
+the full suite on a pull request into `main`**, which is where the cost is worth paying.
+
+### What each suite is for
+
+| Suite | What it answers | Where |
+|---|---|---|
+| `npm test` | the pure logic: what counts as dirty, what the suggestions are, what a move does to a list, what the path looks like | `tests/`, node, no browser |
+| `npm run test:e2e:smoke` | would the app be unusable if this broke, on any of three engines | tagged `@smoke` |
+| `npm run test:e2e` | every path that needs a real browser, real storage and the production headers at once | `e2e/` |
+| `npm run test:visual` | what it looks like, including forced colours and the dimmed dark map | `visual/`, Chromium |
+
+Inside `e2e/`, by file: `smoke.spec.js` the core flows, `detail.spec.js` the view and its deep
+links, `form.spec.js` the dialog including paste, drop and the discard guard, `journey.spec.js`
+the player, `mobile.spec.js` everything below the breakpoint, `offline.spec.js` the worker,
+`axe.spec.js` fifteen states in two themes at two widths, and `aria.spec.js` the accessible
+trees.
+
+### The touch sweep
+
+`mobile.spec.js` walks every visible interactive element in seven states and asserts each can
+be hit with a thumb. Three things make it worth having rather than a list of control names:
+
+- **It hit-tests rather than measuring.** Four points 21px out from the centre, on the axes
+  rather than at the corners, because several controls are drawn smaller than 44px on purpose
+  and grow a transparent box instead, and because the corner of a 44px box is 29px from the
+  centre of a round button.
+- **A modal dialog makes everything behind it inert**, which is the right answer for those
+  controls rather than a fault, so only what is inside it is swept while one is open.
+- **The exemptions are a list with a reason each** - the skip link, the hidden file input, the
+  attribution line, the pins and the three move controls that share a photo tile. A control
+  added later that is too small has to be argued for there before the suite goes green.
+
+It found three real faults on its first run that a list of names had missed for a week: the
+journey scrubber at 22px, Remove at 44x28, and the move controls overflowing a tile that clips
+them, which left Make cover with no centre to tap on any photo.
+
+### Accessibility tree snapshots
+
+`aria.spec.js` locks the roles, names and states of the components this release added. They are
+**not a substitute for a screen reader** and do not pretend to be: a tree can be perfectly
+shaped and still read badly. What they catch is an `aria-label` dropped in a refactor, which
+leaves a control that looks right and can no longer be reached by name.
+
+Scoped tightly on purpose. A snapshot of a whole page changes whenever anything moves, and a
+snapshot nobody trusts is one everybody updates without reading.
+
+---
+
+## What Is Still Checked By Hand
+
+Everything below is deliberately not automated, each for a reason. The list is short on purpose:
+anything that can be a test should be one.
+
+- **A real screen reader.** NVDA, VoiceOver and the Android reader, over the detail view, the
+  form and the player. The aria snapshots say the tree is shaped right; only a reader says
+  whether it is bearable to listen to.
+- **Real Windows High Contrast.** The forced colours baselines are taken through Playwright's
+  `forcedColors: 'active'`, which sets the flag without a real high contrast theme behind it.
+  In that emulation **every control with a background of its own draws its label as a solid
+  block**, in both the light and the dark system palette - Chromium painting an opaque backplate
+  behind the text. It happens even where the background is itself a system colour, which is the
+  canonical pattern and is not supposed to fail, so it needs confirming on a Windows machine
+  before the stylesheet is changed to work around it.
+- **Real Safari and real Firefox offline.** Both harnesses cut the connection below the layer
+  the worker lives in, so the offline-serving tests run on Chromium. Installing, precaching and
+  serving while online are checked on all three.
+- **A real phone.** Touch emulation gets the media queries and the hit testing right and says
+  nothing about a thumb on glass, a soft keyboard over a sticky footer, or the address bar
+  moving under `100dvh`.
+- **Photos from a real camera.** HEIC off an iPhone, EXIF rotation, and a 12 megapixel file
+  through the resize pipeline. The suite uses a drawn JPEG, which exercises the code and not the
+  decoder.
+- **A real Nominatim.** Every test mocks it, and the fixture fails any test that reaches it.
+  What is never exercised is the live service's own rate limiting, timeouts and odd responses.
+- **Dragging a photo on a phone.** It cannot work: HTML5 drag and drop is never started by touch
+  input in any browser, which is why the form carries Move earlier, Move later and Make cover.
+  Those are tested under touch; the drag is tested under a mouse.
+- **The deployed site.** The headers are exercised by `serve:prod`, but the deployment's own
+  edge, its cache and its certificate are not.
+
+---
+
+## Visual Regression
+
+`visual/`, a third Playwright project, Chromium only, run with `npm run test:visual`. It is
+**deliberately not part of `npm run test:e2e` and not run in CI**: a baseline is a record of a
+decision, and a pixel difference is a question for a person rather than a build failure.
+
+Thirteen states: the default view wide in both themes, both panes on a phone, the first run, a
+memory with photos, the form with tags and photos, settings, the player wide and narrow, the end
+card, the filters panel open, and nothing matching.
+
+Five things move between runs if nothing is done about them, and all five are handled in
+`visual/fixtures.js` rather than per test:
+
+- **the clock**, frozen with `page.clock` before any navigation, because the form fills in
+  today's date and the list groups by year
+- **the data**, a fixed hand-written library under the **sandbox** keys. A generator seeded with
+  a constant would also be reproducible, but a list you can read is a list whose screenshot you
+  can check by eye, and the sandbox keys mean a visual run cannot write where memories live
+- **the fonts**, through `document.fonts.ready`, or a shot catches the system stack before
+  Fraunces arrives and which one you get depends on how warm the disk cache is
+- **motion**, through the project's `reducedMotion: 'reduce'`, which takes the duration tokens
+  to zero. A frame caught mid-transition is a different frame every run
+- **the caret**, which blinks
+
+Tiles come from the e2e fixture tile, so the map is one image repeated and never a request.
+
+`maxDiffPixelRatio` is **0.002**. Font hinting and the map's rasterising differ by a few glyph
+edges between runs of the same build, which is about 0.1% of a 1280x900 frame; the smallest
+change this exists to catch is a control moving, which is thousands of pixels and a whole
+percent of the frame.
+
+### Baselines
+
+Snapshots keep Playwright's platform suffix, so `default-wide-light-visual-win32.png` is the
+Windows set and a run on another operating system writes its own rather than failing against
+pixels it was never going to match.
+
+**The committed baselines are win32.** To generate the Linux set when CI is unblocked:
+
+```bash
+docker run --rm -v "$PWD":/work -w /work   mcr.microsoft.com/playwright:v1.63.0-noble   sh -c "npm ci && npx playwright test --project=visual --update-snapshots"
+```
+
+The image tag has to match the Playwright version in `package-lock.json`, or the browser build
+differs from the one the baselines were taken with. Commit the `-linux` files alongside the
+win32 ones; both sets live in `visual/states.spec.js-snapshots/` and neither replaces the other.
+
+A diff is reviewed as a picture, not as a number. If the change is wanted, rerun with
+`--update-snapshots` and commit the new baseline **in the same commit as the change that moved
+it**, so the history says what moved and why.
 
 ---
 
@@ -1089,6 +1825,56 @@ Deleting is immediate, not a confirmation dialog:
 The captured record is what makes undo honest. A new toast replaces the one before it and
 the earlier deletion simply stands; there is no undo stack. The toast region is
 `aria-live="polite"` so the deletion is announced.
+
+---
+
+## Releasing
+
+The version lives in **two** places, `package.json` and `src/js/config.js`, and
+`tests/meta/version.test.js` keeps them in step - two places is one too many, and the test is
+what makes it safe.
+
+In order:
+
+1. `docs/ux-audit.md` gets a status line for anything the release closed or deliberately left
+   open.
+2. The README's **What it does** and **Known limits** are brought up to date, and the test
+   counts with them. No inflated claims: a limit stated before somebody finds it costs nothing,
+   and one found first costs the whole document's credibility.
+3. The screenshots are regenerated **from sandbox data only**, with `?sandbox` and the sandbox
+   storage keys, so nothing in the script can reach real memories. The banner in the pictures
+   says which mode they were taken in.
+4. `CHANGELOG.md`: Unreleased becomes the version, dated with the real date. Written for
+   somebody using the app, not for somebody reading the diff.
+5. The version is bumped in both places and `npm run precache` is run, because the manifest
+   hashes every shipped file and `config.js` is one of them.
+6. Lighthouse, mobile and desktop, three runs each, compared with the previous release.
+7. The three gates: a clean tree, the full unit and end-to-end suites, and the attribution scan
+   over `origin/main..` the branch.
+
+**Merging and tagging are separate from all of this**, and happen after a manual pass, which is
+what the section below is about.
+
+---
+
+## Branches
+
+**`main` is production.** It is what the live site serves and what real data lives against, so
+it only ever moves forward and it is never rewritten.
+
+| Branch | What it is | Pushes to |
+| --- | --- | --- |
+| `main` | production, and the only thing released | hotfixes only |
+| `ui-1.1` | the whole UI and UX run, merged into `main` at the 1.1.0 release | every commit of the run |
+
+- **A production hotfix goes on `main`**, is released from there, and is then merged **into**
+  `ui-1.1` so the branch carries the fix too.
+- **`ui-1.1` merges into `main` once**, at the release. Never the other way round as a rebase:
+  the branch is pushed, so rewriting it would break anyone who has it.
+- A merge, not a rebase, in both directions, for the same reason.
+- Conflicts between a hotfix and the run are resolved **in favour of the run's token system**.
+  A hotfix is written against whatever production has; the branch has moved past that, and the
+  branch is where the design decisions live.
 
 ---
 

@@ -1,0 +1,472 @@
+/* The component layer: the controls every surface is built out of.
+
+   Before this, `.button` was one class with one size, and each component improvised the rest
+   - .view-option, .player-step, .player-play, .popup-button, .toast-action, .search-clear,
+   .filter-reset. Seven near-duplicates meant seven answers to what a hover looks like.
+
+   Everything here is a class on a real element. There is no wrapper and no shadow DOM: the
+   button is a <button>, the switch is a checkbox, and the semantics come from the markup. */
+
+/* ------------------------------------------------------------------- buttons */
+
+/* The base. Layout, shape and state; the variants below only change colour. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 2.5rem;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  background-color: transparent;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--line-snug);
+  text-align: center;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+/* The small size. Used where a control sits inside something else: a popup, a toast, a row
+   of chips. Still clears 44px under a coarse pointer, which mobile.css takes care of. */
+.button-sm {
+  min-height: 2rem;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+}
+
+/* --- secondary, which is what a plain .button is ---------------------------- */
+
+.button,
+.button-secondary {
+  border-color: var(--color-border-strong);
+  background-color: var(--color-surface);
+}
+
+.button:hover,
+.button-secondary:hover {
+  background-color: var(--color-bg);
+  border-color: var(--color-text-muted);
+}
+
+.button:active,
+.button-secondary:active {
+  background-color: var(--color-border);
+}
+
+/* --- primary ----------------------------------------------------------------- */
+
+.button-primary {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.button-primary:hover {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+  /* Darkened by laying the text colour over it at low alpha rather than by introducing a
+     second accent token, which would be a colour nobody could name. */
+  box-shadow: inset 0 0 0 100vmax rgb(0 0 0 / 0.12);
+}
+
+.button-primary:active {
+  box-shadow: inset 0 0 0 100vmax rgb(0 0 0 / 0.2);
+}
+
+/* --- ghost -------------------------------------------------------------------- */
+
+/* For a control that should be reachable but should not compete: Cancel beside a Save, a
+   clear button inside a field, the dismiss on a banner. */
+.button-ghost {
+  border-color: transparent;
+  background-color: transparent;
+  color: var(--color-text-muted);
+}
+
+.button-ghost:hover {
+  background-color: var(--color-bg);
+  border-color: transparent;
+  color: var(--color-text);
+}
+
+.button-ghost:active {
+  background-color: var(--color-border);
+}
+
+/* --- icon only ------------------------------------------------------------------ */
+
+/* Square rather than pill-padded, so the icon sits in the middle of the target instead of
+   inside padding that was measured for words. The name comes from aria-label. */
+.icon-only {
+  gap: var(--space-0);
+  min-width: 2.5rem;
+  padding: var(--space-2);
+}
+
+.button-sm.icon-only {
+  min-width: 2rem;
+  padding: var(--space-1);
+}
+
+/* --- states ----------------------------------------------------------------------- */
+
+/* aria-disabled, never the disabled attribute: a disabled control leaves the tab order,
+   which puts the explanation of why it is unavailable out of reach and drops focus when the
+   button that was just pressed becomes unavailable. */
+.button[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.button[aria-disabled='true']:hover {
+  background-color: var(--color-surface);
+  border-color: var(--color-border-strong);
+}
+
+.button-ghost[aria-disabled='true']:hover,
+.button-primary[aria-disabled='true']:hover {
+  background-color: inherit;
+  box-shadow: none;
+}
+
+/* A pressed toggle reads as filled, the same as a primary. The two are the same visual
+   statement: this one is the active one. */
+.button[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+/* --- busy -------------------------------------------------------------------------- */
+
+/* The label stays, so the button does not change width and the reason it is busy is still
+   readable. The spinner replaces the icon's space rather than being added beside it. */
+.button[aria-busy='true'] {
+  cursor: progress;
+}
+
+.button[aria-busy='true'] .icon {
+  display: none;
+}
+
+.button[aria-busy='true']::before {
+  content: '';
+  flex: none;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--radius-full);
+  /* Zero duration under reduced motion, which leaves a still ring rather than a spinning
+     one. The indicator is still there; it just does not move. */
+  animation: button-spin var(--duration-slow) linear infinite;
+}
+
+@keyframes button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* -------------------------------------------------------------- form controls */
+
+/* One height, one border, one focus treatment, whatever the control is. Before this the
+   text inputs, the select and the two checkboxes each had their own answer, so a form read
+   as a stack of things from different places. */
+
+.field {
+  margin-bottom: var(--space-4);
+}
+
+.field-label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.field-input {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+
+.field-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.field-input:hover {
+  border-color: var(--color-text-muted);
+}
+
+/* The global focus ring does the work; this only strengthens the edge under it so the
+   control still reads as a control at the moment it is focused. */
+.field-input:focus-visible {
+  border-color: var(--color-accent);
+}
+
+.field-input[aria-invalid='true'] {
+  border-color: var(--color-accent);
+}
+
+.field-textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+/* The native arrow is kept. Replacing it means appearance:none and a background image, and
+   the only way to draw one is a data URI with a colour written into it, which is the one
+   thing the palette rules forbid. The box around it is normalised instead. */
+.field-select {
+  padding-inline-end: var(--space-2);
+}
+
+/* --- checkbox ------------------------------------------------------------------ */
+
+.field-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+/* :not(.switch) rather than relying on source order. The plain rule is more specific than
+   .switch on its own, so without this it sets the switch to 1.25rem square and the thumb
+   fills the whole track: the control renders as a dot sitting on top of its own label. */
+.field-checkbox input[type='checkbox']:not(.switch) {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--color-accent);
+}
+
+.field-checkbox label {
+  font-size: var(--text-sm);
+  line-height: var(--line-base);
+}
+
+/* --- switch --------------------------------------------------------------------- */
+
+/* A real checkbox underneath, with role="switch" on it. Nothing here changes what it is:
+   it is still checked and unchecked, still reachable by Space, still reported by its label.
+   Only the drawing changes, because a setting that is on or off reads better as a thing in
+   one of two positions than as a box with a tick in it. */
+.switch {
+  position: relative;
+  flex: none;
+  appearance: none;
+  width: 2.5rem;
+  height: 1.5rem;
+  margin: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  background-color: var(--color-bg);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: var(--radius-full);
+  background-color: var(--color-text-muted);
+  transition: transform var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
+}
+
+.switch:hover {
+  border-color: var(--color-text-muted);
+}
+
+.switch:checked {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent);
+}
+
+.switch:checked::after {
+  transform: translateX(1rem);
+  background-color: var(--color-accent-contrast);
+}
+
+@media (forced-colors: active) {
+  /* appearance:none takes the control out of the user agent's hands entirely, and a forced
+     palette has no way to draw a track and a thumb that are both legible. Handed back: it
+     renders as the system's own checkbox, which is exactly right and needs no help. */
+  .switch {
+    appearance: auto;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: none;
+    background-color: transparent;
+  }
+
+  .switch::after {
+    content: none;
+  }
+
+  .field-input {
+    border-color: ButtonBorder;
+    background-color: Field;
+    color: FieldText;
+  }
+}
+
+/* -------------------------------------------------------------------- chips */
+
+/* One family, two roles, and the whole point is that you can tell which is which without
+   clicking anything.
+
+   A .chip-filter is a control holding state: it has an edge, it fills when it is on, and it
+   carries a count of what choosing it would show. A .chip-tag is a label: no edge, a tinted
+   bed, quieter text. Both are still buttons, because a tag in a popup does filter by that
+   tag - but one of them is a switch you are being offered and the other is a fact about the
+   memory you are reading, and they were drawn identically.
+
+   The shared part is only shape and rhythm. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 100%;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  line-height: var(--line-snug);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  transition: background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+/* --- the filter chip ------------------------------------------------------------ */
+
+.chip-filter {
+  border-color: var(--color-border-strong);
+  background-color: var(--color-surface);
+  font-weight: var(--weight-medium);
+}
+
+.chip-filter:hover {
+  border-color: var(--color-text-muted);
+  background-color: var(--color-bg);
+}
+
+.chip-filter[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+/* The count is a second piece of information, not a second word. Tabular, so a column of
+   chips does not jitter as the numbers change under a keystroke. */
+.chip-count {
+  flex: none;
+  min-width: 1.25em;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.chip-filter[aria-pressed='true'] .chip-count {
+  /* On the filled chip there is no lighter bed to sit in, so the badge becomes a hole in the
+     fill rather than a patch on it. */
+  background-color: transparent;
+  color: var(--color-accent-contrast);
+  opacity: 0.8;
+}
+
+/* --- the display tag -------------------------------------------------------------- */
+
+.chip-tag {
+  padding: 0 var(--space-2);
+  border-color: transparent;
+  background-color: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.chip-tag:hover {
+  background-color: var(--color-border);
+  color: var(--color-text);
+}
+
+@media (forced-colors: active) {
+  /* Neither has a border of its own in every state, and a forced palette flattens the fill
+     that was telling them apart, so both get an edge and the pressed one takes Highlight. */
+  .chip {
+    border-color: ButtonBorder;
+    background-color: ButtonFace;
+    color: ButtonText;
+  }
+
+  .chip-filter[aria-pressed='true'] {
+    border-color: Highlight;
+    background-color: Highlight;
+    color: HighlightText;
+  }
+
+  .chip-count {
+    background-color: transparent;
+    color: inherit;
+  }
+}
+
+/* ------------------------------------------------------------------ forced colours */
+
+/* Every property relied on here is one the user agent forces, so assigning a system keyword
+   is enough. The variants collapse to two looks, which is all the palette has: the filled
+   ones take Highlight, everything else takes ButtonFace with a visible edge. */
+@media (forced-colors: active) {
+  .button {
+    border-color: ButtonBorder;
+    background-color: ButtonFace;
+    color: ButtonText;
+  }
+
+  .button-primary,
+  .button[aria-pressed='true'] {
+    border-color: Highlight;
+    background-color: Highlight;
+    color: HighlightText;
+    box-shadow: none;
+  }
+
+  /* A ghost button has no edge by design, which in forced colours leaves a word floating
+     with nothing to say it is a control. */
+  .button-ghost {
+    border-color: ButtonBorder;
+  }
+
+  .button[aria-disabled='true'] {
+    opacity: 1;
+    border-color: GrayText;
+    color: GrayText;
+  }
+
+  .button[aria-busy='true']::before {
+    border-color: ButtonText;
+    border-top-color: transparent;
+  }
+}

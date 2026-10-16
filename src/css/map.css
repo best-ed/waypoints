@@ -1,3 +1,47 @@
+/* Dimming the map in the dark.
+
+   There is no keyless dark basemap, so this turns the light one over instead: invert it,
+   rotate the hue back 180 degrees so blues stay blue rather than becoming orange, then pull
+   the brightness and saturation down because an inverted map is otherwise glaring in a
+   different way. The numbers were chosen by looking at Nairobi at zoom 12 and checking that
+   water reads dark blue, parks read muted green and motorways stay distinguishable from
+   minor roads, not by reasoning about them.
+
+   It is applied to the tile pane alone. Markers, popups, the journey path and the draft pin
+   live in their own Leaflet panes and are untouched, which is what keeps the rust pins and
+   the teal route reading as themselves over it.
+
+   The dark theme is declared two ways, so this is too: the media query for a system
+   preference that an explicit light choice can beat, and the attribute for an explicit dark
+   choice on a light system. */
+:root {
+  --map-dim: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light'])[data-dim-map] {
+    --map-dim: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.88) saturate(0.78);
+  }
+}
+
+:root[data-theme='dark'][data-dim-map] {
+  --map-dim: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.88) saturate(0.78);
+}
+
+/* A forced palette has already decided what everything looks like, and inverting on top of
+   that produces a map nobody asked for. Same selectors as the two above so this wins on
+   source order rather than on a specificity trick. */
+@media (forced-colors: active) {
+  :root[data-theme='dark'][data-dim-map],
+  :root:not([data-theme='light'])[data-dim-map] {
+    --map-dim: none;
+  }
+}
+
+.leaflet-tile-pane {
+  filter: var(--map-dim);
+}
+
 /* Outranks Leaflet's own .leaflet-grab cursor without needing !important. */
 .map.is-placing,
 .map.is-placing .leaflet-grab,
@@ -21,7 +65,8 @@
   fill: var(--color-accent);
   stroke: var(--color-accent-contrast);
   stroke-width: 1.5;
-  transition: fill 120ms ease, transform 120ms ease;
+  transition: fill var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
   transform-origin: 50% 100%;
 }
 
@@ -61,12 +106,6 @@
   opacity: 0.85;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .pin-body {
-    transition: none;
-  }
-}
-
 /* A search result, not a saved memory: hollow and in the muted tone so the difference
    is obvious at a glance. */
 .pin-result .pin-body {
@@ -84,10 +123,39 @@
   transform: none;
 }
 
+/* The touch hit area in mobile.css is absolutely positioned against this. */
+.pin {
+  position: relative;
+}
+
 /* Wraps the pin SVG and the hidden span carrying the marker's accessible name. */
 .pin-content {
   display: block;
   position: relative;
+}
+
+/* Arriving at a journey stop. The scale goes on the wrapper rather than on .pin-body, which
+   already carries one for hover and selection: on the wrapper the two compose instead of one
+   cancelling the other, and the pin grows out of its own point.
+
+   The duration is a motion token, so reduced motion takes it to zero and nothing moves. */
+@keyframes pin-arrive {
+  from {
+    transform: scale(1);
+  }
+
+  40% {
+    transform: scale(1.3);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+.pin-arriving .pin-content {
+  transform-origin: 50% 100%;
+  animation: pin-arrive var(--duration-slow) var(--ease-standard);
 }
 
 /* The cluster plugin animates its splits, merges and spider legs through CSS transitions in
@@ -106,4 +174,28 @@
 .leaflet-control-attribution a {
   text-decoration: underline;
   color: inherit;
+}
+
+/* The hint while a pin is being placed. Pinned to the top of the map rather than shown in the
+   sidebar, because the instruction is about where to click and the map is where that happens.
+
+   Above Leaflet's own controls, which top out at 1000, and below the app header. */
+.placement-hint {
+  position: absolute;
+  top: var(--space-3);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-panel);
+  max-width: calc(100% - var(--space-6));
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-overlay);
+  color: var(--color-text);
+  box-shadow: var(--elevation-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-align: center;
+  /* It is an instruction, not a target: clicking it would be clicking the map. */
+  pointer-events: none;
 }

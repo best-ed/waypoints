@@ -42,11 +42,14 @@ function storedSettings(storage) {
 
 test('place name suggestions are on by default', () => {
   assert.equal(DEFAULT_SETTINGS.suggestPlaceNames, true);
+  /* On by default: a full brightness map inside a dark interface is the first thing anyone
+     notices about dark mode here. */
+  assert.equal(DEFAULT_SETTINGS.dimMapInDark, true);
 });
 
 test('an empty store starts at the defaults', () => {
   const { settings } = setup();
-  assert.deepEqual(settings.get(), { suggestPlaceNames: true, theme: 'system' });
+  assert.deepEqual(settings.get(), { suggestPlaceNames: true, theme: 'system', dimMapInDark: true });
 });
 
 test('reads a stored setting', () => {
@@ -59,7 +62,7 @@ test('reads a stored setting', () => {
 test('junk in the key falls back to the defaults', () => {
   for (const raw of ['', 'not json', '[]', 'null', '42', '{', '{"suggestPlaceNames":"yes"}']) {
     const { settings } = setup({ [SETTINGS_KEY]: raw });
-    assert.deepEqual(settings.get(), { suggestPlaceNames: true, theme: 'system' }, JSON.stringify(raw));
+    assert.deepEqual(settings.get(), { suggestPlaceNames: true, theme: 'system', dimMapInDark: true }, JSON.stringify(raw));
   }
 });
 
@@ -68,7 +71,7 @@ test('an unknown key in the stored value is ignored', () => {
     [SETTINGS_KEY]: JSON.stringify({ suggestPlaceNames: false, somethingElse: 'x' })
   });
 
-  assert.deepEqual(settings.get(), { suggestPlaceNames: false, theme: 'system' });
+  assert.deepEqual(settings.get(), { suggestPlaceNames: false, theme: 'system', dimMapInDark: true });
 });
 
 test('a __proto__ key in the stored value pollutes nothing', () => {
@@ -79,19 +82,51 @@ test('a __proto__ key in the stored value pollutes nothing', () => {
   assert.equal({}.polluted3, undefined);
 });
 
+/* Every field has to appear by name in set(), and missing one fails silently: the patch is
+   dropped, the result equals what was there, the equality check returns early and nothing is
+   written or notified. dimMapInDark shipped that way for exactly as long as it took to write
+   this. Looped over the fields so the next setting cannot repeat it. */
+test('every setting round-trips through set and is written', () => {
+  const cases = [
+    ['suggestPlaceNames', false],
+    ['theme', 'dark'],
+    ['dimMapInDark', false]
+  ];
+
+  for (const [field, value] of cases) {
+    const { settings, storage } = setup();
+    const seen = [];
+    settings.subscribe((next) => seen.push(next[field]));
+
+    settings.set({ [field]: value });
+
+    assert.equal(settings.get()[field], value, field + ' was not applied');
+    assert.equal(storedSettings(storage)[field], value, field + ' was not written');
+    assert.deepEqual(seen, [value], field + ' did not notify');
+  }
+});
+
+test('a non-boolean dimMapInDark falls back rather than being coerced', () => {
+  for (const value of ['false', 0, null, [], {}]) {
+    assert.equal(resolveSettings({ dimMapInDark: value }).dimMapInDark, true, JSON.stringify(value));
+  }
+
+  assert.equal(resolveSettings({ dimMapInDark: false }).dimMapInDark, false);
+});
+
 test('resolveSettings fills every field with a typed fallback', () => {
-  assert.deepEqual(resolveSettings(null), { suggestPlaceNames: true, theme: 'system' });
-  assert.deepEqual(resolveSettings([]), { suggestPlaceNames: true, theme: 'system' });
-  assert.deepEqual(resolveSettings('nope'), { suggestPlaceNames: true, theme: 'system' });
-  assert.deepEqual(resolveSettings({ suggestPlaceNames: 'false' }), { suggestPlaceNames: true, theme: 'system' });
-  assert.deepEqual(resolveSettings({ suggestPlaceNames: 0 }), { suggestPlaceNames: true, theme: 'system' });
-  assert.deepEqual(resolveSettings({ suggestPlaceNames: false }), { suggestPlaceNames: false, theme: 'system' });
+  assert.deepEqual(resolveSettings(null), { suggestPlaceNames: true, theme: 'system', dimMapInDark: true });
+  assert.deepEqual(resolveSettings([]), { suggestPlaceNames: true, theme: 'system', dimMapInDark: true });
+  assert.deepEqual(resolveSettings('nope'), { suggestPlaceNames: true, theme: 'system', dimMapInDark: true });
+  assert.deepEqual(resolveSettings({ suggestPlaceNames: 'false' }), { suggestPlaceNames: true, theme: 'system', dimMapInDark: true });
+  assert.deepEqual(resolveSettings({ suggestPlaceNames: 0 }), { suggestPlaceNames: true, theme: 'system', dimMapInDark: true });
+  assert.deepEqual(resolveSettings({ suggestPlaceNames: false }), { suggestPlaceNames: false, theme: 'system', dimMapInDark: true });
 });
 
 test('parseSettings copes with anything', () => {
-  assert.deepEqual(parseSettings(undefined), { suggestPlaceNames: true, theme: 'system' });
-  assert.deepEqual(parseSettings('{"suggestPlaceNames":false}'), { suggestPlaceNames: false, theme: 'system' });
-  assert.deepEqual(parseSettings('{{{'), { suggestPlaceNames: true, theme: 'system' });
+  assert.deepEqual(parseSettings(undefined), { suggestPlaceNames: true, theme: 'system', dimMapInDark: true });
+  assert.deepEqual(parseSettings('{"suggestPlaceNames":false}'), { suggestPlaceNames: false, theme: 'system', dimMapInDark: true });
+  assert.deepEqual(parseSettings('{{{'), { suggestPlaceNames: true, theme: 'system', dimMapInDark: true });
 });
 
 test('a setting is written under its own key and nothing else', () => {
@@ -99,7 +134,7 @@ test('a setting is written under its own key and nothing else', () => {
 
   settings.set({ suggestPlaceNames: false });
 
-  assert.deepEqual(storedSettings(storage), { suggestPlaceNames: false, theme: 'system' });
+  assert.deepEqual(storedSettings(storage), { suggestPlaceNames: false, theme: 'system', dimMapInDark: true });
   assert.deepEqual([...storage.values.keys()], [SETTINGS_KEY]);
 });
 
@@ -220,7 +255,7 @@ test('a throwing listener does not stop the others', () => {
 test('blocked storage still yields usable settings', () => {
   const settings = createSettingsStore({ storage: blockedStorage() });
 
-  assert.deepEqual(settings.get(), { suggestPlaceNames: true, theme: 'system' });
+  assert.deepEqual(settings.get(), { suggestPlaceNames: true, theme: 'system', dimMapInDark: true });
 });
 
 /* The setting still applies for this session; only remembering it is lost. */

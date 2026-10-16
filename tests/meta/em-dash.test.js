@@ -4,9 +4,14 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 
-/* Written as an escape rather than the character itself, so this file stays ASCII and cannot
-   trip the rule it enforces if the exemption below is ever narrowed. */
-const EM_DASH = '—';
+/* Written as escapes rather than the characters themselves, so this file stays ASCII and
+   cannot trip the rule it enforces if the exemption below is ever narrowed.
+
+   The entity and numeric forms are here because checking for the character alone missed
+   `Sandbox &mdash; ...` in index.html: it renders as an em dash and a reader sees one, while
+   the bytes on disk are plain ASCII. A rule about what a reader sees has to cover every way
+   of spelling it. */
+const SPELLINGS = ['—', '&mdash;', '&#8212;', '&#x2014;', '&#X2014;'];
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 
@@ -45,7 +50,7 @@ test('the scan covers the files it is supposed to', () => {
   }
 });
 
-test('no em dash appears in anything a reader sees', () => {
+test('no em dash appears in anything a reader sees, however it is spelled', () => {
   /* House rule: em dashes are rewritten, not typed. A colon, a comma, a full stop or
      parentheses says the same thing and reads as something a person wrote. tests/ and
      CLAUDE.md are exempt and are deliberately absent from the list above. */
@@ -55,7 +60,9 @@ test('no em dash appears in anything a reader sees', () => {
     const text = readFileSync(join(root, file), 'utf8');
 
     text.split('\n').forEach((line, index) => {
-      if (line.includes(EM_DASH)) offenders.push(file + ':' + (index + 1) + ': ' + line.trim());
+      if (SPELLINGS.some((spelling) => line.includes(spelling))) {
+        offenders.push(file + ':' + (index + 1) + ': ' + line.trim());
+      }
     });
   }
 

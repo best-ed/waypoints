@@ -26,10 +26,24 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  line-height: var(--line-tight);
+}
+
 h1 {
   font-size: var(--text-lg);
-  line-height: var(--line-tight);
-  font-weight: 600;
+}
+
+h2 {
+  font-size: var(--text-md);
+}
+
+h3 {
+  font-size: var(--text-base);
 }
 
 img {
@@ -49,31 +63,19 @@ textarea {
   outline-offset: 2px;
 }
 
-.button {
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-full);
-  background-color: var(--color-surface);
-  color: var(--color-text);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.button:hover {
-  border-color: var(--color-text-muted);
-}
-
-.button[aria-pressed='true'] {
-  background-color: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-accent-contrast);
-}
+/* The button lives in primitives.css now, with its variants, sizes and states. */
 
 /* The user agent's [hidden] rule is display:none at the same specificity as a class, so any
    later rule setting display wins and the element stays on screen while marked hidden. Both
-   .date-range and .journey-controls are flex containers toggled by the attribute, so this has
+   .date-range and .journey-player are flex containers toggled by the attribute, so this has
    to outrank them. */
+/* An icon never shrinks and never grows: the label wraps or ellipses, the picture does not
+   distort. */
+.icon {
+  display: block;
+  flex: none;
+}
+
 [hidden] {
   display: none !important;
 }

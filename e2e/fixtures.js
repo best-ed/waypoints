@@ -5,6 +5,13 @@ import { readFileSync } from 'node:fs';
    error or a blocked resource is a failure wherever it happens, and a suite that only notices
    when a test remembers to look is a suite that stops noticing. */
 
+/* A real 256x256 tile, which is the size Leaflet draws one at.
+
+   It used to be a 2x2 PNG, on the reasoning that the bytes do not matter when nothing looks at
+   the picture. Firefox disagreed: every tile logged "Image corrupt or truncated" and the global
+   console-error guard failed all seventeen smoke tests on that engine. Chromium and WebKit
+   scaled the 2x2 up without complaint, so it went unnoticed until there was a third engine.
+   Proven by swapping the file and nothing else: 18 console errors became 0. */
 const TILE = readFileSync(new URL('./fixtures/tile.png', import.meta.url));
 const SEARCH = readFileSync(new URL('./fixtures/nominatim-search.json', import.meta.url), 'utf8');
 const REVERSE = readFileSync(new URL('./fixtures/nominatim-reverse.json', import.meta.url), 'utf8');
@@ -135,13 +142,75 @@ export async function seedLibrary(page, memories = LIBRARY) {
   }, memories);
 }
 
+/* Settings, written before anything on the page runs. Mostly used to turn place suggestions
+   off: placing a pin reverse geocodes, and a test about the form has no business depending on
+   a lookup it never asked for. Unconditional, unlike the library, because a test that sets a
+   setting means it. */
+export async function seedSettings(page, settings) {
+  await page.addInitScript((values) => {
+    window.localStorage.setItem(
+      'waypoints:settings',
+      JSON.stringify({ suggestPlaceNames: true, theme: 'system', dimMapInDark: true, ...values })
+    );
+  }, settings);
+}
+
+/* A dialog fades and rises on the way in, and "visible" is true from the first frame of that.
+   Anything measuring what is painted - axe's colour contrast, a screenshot - has to wait for it
+   to arrive, or it measures a panel at 0.4 opacity against whatever is behind it.
+
+   The opacity, not a timeout: the duration is a token and reduced motion takes it to zero. */
+export async function settled(page, selector) {
+  await expect(page.locator(selector)).toBeVisible();
+
+  await page.waitForFunction(
+    (target) => {
+      const node = document.querySelector(target);
+      return Boolean(node) && getComputedStyle(node).opacity === '1';
+    },
+    selector,
+    { timeout: 5000 }
+  );
+}
+
 export async function openApp(page, search = '') {
   await page.goto(BASE + search);
   await page.waitForFunction(
     () =>
       document.querySelectorAll('.memory-list li').length > 0 ||
+      document.getElementById('welcome')?.hidden === false ||
       document.getElementById('memory-empty')?.hidden === false
   );
+}
+
+/* Edit, Move and Delete live in the detail view now, so the way to any of them is through a
+   memory rather than through its pin. One helper, because every spec that used to reach for
+   the popup's buttons has to come this way instead. */
+export async function openDetail(page, { narrow = false, index = 0 } = {}) {
+  if (narrow) {
+    await page.locator('#view-list').click();
+  }
+
+  await page.locator('.memory-list li button').nth(index).click();
+  /* It slides and fades in now, and "visible" is true from the first frame of that. */
+  await settled(page, '#memory-detail');
+}
+
+/* A popup, which is now reached from the map rather than from the list. Seed one memory, or
+   two far enough apart not to cluster: a pin under a cluster is a slow and flaky way in to
+   something that is not what the test is about. */
+export async function openPopup(page, { narrow = false, index = 0 } = {}) {
+  if (narrow) {
+    await page.locator('#view-map').click();
+  }
+
+  /* Dispatched rather than clicked at a point. Where a pin lands depends on where the map
+     centred itself on whatever was seeded, and at 1280 that is often underneath the sidebar;
+     a real click there is intercepted and the test fails for a reason that has nothing to do
+     with what it is testing. Leaflet binds an ordinary click listener to the icon element, so
+     this reaches it. */
+  await page.locator('.leaflet-marker-icon').nth(index).dispatchEvent('click');
+  await expect(page.locator('.leaflet-popup')).toBeVisible();
 }
 
 /* Mocks a place search. Added after the guard route in the fixture, so it wins. */

@@ -17,7 +17,7 @@
   background-color: var(--color-text);
   color: var(--color-bg);
   font-size: var(--text-sm);
-  box-shadow: var(--shadow-toast);
+  box-shadow: var(--elevation-3);
   pointer-events: auto;
 }
 
@@ -25,15 +25,47 @@
   overflow-wrap: anywhere;
 }
 
+/* The toast is the one inverted surface in the app, so its action cannot take the ordinary
+   secondary colours: they are drawn for a light panel and would vanish here. */
 .toast-action {
   flex-shrink: 0;
-  padding: var(--space-1) var(--space-3);
   background-color: transparent;
   border-color: var(--color-bg);
   color: var(--color-bg);
 }
 
-.toast-action:hover {
+.toast-action:hover,
+.toast-action:active {
   background-color: var(--color-bg);
+  border-color: var(--color-bg);
   color: var(--color-text);
+}
+
+/* Up from the edge it is pinned to, and out in place. The region is fixed at the bottom, so
+   rising is the direction it came from.
+
+   An animation rather than a transition: the toast is inserted into the document, and a
+   transition cannot run on an element that was not there a frame ago. */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-3));
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.toast {
+  animation: toast-in var(--duration-base) var(--ease-out);
+}
+
+/* Set when the toast is dismissed. The node is removed when this finishes, so nothing here
+   decides how long it lives: the stylesheet owns the duration and toast.js waits for it. */
+.toast.is-leaving {
+  animation: toast-out var(--duration-base) var(--ease-out) forwards;
+  pointer-events: none;
 }

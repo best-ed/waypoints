@@ -2,6 +2,8 @@ import {
   test,
   expect,
   openApp,
+  openDetail,
+  openPopup,
   seedLibrary,
   mockNominatim,
   generatePhotoBytes,
@@ -14,16 +16,51 @@ import {
    paths that only break once a real browser, real storage and the production headers are all
    involved at once. Each one seeds its own state and shares nothing. */
 
-test('boots with an empty library and says so', async ({ page }) => {
+test('boots with an empty library and offers somewhere to start', { tag: '@smoke' }, async ({ page }) => {
   await page.goto(BASE);
 
-  await expect(page.locator('#memory-empty')).toBeVisible();
+  await expect(page.locator('#welcome')).toBeVisible();
+  await expect(page.locator('#welcome-add')).toBeVisible();
+  await expect(page.locator('#welcome-import')).toBeVisible();
+
+  /* Everything that is an answer to a question nobody with an empty library is asking. */
+  await expect(page.locator('#sidebar-controls')).toBeHidden();
+  await expect(page.locator('#memory-search')).toBeHidden();
+  await expect(page.locator('#filters-toggle')).toBeHidden();
+  await expect(page.locator('.journey')).toBeHidden();
+  await expect(page.locator('#memory-empty')).toBeHidden();
+
   await expect(page.locator('.memory-list li')).toHaveCount(0);
   await expect(page.locator('.leaflet-container')).toBeVisible();
   await expect(page.locator('#add-memory')).toBeEnabled();
 });
 
-test('adds a memory by placing a pin', async ({ page }) => {
+test('the first memory brings the whole sidebar back', async ({ page }) => {
+  /* Placing a pin reverse geocodes it, so the response is mocked rather than the feature
+     being switched off: the guard route is what caught this. */
+  await mockNominatim(page);
+  await page.goto(BASE);
+  await expect(page.locator('#welcome')).toBeVisible();
+
+  await page.locator('#welcome-add').click();
+  const box = await page.locator('#map').boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+
+  await expect(page.locator('#memory-dialog')).toBeVisible();
+  await page.locator('#memory-title').fill('The first one');
+  await page.locator('#memory-date').fill('2025-05-05');
+  await page.locator('#memory-save').click();
+
+  await expect(page.locator('#welcome')).toBeHidden();
+  await expect(page.locator('#sidebar-controls')).toBeVisible();
+  await expect(page.locator('#memory-search')).toBeVisible();
+  await expect(page.locator('.memory-list li')).toHaveCount(1);
+
+  /* One memory is a dot, not a journey, so the control is not there to be explained. */
+  await expect(page.locator('.journey')).toBeHidden();
+});
+
+test('adds a memory by placing a pin', { tag: '@smoke' }, async ({ page }) => {
   /* Suggestions off, so placing a pin sends nothing anywhere and the test does not depend on
      a reverse geocode it did not ask for. */
   await page.addInitScript(() => {
@@ -55,7 +92,7 @@ test('adds a memory by placing a pin', async ({ page }) => {
   expect(Number.isFinite(stored[0].lat)).toBe(true);
 });
 
-test('a photo survives a reload, on whichever engine is running', async ({ page }) => {
+test('a photo survives a reload, on whichever engine is running', { tag: '@smoke' }, async ({ page }) => {
   /* The one that guards the storage shape. WebKit's IndexedDB cannot hold a Blob, so if this
      ever regresses to storing Blobs it fails here and nowhere else. */
   await seedLibrary(page, [memory('a', 'Photo memory', '2025-01-01', -1.29, 36.82, ['x'])]);
@@ -63,8 +100,8 @@ test('a photo survives a reload, on whichever engine is running', async ({ page 
 
   const jpeg = await generatePhotoBytes(page);
 
-  await page.locator('.memory-list li button').first().click();
-  await page.locator('.leaflet-popup button', { hasText: 'Edit' }).click();
+  await openDetail(page);
+  await page.locator('#detail-edit').click();
   await expect(page.locator('#memory-dialog')).toBeVisible();
 
   await page.locator('#memory-photo-input').setInputFiles({
@@ -105,13 +142,22 @@ test('a photo survives a reload, on whichever engine is running', async ({ page 
   expect(shape.bytes).toBeGreaterThan(0);
 
   await openApp(page);
-  await page.locator('.memory-list li button').first().click();
 
-  const thumb = page.locator('.popup-photo-button img').first();
-  await expect(thumb).toBeVisible();
-  expect(await thumb.evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
+  /* The popup shows the thumb as a cover, and the detail view shows the photo itself. Both
+     come out of the same record, so both are checked here. */
+  await openPopup(page);
+  const cover = page.locator('.popup-cover-image');
+  await expect(cover).toBeVisible();
+  expect(await cover.evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
 
-  await page.locator('.popup-photo-button').first().click();
+  await page.locator('.popup-open').click();
+  await expect(page.locator('#memory-detail')).toBeVisible();
+
+  const hero = page.locator('.detail-hero-button img');
+  await expect(hero).toBeVisible();
+  expect(await hero.evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
+
+  await page.locator('.detail-hero-button').click();
   await expect(page.locator('#lightbox')).toBeVisible();
   expect(await page.locator('#lightbox-image').evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
 });
@@ -122,9 +168,8 @@ test('edits a memory and sees it everywhere', async ({ page }) => {
   await seedLibrary(page, [memory('only', 'The only memory', '2025-03-03', -1.29, 36.82, ['x'])]);
   await openApp(page);
 
-  await page.locator('.memory-list li button').first().click();
-  await expect(page.locator('.leaflet-popup')).toBeVisible();
-  await page.locator('.leaflet-popup button', { hasText: 'Edit' }).click();
+  await openDetail(page);
+  await page.locator('#detail-edit').click();
   await page.locator('#memory-title').fill('Renamed on the way through');
   await page.locator('#memory-save').click();
 
@@ -145,9 +190,8 @@ test('deletes a memory and undoes it, keeping the same record', async ({ page })
 
   const before = await page.evaluate(() => JSON.parse(localStorage.getItem('waypoints:v1')).memories);
 
-  await page.locator('.memory-list li button').first().click();
-  await expect(page.locator('.leaflet-popup')).toBeVisible();
-  await page.locator('.leaflet-popup button', { hasText: 'Delete' }).click();
+  await openDetail(page);
+  await page.locator('#detail-delete').click();
 
   await expect(page.locator('.memory-list li')).toHaveCount(1);
   await expect(page.locator('#toast-region')).toContainText('Deleted');
@@ -164,7 +208,7 @@ test('deletes a memory and undoes it, keeping the same record', async ({ page })
   expect(restored.updatedAt).toBe(original.updatedAt);
 });
 
-test('a text filter narrows the list and comes back from the url', async ({ page }) => {
+test('a text filter narrows the list and comes back from the url', { tag: '@smoke' }, async ({ page }) => {
   await seedLibrary(page);
   await openApp(page);
 
@@ -181,6 +225,12 @@ test('a tag filter is a union and comes back from the url', async ({ page }) => 
   await seedLibrary(page);
   await openApp(page);
 
+  /* The tag chips live behind the Filters disclosure, which is closed when nothing is
+     filtering. Restoring from the url below needs no click: a url carrying filters opens
+     the panel itself, which is the point of it doing so. */
+  await page.locator('#filters-toggle').click();
+  await expect(page.locator('#filters-panel')).toBeVisible();
+
   await page.locator('.tag-chip', { hasText: 'trail' }).click();
   await expect(page.locator('.memory-list li')).toHaveCount(2);
 
@@ -192,7 +242,11 @@ test('a tag filter is a union and comes back from the url', async ({ page }) => 
   const restored = page.url();
   await page.goto(restored);
   await expect(page.locator('.memory-list li')).toHaveCount(4);
+  /* Open on arrival, because the url said something was filtering. */
+  await expect(page.locator('#filters-toggle')).toHaveAttribute('aria-expanded', 'true');
   await expect(page.locator('.tag-chip[aria-pressed="true"]')).toHaveCount(2);
+  /* And one removable chip per tag above it. */
+  await expect(page.locator('#active-filters .chip-removable')).toHaveCount(2);
 });
 
 test('a date range filters inclusively and comes back from the url', async ({ page }) => {
@@ -203,6 +257,9 @@ test('a date range filters inclusively and comes back from the url', async ({ pa
      picker fires when a date is chosen. Playwright's WebKit has no native date control and
      falls back to a text input, where change only arrives on blur; real Safari has supported
      type="date" for years, so this is the harness, not the app. */
+  await page.locator('#filters-toggle').click();
+  await expect(page.locator('#filters-panel')).toBeVisible();
+
   await page.locator('#filter-from').fill('2024-01-20');
   await page.locator('#filter-from').blur();
   await page.locator('#filter-to').fill('2024-06-15');
@@ -250,22 +307,21 @@ test('journey mode enters, plays, and leaves no timer behind on Escape', async (
   await openApp(page);
 
   await page.locator('#journey-toggle').click();
-  await expect(page.locator('#journey-controls')).toBeVisible();
-  await expect(page.locator('#journey-summary')).toContainText('memories');
+  await expect(page.locator('#journey-player')).toBeVisible();
 
-  await page.locator('#journey-play').click();
-  await expect(page.locator('#journey-progress')).toContainText('1');
+  await page.locator('#player-play').click();
+  await expect(page.locator('#player-position')).toContainText('1 of');
 
   /* Let the dwell timer fire at least once and move the playback on. */
-  await expect(page.locator('#journey-progress')).toContainText('2', { timeout: 15000 });
+  await expect(page.locator('#player-position')).toContainText('2 of', { timeout: 15000 });
 
   await page.keyboard.press('Escape');
-  await expect(page.locator('#journey-controls')).toBeHidden();
+  await expect(page.locator('#journey-player')).toBeHidden();
 
   /* Captured after the exit, not before it: leaving journey mode resets the playback, so the
      readout is expected to change once. What must not happen is it changing again. */
   await page.waitForTimeout(500);
-  const settled = await page.locator('#journey-progress').textContent();
+  const settled = await page.locator('#player-position').textContent();
 
   /* The leak, observed rather than counted. Counting setTimeout calls says nothing here -
      Leaflet schedules dozens and lets most of them fire - so what is asserted instead is the
@@ -273,9 +329,9 @@ test('journey mode enters, plays, and leaves no timer behind on Escape', async (
      The dwell is 3500ms, so this waits past two of them. */
   await page.waitForTimeout(8000);
 
-  await expect(page.locator('#journey-controls')).toBeHidden();
-  expect(await page.locator('#journey-progress').textContent()).toBe(settled);
-  /* .pin-journey, not .journey-step: the latter is the class on the Previous and Next
+  await expect(page.locator('#journey-player')).toBeHidden();
+  expect(await page.locator('#player-position').textContent()).toBe(settled);
+  /* .pin-journey, not .player-step: the latter is the class on the Previous and Next
      buttons. The pins are what must go back to being ordinary pins. */
   await expect(page.locator('.pin-journey')).toHaveCount(0);
 });
@@ -346,7 +402,7 @@ test('imports a file it just exported, changing nothing', async ({ page }) => {
   expect(stored.filter((m) => m.id === 'm1')).toHaveLength(1);
 });
 
-test('a hostile import file pollutes nothing and raises no dialog', async ({ page }) => {
+test('a hostile import file pollutes nothing and raises no dialog', { tag: '@smoke' }, async ({ page }) => {
   await seedLibrary(page);
   await openApp(page);
 
@@ -399,8 +455,11 @@ test('a hostile import file pollutes nothing and raises no dialog', async ({ pag
   const state = await page.evaluate(() => ({
     polluted: {}.polluted,
     objectPolluted: Object.prototype.polluted,
-    /* The title must be text, not markup. */
-    injected: document.querySelectorAll('.memory-list img').length,
+    /* The title must be text, not markup. Every card carries a cover image of its own now,
+       so the count is of images the list did not put there itself. */
+    injected: [...document.querySelectorAll('.memory-list img')].filter(
+      (image) => !image.classList.contains('memory-cover-image')
+    ).length,
     scripts: document.querySelectorAll('.memory-list script').length
   }));
 
@@ -411,7 +470,97 @@ test('a hostile import file pollutes nothing and raises no dialog', async ({ pag
   expect(dialogs).toBe(0);
 });
 
-test('an explicit theme is applied before the first paint', async ({ page }) => {
+test('a card shows its photo, and the list does not hoard object URLs', async ({ page }) => {
+  /* The list is the one surface with no single moment when every URL it made is finished
+     with, so it has an owner that releases on exit and caps what it holds. This is the
+     guarantee that matters: scrolling a long list cannot grow without limit. */
+  await page.addInitScript(() => {
+    window.__live = 0;
+    window.__peak = 0;
+    const create = URL.createObjectURL.bind(URL);
+    const revoke = URL.revokeObjectURL.bind(URL);
+    URL.createObjectURL = (blob) => {
+      window.__live += 1;
+      if (window.__live > window.__peak) window.__peak = window.__live;
+      return create(blob);
+    };
+    URL.revokeObjectURL = (url) => {
+      window.__live -= 1;
+      return revoke(url);
+    };
+  });
+
+  await seedLibrary(page, [memory('a', 'Has a photo', '2025-01-01', -1.29, 36.82, ['x'])]);
+  await openApp(page);
+
+  const jpeg = await generatePhotoBytes(page);
+  await openDetail(page);
+  await page.locator('#detail-edit').click();
+  await page.locator('#memory-photo-input').setInputFiles({
+    name: 'generated.jpg',
+    mimeType: 'image/jpeg',
+    buffer: Buffer.from(jpeg, 'base64')
+  });
+  await expect(page.locator('#memory-photos img')).toHaveCount(1);
+  await page.locator('#memory-save').click();
+  await expect(page.locator('#memory-dialog')).toBeHidden();
+
+  /* Back to the list, which is where a card is. While the detail view is open the list is
+     display:none, so its observer never fires and no row ever asks for its cover: hidden
+     rows not loading pictures is the lazy loading working, not the cover failing. */
+  await page.locator('#detail-back').click();
+  await expect(page.locator('#memory-detail')).toBeHidden();
+
+  /* The card picks the cover up without a reload. */
+  const cover = page.locator('.memory-cover-image').first();
+  await expect(cover).toBeVisible();
+  await expect(cover).toHaveAttribute('src', /^blob:/);
+
+  /* A memory with no photos keeps its placeholder rather than a broken image. */
+  const stats = await page.evaluate(() => ({ live: window.__live, peak: window.__peak }));
+  expect(stats.peak).toBeLessThan(20);
+  expect(stats.live).toBeLessThanOrEqual(stats.peak);
+});
+
+test('the year headings group the list and stick to the top', async ({ page }) => {
+  await seedLibrary(page);
+  await openApp(page);
+
+  /* The seeded library spans 2023 to 2025, newest first. */
+  const years = await page.locator('.memory-list .year-heading').allTextContents();
+
+  expect(years.length).toBeGreaterThan(1);
+  expect(years).toEqual([...years].sort().reverse());
+
+  /* Every card is an li inside a list, not a loose li in a div. */
+  const stray = await page.evaluate(
+    () => [...document.querySelectorAll('.memory-list li')].filter((li) => li.parentElement.tagName !== 'UL').length
+  );
+  expect(stray).toBe(0);
+
+  const position = await page.evaluate(
+    () => getComputedStyle(document.querySelector('.year-heading')).position
+  );
+  expect(position).toBe('sticky');
+});
+
+test('the placement hint appears while placing and leaves with the mode', async ({ page }) => {
+  await mockNominatim(page);
+  await seedLibrary(page);
+  await openApp(page);
+
+  const hint = page.locator('#placement-hint');
+  await expect(hint).toBeHidden();
+
+  await page.locator('#add-memory').click();
+  await expect(hint).toBeVisible();
+  await expect(hint).toContainText('where it happened');
+
+  await page.keyboard.press('Escape');
+  await expect(hint).toBeHidden();
+});
+
+test('an explicit theme is applied before the first paint', { tag: '@smoke' }, async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem(
       'waypoints:settings',

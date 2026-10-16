@@ -1,5 +1,114 @@
 # Changelog
 
+## 1.1.0 (2026-10-16)
+
+A six day pass over the whole interface. Nothing about how memories are stored has changed, so
+an export from 1.0 imports into this without a migration.
+
+### The map in dark mode
+
+- **The map is dimmed in dark mode.** The tile colours are turned over so the map sits inside
+  the dark interface instead of glaring out of it. Pins, photos, popups and the journey line
+  are untouched, and **Settings -> Dim the map in dark mode** turns it off. It is off entirely
+  under forced colours, where the palette has already been decided.
+
+### Reading a memory
+
+- **A memory has a view of its own.** The note in full, a hero photo with the rest of them
+  under it, the date written out, the place, the tags and the coordinates. It opens where the
+  list was, so the map is still beside it, and it takes the whole screen on a phone.
+- The popup is a preview now: the cover, the title, a line of date and place, and Open. Edit,
+  Move, Delete and the tags moved into the view, where there is room for them.
+- Previous and Next step through the list as it currently stands, and stop at both ends.
+- **A memory has a link.** `?memory=<id>` opens it, the browser's Back button closes it, and
+  the link carries whatever filters were on with it.
+- The popup's close control is a real button with a real name. It was a link pointing at
+  nothing, which is Leaflet's own markup and which no screen reader could make sense of.
+
+### Journeys
+
+- **A player, over the map rather than in the sidebar.** It says which stop the journey is on by
+  name and date, how far through it you are, and gives you a scrubber to move it.
+- Drag the scrubber or arrow along it to go to any stop.
+- **Slow, Normal and Fast**, for reading a note at each stop or seeing the shape of the whole
+  thing. It goes back to Normal when you leave the journey.
+- **The route is drawn as one line again**, which at a world view used to be a soft teal band
+  rather than a path. The line thins as you pull back, and the direction arrows are spaced evenly
+  along what is still ahead instead of one per leg.
+- Arriving at a stop pulses its pin, which matters most where two stops are a few streets apart.
+- **Opening a memory during a journey takes the journey with you**, paused, without moving the
+  map. Going back leaves it where you left it.
+- Finishing shows what the journey was, with Replay and Exit.
+
+### Writing a memory
+
+- **Tags are tokens.** Type and press Enter, and the ones already in your library are offered
+  as you go. Each token says what will be stored and carries its own remove button, instead of
+  a line of commas that quietly became something else on save.
+- **Photos have an order, and the first one is the cover.** Drag them, or use Move earlier,
+  Move later and Make cover on each tile. Moves are announced.
+- Drop photos onto the form, or paste one straight in.
+- **Leaving a half-written memory asks first**, inside the dialog rather than through a browser
+  prompt, and so does reloading the page. A form you have not touched still closes without a
+  word.
+- An error clears as soon as that field is right, rather than waiting for the next save.
+- Ctrl+Enter and Cmd+Enter save from anywhere in the form.
+- The note grows with what you write in it, up to a point, and Save stays on screen on a phone.
+- The fields read title, date, place, note: the note is no longer between the date and the
+  place it belongs to.
+- The import preview now sits clearly in front of Settings instead of looking like part of it.
+
+### The sidebar and the list
+
+- **The memories come first.** The filter controls live behind one Filters button with a count
+  badge, so the first memory's title moves from 618px down the viewport to 341px and eight
+  cards are visible instead of three.
+- Removable chips above the list say what is narrowing it, with one Clear all. There used to
+  be two clear-filters controls, visible at once, doing the same thing.
+- The list is grouped by year with sticky headings, and each row is a card with the memory's
+  first photo on it.
+- A first run shows a welcome rather than a search box, a filter panel and a journey control
+  that cannot be used.
+- Placing a pin says so, over the map.
+- Choosing a card opens the memory rather than flying the map to its pin. The pin still
+  highlights, and Show on map is there when moving the map is the point.
+- A no-results message names what excluded everything rather than saying "the current
+  filters".
+- The timeline no longer renders as a solid block when one memory matches.
+
+### Design
+
+- A warm palette: paper in light, charcoal in dark, with the rust accent unchanged.
+- Fraunces, self-hosted and subset, for headings and the titles of memories.
+- A type scale, a spacing scale, three elevation levels and motion tokens, with reduced motion
+  handled once rather than per rule.
+- An icon set drawn for the app, on every control that has room for one.
+- Buttons, form controls and chips as primitives, so a filter chip and a tag in a popup no
+  longer look identical, and a photo's Remove button no longer covers the photo.
+- Boolean settings are switches.
+- Dialog actions stay on screen when the form is taller than the window.
+- Dialogs, the detail view, toasts and the end of a journey arrive and leave rather than
+  appearing. All of it is off under reduced motion.
+
+### On a phone
+
+- **The place search is an icon until you want it.** It used to be a card across the top of the
+  map, about a tenth of the screen, whether or not anybody was searching.
+- Every control that is tapped is at least 44px, including the map's zoom buttons, the pins and
+  the settings switches. Six of them were 32px wide: the rule was there and a size variant was
+  quietly beating it.
+- The journey player is a bar at the bottom of the map rather than a floating card, so it
+  covers neither the zoom control nor the attribution.
+
+### Known limits
+
+- **The map is dimmed in dark mode rather than drawn dark.** No keyless provider offers a dark
+  raster basemap. Settings turns the dimming off if you prefer the bright one.
+- The date fields are the browser's own, so they look like your operating system rather than
+  like the rest of the app.
+- Memories live in this browser on this device. There is no sync, and clearing site data
+  deletes them. Export regularly.
+
 ## 1.0.1 (2026-10-09)
 
 ### Fixed

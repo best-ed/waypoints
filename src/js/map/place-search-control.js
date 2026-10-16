@@ -14,10 +14,29 @@ function element(tag, className, text) {
   return node;
 }
 
+const PANEL_ID = 'place-search-panel';
+
 /* Every string reaching this module came from Nominatim, so all of it goes in through
-   textContent. Nothing here builds markup from a response. */
-export function createPlaceSearchControl({ map, onSearch, onChoose, onClear }) {
+   textContent. Nothing here builds markup from a response.
+
+   On a phone the panel is collapsed to an icon. At rest it was a full-width card about 70px
+   tall sitting exactly where the map's own content is, which is a tenth of the screen given
+   permanently to a control used occasionally. isNarrow is injected rather than read here,
+   because map/ does not get to ask the DOM about the layout; main.js owns that question.
+
+   createIcon likewise: this module is in map/ and ui/icons.js is not its to import. */
+export function createPlaceSearchControl({
+  map,
+  onSearch,
+  onChoose,
+  onClear,
+  isNarrow = () => false,
+  createIcon = null
+}) {
   const container = L.DomUtil.create('div', 'leaflet-control place-search');
+  const toggle = element('button', 'button icon-button place-search-toggle');
+  const panel = element('div', 'place-search-panel');
+  const close = element('button', 'button button-sm icon-only place-search-close');
   const form = element('form', 'place-search-form');
   const input = element('input', 'place-search-input');
   const submit = element('button', 'button place-search-submit', 'Search');
@@ -28,6 +47,22 @@ export function createPlaceSearchControl({ map, onSearch, onChoose, onClear }) {
 
   let results = [];
   let activeIndex = -1;
+
+  toggle.type = 'button';
+  /* Icon only at this size, so the name has to come from here. */
+  toggle.setAttribute('aria-label', 'Search places');
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-controls', PANEL_ID);
+
+  close.type = 'button';
+  close.setAttribute('aria-label', 'Close place search');
+
+  if (createIcon) {
+    toggle.append(createIcon('search', { size: 20 }));
+    close.append(createIcon('close', { size: 16 }));
+  }
+
+  panel.id = PANEL_ID;
 
   input.type = 'search';
   input.placeholder = 'Search places';
@@ -45,8 +80,9 @@ export function createPlaceSearchControl({ map, onSearch, onChoose, onClear }) {
   list.hidden = true;
   credit.hidden = true;
 
-  form.append(input, submit);
-  container.append(form, status, hint, list, credit);
+  form.append(input, submit, close);
+  panel.append(form, status, hint, list, credit);
+  container.append(toggle, panel);
 
   /* Without this the map pans under a drag on the control and zooms on a scroll over it. */
   L.DomEvent.disableClickPropagation(container);
@@ -172,11 +208,44 @@ export function createPlaceSearchControl({ map, onSearch, onChoose, onClear }) {
       choose(activeIndex);
     } else if (event.key === 'Escape') {
       event.stopPropagation();
+
+      /* On a phone Escape puts the whole control away, because the field is the thing covering
+         the map. On a wide screen there is nothing to put away, so it clears as it always did. */
+      if (isNarrow() && collapse()) {
+        return;
+      }
+
       closeResults();
       setStatus('');
       onClear();
     }
   });
+
+  /* Only ever meaningful where the toggle is on screen. Above the breakpoint the panel is
+     always open and the two controls below are display:none, so nothing can reach this. */
+  function expand() {
+    container.classList.add('is-open');
+    toggle.setAttribute('aria-expanded', 'true');
+    input.focus();
+  }
+
+  function collapse() {
+    if (!container.classList.contains('is-open')) {
+      return false;
+    }
+
+    container.classList.remove('is-open');
+    toggle.setAttribute('aria-expanded', 'false');
+    closeResults();
+    setStatus('');
+    onClear();
+    /* Back to the control that opened it, which is the only thing left on screen. */
+    toggle.focus();
+    return true;
+  }
+
+  toggle.addEventListener('click', () => expand());
+  close.addEventListener('click', () => collapse());
 
   const control = L.control({ position: 'topleft' });
   control.onAdd = () => container;
@@ -190,7 +259,8 @@ export function createPlaceSearchControl({ map, onSearch, onChoose, onClear }) {
       closeResults();
       setStatus(message);
     },
-    focus: () => input.focus(),
+    focus: () => (isNarrow() ? expand() : input.focus()),
+    collapse,
     getQuery: () => input.value.trim()
   };
 }

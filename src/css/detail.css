@@ -1,0 +1,228 @@
+/* The detail view. It takes the sidebar's place rather than floating over it, which is why
+   there is no scrim, no elevation and no shadow here: nothing is above anything else. A
+   dialog would have been easier and wrong - a memory is not a decision to confirm, it is the
+   thing the app is for, and reading it should not black out the map it sits on. */
+
+.detail {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  background-color: var(--color-surface);
+
+  /* Opening a memory is the one navigation in this app, so it arrives from the side the list
+     it replaced is on rather than appearing in place. Transitions outrank even an !important
+     declaration, which is what lets this animate out of [hidden] at all; where the discrete
+     half is unsupported the rule is dropped and the view switches instantly, as before.
+
+     Focus is unaffected: detail-view.js moves it when it opens and when it closes, and neither
+     waits on a transition. */
+  opacity: 1;
+  transform: none;
+  transition: opacity var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out),
+    display var(--duration-base) allow-discrete;
+}
+
+.detail[hidden] {
+  opacity: 0;
+  transform: translateX(var(--space-4));
+}
+
+@starting-style {
+  .detail:not([hidden]) {
+    opacity: 0;
+    transform: translateX(var(--space-4));
+  }
+}
+
+/* Pinned, so Back and the two step buttons stay reachable however long the note is. The
+   border is the only thing separating it from the content, as with the sidebar header. */
+.detail-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.detail-steps {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.detail-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.detail-title {
+  margin: 0;
+  padding: var(--space-4) var(--space-4) var(--space-0);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-display);
+  line-height: var(--line-tight);
+  /* A title can be one long unbroken word, and the sidebar is narrow. */
+  overflow-wrap: anywhere;
+}
+
+/* The heading takes focus when the view opens, so it needs a focus ring of its own: without
+   one, a keyboard reader is told where they are and shown nothing. */
+.detail-title:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.detail-date,
+.detail-place {
+  padding: var(--space-1) var(--space-4) var(--space-0);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.detail-note {
+  padding: var(--space-4);
+  /* Keeps the writer's own line breaks without injecting <br> into the document. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-0) var(--space-4);
+  list-style: none;
+}
+
+/* Shape and colour come from .chip and .chip-tag in primitives.css. These are display tags
+   that happen to be actionable, which is why they keep the quiet label treatment rather than
+   the filter chip's edge and fill: the state they would be showing lives in the sidebar. */
+.detail-tag:hover {
+  color: var(--color-accent);
+}
+
+.detail-coordinates {
+  padding: var(--space-4);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  /* Numbers read better aligned, and these are the only ones in the app that get compared
+     against something outside it. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Outside the scroller, so a long note scrolls past them rather than carrying them with it.
+   They wrap at the sidebar's width: four labelled buttons do not fit on one line at 320px,
+   and cutting them down to icons would leave Delete and Move as two unlabelled squares next
+   to each other. */
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+/* ---- photos ------------------------------------------------------------------- */
+
+/* 16:10 and cropped. A memory's photos are whatever shape they came out of the camera, and a
+   column of letterboxed frames at their own ratios reads as a gallery of mistakes; the
+   lightbox is where a photo is seen whole. */
+.detail-hero {
+  aspect-ratio: 16 / 10;
+  background-color: var(--color-surface-raised);
+}
+
+.detail-hero-button,
+.detail-thumb-button {
+  display: block;
+  padding: var(--space-0);
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.detail-hero-button {
+  width: 100%;
+  height: 100%;
+}
+
+.detail-hero-button img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.detail-hero-button:focus-visible,
+.detail-thumb-button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  /* Inside, because the hero runs to both edges of the sidebar and an outset ring would be
+     clipped by the scroller. */
+  outline-offset: -3px;
+}
+
+.detail-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-4) var(--space-0);
+  list-style: none;
+}
+
+.detail-thumb-button {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.detail-thumb-button img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/* ---- what the detail replaces ------------------------------------------------ */
+
+/* While a memory is open the list and everything above it are gone. Hidden rather than
+   unmounted, so the scroll position of the list, the open filters panel and the search box
+   are all exactly as they were when Back comes back to them. */
+body[data-detail] .sidebar-header,
+body[data-detail] .memory-list,
+body[data-detail] .sidebar-empty {
+  display: none;
+}
+
+/* The sidebar stops being a column beside the map and becomes the page the memory is on.
+   Written against .app-body rather than straight at .sidebar so it outranks the narrow
+   rules in mobile.css by specificity rather than by which stylesheet happens to load last. */
+@media (max-width: 720px) {
+  body[data-detail] .app-body .sidebar {
+    display: flex;
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    border-right: none;
+  }
+
+  body[data-detail] .app-body .app-main {
+    display: none;
+  }
+
+  /* Nothing to switch between while one memory is open. display rather than the hidden
+     attribute, because the attribute belongs to the view switch itself: it uses it to take
+     the control off a wide screen, and the two must not fight over the same property. */
+  body[data-detail] #view-switch {
+    display: none;
+  }
+}

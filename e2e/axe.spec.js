@@ -4,7 +4,11 @@ import {
   test,
   expect,
   openApp,
+  openDetail,
+  openPopup,
   seedLibrary,
+  seedSettings,
+  settled,
   mockNominatim,
   generatePhotoBytes,
   memory,
@@ -24,11 +28,8 @@ const WIDTHS = [
 
 const THEMES = ['light', 'dark'];
 
-async function analyse(page, { disable = [] } = {}) {
-  let builder = new AxeBuilder({ page }).withTags(TAGS);
-  if (disable.length > 0) builder = builder.disableRules(disable);
-
-  const results = await builder.analyze();
+async function analyse(page) {
+  const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
 
   /* Named, so a failure says which rule and where rather than just a count. */
   return results.violations.map((violation) => ({
@@ -46,7 +47,7 @@ const STATES = {
     await openApp(page);
   },
 
-  async 'add dialog'(page) {
+  async 'add dialog'(page, { narrow }) {
     /* Placing a pin reverse geocodes it, so the response is mocked rather than the feature
        being switched off: the hint and the filled place name are part of what is audited. */
     await mockNominatim(page);
@@ -54,17 +55,98 @@ const STATES = {
        opened a marker popup instead of placing anything. The dialog is what is being audited. */
     await seedLibrary(page, []);
     await page.goto(BASE);
+    /* An empty library opens on the List pane at narrow, because that is where the welcome
+       is. Placing a pin means being on the map. */
+    if (narrow) await page.locator('#view-map').click();
     await page.locator('#add-memory').click();
     const box = await page.locator('#map').boundingBox();
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-    await expect(page.locator('#memory-dialog')).toBeVisible();
+    await settled(page, '#memory-dialog');
+  },
+
+  /* The tag suggestions, which are a listbox over a combobox: the one popup in the app that
+     has to carry its state in attributes rather than in focus. */
+  async 'tag autocomplete open'(page, { narrow }) {
+    /* Reached through Edit rather than by placing a pin: the suggestions come from the tags
+       already in the library, and with a library seeded the pins sit under the middle of the
+       map at 1280, where a click opens a popup instead of placing anything. */
+    await seedLibrary(page);
+    await openApp(page);
+    await openDetail(page, { narrow });
+    await page.locator('#detail-edit').click();
+    await settled(page, '#memory-dialog');
+
+    await page.locator('#memory-tags').click();
+    await page.locator('#memory-tags').type('t');
+    await expect(page.locator('#memory-tag-listbox')).toBeVisible();
+    await page.keyboard.press('ArrowDown');
+  },
+
+  /* A full grid: six tiles, each with a cover badge or three move controls over an 80px
+     picture, which is the densest thing in the app. */
+  async 'six photos'(page, { narrow }) {
+    await seedSettings(page, { suggestPlaceNames: false });
+    await seedLibrary(page, []);
+    await page.goto(BASE);
+    if (narrow) await page.locator('#view-map').click();
+    await page.locator('#add-memory').click();
+    const box = await page.locator('#map').boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await settled(page, '#memory-dialog');
+
+    const jpeg = await generatePhotoBytes(page);
+    await page.locator('#memory-photo-input').setInputFiles(
+      ['a', 'b', 'c', 'd', 'e', 'f'].map((name) => ({
+        name: name + '.jpg',
+        mimeType: 'image/jpeg',
+        buffer: Buffer.from(jpeg, 'base64')
+      }))
+    );
+    await expect(page.locator('#memory-photos img')).toHaveCount(6);
+  },
+
+  /* The question asked in the footer's place when leaving would cost something. */
+  async 'discard prompt'(page, { narrow }) {
+    await seedSettings(page, { suggestPlaceNames: false });
+    await seedLibrary(page, []);
+    await page.goto(BASE);
+    if (narrow) await page.locator('#view-map').click();
+    await page.locator('#add-memory').click();
+    const box = await page.locator('#map').boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await settled(page, '#memory-dialog');
+
+    await page.locator('#memory-title').fill('Worth keeping');
+    await page.locator('#memory-cancel').click();
+    await expect(page.locator('#memory-discard')).toBeVisible();
+  },
+
+  /* Nothing saved yet: the welcome block, with the search, the filters and the journey all
+     gone. A state nobody reaches twice, and the one that decides whether they come back. */
+  async 'first run'(page) {
+    await seedLibrary(page, []);
+    await page.goto(BASE);
+    await expect(page.locator('#welcome')).toBeVisible();
+  },
+
+  /* The filter controls are behind a disclosure now, so axe never saw them unless something
+     opened it. */
+  async 'filters expanded'(page, { narrow }) {
+    await seedLibrary(page);
+    await openApp(page);
+    if (narrow) await page.locator('#view-list').click();
+    await page.locator('#filters-toggle').click();
+    await expect(page.locator('#filters-panel')).toBeVisible();
+    /* With a tag on there is also a removable chip and a Clear all to audit. */
+    await page.locator('.tag-chip').first().click();
+    await expect(page.locator('#active-filters .chip-removable')).toHaveCount(1);
   },
 
   async settings(page) {
     await seedLibrary(page);
     await openApp(page);
     await page.locator('#open-settings').click();
-    await expect(page.locator('#settings-dialog')).toBeVisible();
+    await settled(page, '#settings-dialog');
   },
 
   async lightbox(page, { narrow }) {
@@ -72,9 +154,8 @@ const STATES = {
     await openApp(page);
 
     const jpeg = await generatePhotoBytes(page);
-    if (narrow) await page.locator('#view-list').click();
-    await page.locator('.memory-list li button').first().click();
-    await page.locator('.leaflet-popup button', { hasText: 'Edit' }).click();
+    await openDetail(page, { narrow });
+    await page.locator('#detail-edit').click();
     await page.locator('#memory-photo-input').setInputFiles({
       name: 'generated.jpg',
       mimeType: 'image/jpeg',
@@ -84,10 +165,8 @@ const STATES = {
     await page.locator('#memory-save').click();
     await expect(page.locator('#memory-dialog')).toBeHidden();
 
-    if (narrow) await page.locator('#view-list').click();
-    await page.locator('.memory-list li button').first().click();
-    await page.locator('.popup-photo-button').first().click();
-    await expect(page.locator('#lightbox')).toBeVisible();
+    await page.locator('.detail-hero-button').click();
+    await settled(page, '#lightbox');
   },
 
   /* The state that shipped broken in 1.0.0. Leaflet paints the popup wrapper white from its
@@ -104,9 +183,8 @@ const STATES = {
     await openApp(page);
 
     const jpeg = await generatePhotoBytes(page);
-    if (narrow) await page.locator('#view-list').click();
-    await page.locator('.memory-list li button').first().click();
-    await page.locator('.leaflet-popup button', { hasText: 'Edit' }).click();
+    await openDetail(page, { narrow });
+    await page.locator('#detail-edit').click();
     await page.locator('#memory-photo-input').setInputFiles({
       name: 'generated.jpg',
       mimeType: 'image/jpeg',
@@ -116,49 +194,99 @@ const STATES = {
     await page.locator('#memory-save').click();
     await expect(page.locator('#memory-dialog')).toBeHidden();
 
-    if (narrow) await page.locator('#view-list').click();
-    await page.locator('.memory-list li button').first().click();
-    await expect(page.locator('.leaflet-popup')).toBeVisible();
-    /* The strip is filled lazily from Leaflet's contentupdate, so the popup is not finished
+    await page.locator('#detail-back').click();
+    await openPopup(page, { narrow });
+    /* The cover is filled lazily from Leaflet's contentupdate, so the popup is not finished
        the moment it appears. */
-    await expect(page.locator('.popup-photo-button img')).toHaveCount(1);
+    await expect(page.locator('.popup-cover-image')).toBeVisible();
   },
 
+  /* The memory, in full, where the list was. Audited with photos because the hero and the
+     strip are the parts that carry images and buttons around them. */
+  async 'detail with photos'(page, { narrow }) {
+    await seedLibrary(page, [
+      memory('p', 'Ridge trail at the long rains', '2025-01-01', -1.29, 36.82, ['trail', 'rain'], {
+        note: 'Walked up from the gate in the afternoon and the cloud came in about an hour later.',
+        placeName: 'Ngong Hills, Kajiado'
+      })
+    ]);
+    await openApp(page);
+
+    const jpeg = await generatePhotoBytes(page);
+    await openDetail(page, { narrow });
+    await page.locator('#detail-edit').click();
+    await page.locator('#memory-photo-input').setInputFiles([
+      { name: 'one.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(jpeg, 'base64') },
+      { name: 'two.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(jpeg, 'base64') }
+    ]);
+    await expect(page.locator('#memory-photos img')).toHaveCount(2);
+    await page.locator('#memory-save').click();
+    await expect(page.locator('#memory-dialog')).toBeHidden();
+
+    await expect(page.locator('.detail-hero-button img')).toBeVisible();
+    await expect(page.locator('.detail-thumb-button')).toHaveCount(2);
+  },
+
+  /* And without, where there is no hero at all rather than a frame around nothing, and
+     Previous is aria-disabled at the top of the list. */
+  async 'detail without photos'(page, { narrow }) {
+    await seedLibrary(page);
+    await openApp(page);
+    await openDetail(page, { narrow });
+    await expect(page.locator('#detail-title')).toBeVisible();
+  },
+
+  /* The toggle is in the sidebar and the player is over the map, so at narrow the two are on
+     different panes: entering the journey means going back to the map to see it. */
   async journey(page, { narrow }) {
     await seedLibrary(page);
     await openApp(page);
     if (narrow) await page.locator('#view-list').click();
     await page.locator('#journey-toggle').click();
-    await expect(page.locator('#journey-controls')).toBeVisible();
-    await page.locator('#journey-play').click();
-    await expect(page.locator('#journey-progress')).toContainText('1');
+    if (narrow) await page.locator('#view-map').click();
+    await expect(page.locator('#journey-player')).toBeVisible();
+    await page.locator('#player-play').click();
+    await expect(page.locator('#player-position')).toContainText('1 of');
+  },
+
+  async 'journey end card'(page, { narrow }) {
+    await seedLibrary(page);
+    await openApp(page);
+    if (narrow) await page.locator('#view-list').click();
+    await page.locator('#journey-toggle').click();
+    if (narrow) await page.locator('#view-map').click();
+
+    /* Scrubbed to the last stop rather than stepped there: Next is aria-disabled at the end
+       and Playwright will not click one of those. */
+    const scrubber = page.locator('#player-scrubber');
+    await scrubber.fill(await scrubber.getAttribute('max'));
+    await page.locator('#player-play').click();
+
+    await expect(page.locator('#player-end')).toBeVisible({ timeout: 10000 });
   }
 };
 
-/* Rules switched off for one state, each with the reason and each a known issue rather than
-   an accepted one.
+/* Nothing is switched off. 1.0.1 had to turn skip-link off for the open popup, because
+   Leaflet builds its close control as <a href="#close"> and "#close" matches no element; the
+   popup carries a real button now, so the exemption is gone and the state passes without it. */
 
-   skip-link on the open popup: Leaflet builds its close control as <a href="#close">, and
-   "#close" matches no element. axe's skip-link rule only looks at links near the start of the
-   document, so this surfaces at 375 - where the sidebar is hidden and the close button becomes
-   the first link - and not at 1280. It is Leaflet's markup and it is wrong: a control that
-   closes something is a button, not a link to nowhere. Replacing it means taking over a
-   control Leaflet binds its own handler to, which is more than a patch release should carry,
-   so it is turned off here and fixed on the UI branch. */
-const DISABLED = {
-  'open popup': ['skip-link']
-};
+/* The two states the smoke suite carries: the page as it opens, and a memory open in it. They
+   are the states every other one is reached through, so a violation in either is a violation
+   everywhere. */
+const SMOKE_STATES = new Set(['default', 'detail with photos']);
 
 for (const [name, reach] of Object.entries(STATES)) {
   for (const theme of THEMES) {
     for (const size of WIDTHS) {
-      test(`axe: ${name}, ${theme}, ${size.label}`, async ({ page }) => {
+      const tag = SMOKE_STATES.has(name) ? { tag: '@smoke' } : {};
+
+      test(`axe: ${name}, ${theme}, ${size.label}`, tag, async ({ page }) => {
         await page.setViewportSize({ width: size.width, height: size.height });
         await page.emulateMedia({ colorScheme: theme });
 
         await reach(page, { narrow: size.width <= 720 });
 
-        const violations = await analyse(page, { disable: DISABLED[name] ?? [] });
+        const violations = await analyse(page);
         expect(violations, JSON.stringify(violations, null, 1)).toEqual([]);
       });
     }
@@ -184,8 +312,7 @@ for (const theme of THEMES) {
       })
     ]);
     await openApp(page);
-    await page.locator('.memory-list li button').first().click();
-    await expect(page.locator('.leaflet-popup')).toBeVisible();
+    await openPopup(page);
 
     const measured = await page.evaluate(() => {
       const channel = (value) => {
@@ -209,7 +336,7 @@ for (const theme of THEMES) {
         return null;
       };
 
-      return ['.popup-title', '.popup-date', '.popup-place', '.popup-note'].map((selector) => {
+      return ['.popup-title', '.popup-meta'].map((selector) => {
         const node = document.querySelector(selector);
         if (!node) return { selector, missing: true };
         const background = painted(node);

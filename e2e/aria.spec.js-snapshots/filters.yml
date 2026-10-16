@@ -1,0 +1,22 @@
+- text: Search memories
+- searchbox "Search memories"
+- list "Active filters":
+  - listitem:
+    - 'button "Remove filter: trail"'
+- button "Filters, 1 active" [expanded]: Filters 1
+- list "Filter by tag":
+  - listitem:
+    - button "food 2"
+  - listitem:
+    - button "trail 2" [pressed]
+  - listitem:
+    - button "view 2"
+- text: From
+- textbox "From"
+- text: To
+- textbox "To"
+- slider "Start date": /\d+/
+- slider "End date": /\d+/
+- paragraph: /\d+ Mar \d+ to \d+ Jan \d+/
+- paragraph: 2 of 5 memories
+- button "Journey"

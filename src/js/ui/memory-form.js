@@ -1,4 +1,9 @@
-import { parseTagInput, todayLocalDate } from './form-values.js';
+import { todayLocalDate } from './form-values.js';
+import { createTagInput } from './tag-input.js';
+import { isFormDirty } from './form-dirty.js';
+import { createAutoGrow } from './autogrow.js';
+import { normalizeMemoryInput } from '../data/normalize.js';
+import { validateMemory } from '../data/validate.js';
 
 const SAVED = 'saved';
 const CANCELLED = 'cancelled';
@@ -11,11 +16,13 @@ const COPY = {
   [EDIT]: { heading: 'Edit memory', submit: 'Save changes' }
 };
 
+/* In the order the form shows them, which is what decides where focus lands when a submit
+   reports more than one thing wrong. */
 const FIELDS = [
   { name: 'title', inputId: 'memory-title', errorId: 'memory-title-error' },
   { name: 'date', inputId: 'memory-date', errorId: 'memory-date-error' },
-  { name: 'note', inputId: 'memory-note', errorId: 'memory-note-error' },
   { name: 'placeName', inputId: 'memory-place-name', errorId: 'memory-place-name-error' },
+  { name: 'note', inputId: 'memory-note', errorId: 'memory-note-error' },
   { name: 'tags', inputId: 'memory-tags', errorId: 'memory-tags-error', hintId: 'memory-tags-hint' }
 ];
 
@@ -38,7 +45,17 @@ function isBackdropClick(event, dialog) {
   );
 }
 
-export function createMemoryForm({ document: doc = document, onSubmit, onCancel, photoPicker, now = () => new Date() }) {
+export function createMemoryForm({
+  document: doc = document,
+  onSubmit,
+  onCancel,
+  photoPicker,
+  /* Every tag in the library, read when the suggestions are built rather than held, so a
+     memory saved while the dialog is open is offered the next time somebody types. */
+  getAllTags = () => [],
+  createIcon = null,
+  now = () => new Date()
+}) {
   const dialog = doc.getElementById('memory-dialog');
   const form = doc.getElementById('memory-form');
   const coordinatesOutput = doc.getElementById('memory-coordinates');
@@ -47,11 +64,32 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
   const heading = doc.getElementById('memory-dialog-title');
   const placeHint = doc.getElementById('memory-place-hint');
   const titleInput = doc.getElementById('memory-title');
+  const noteInput = doc.getElementById('memory-note');
   const formError = doc.getElementById('memory-form-error');
+  const actionsRow = doc.getElementById('memory-actions');
+  const discardRow = doc.getElementById('memory-discard');
+  const keepEditingButton = doc.getElementById('memory-discard-keep');
+  const discardButton = doc.getElementById('memory-discard-confirm');
+
+  const noteHeight = createAutoGrow(noteInput);
+
+  const tagInput = createTagInput({
+    inputElement: doc.getElementById('memory-tags'),
+    tokensElement: doc.getElementById('memory-tag-tokens'),
+    listboxElement: doc.getElementById('memory-tag-listbox'),
+    errorElement: doc.getElementById('memory-tags-error'),
+    getAllTags,
+    createIcon,
+    onChange: () => revalidate()
+  });
 
   let session = null;
   let returnFocusTo = null;
   let closeReason = CANCELLED;
+  /* What the form held when it opened, which is what "unchanged" means. Taken after anything
+     the app fills in on the reader's behalf, so a reverse-geocoded place name is not something
+     they are asked whether they want to discard. */
+  let initialValues = null;
 
   const fields = FIELDS.map((field) => ({
     ...field,
@@ -124,10 +162,87 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
       date: data.get('date'),
       note: data.get('note'),
       placeName: data.get('placeName'),
-      tags: parseTagInput(data.get('tags')),
+      /* From the tokens, not from the input: what is half typed in the box is not yet a tag. */
+      tags: tagInput.getTags(),
       lat: session.coordinates.lat,
       lng: session.coordinates.lng
     };
+  }
+
+  /* An error clears the moment the field is right again, rather than waiting for the next
+     submit to admit it. The reverse is deliberately not done: nothing new is reported while
+     someone is still typing, because a title is empty for as long as it takes to type the
+     first letter and saying so is just shouting at them.
+
+     The same validator the store uses, over the whole form, rather than a per-field copy of
+     the rules. A second set of rules beside the real ones is a second thing to get wrong. */
+  function clearErrorWhenFixed(field) {
+    if (field.error.hidden) {
+      return;
+    }
+
+    const { errors } = validateMemory(normalizeMemoryInput(readValues()));
+
+    if (!errors[field.name]) {
+      applyFieldError(field, null);
+    }
+  }
+
+  function revalidate() {
+    for (const field of fields) {
+      clearErrorWhenFixed(field);
+    }
+  }
+
+  /* The same shape isFormDirty compares, read straight off the form. */
+  function snapshot() {
+    const data = new FormData(form);
+    return {
+      title: data.get('title'),
+      date: data.get('date'),
+      note: data.get('note'),
+      placeName: data.get('placeName'),
+      tags: tagInput.getTags(),
+      photoIds: photoPicker.getPhotoIds()
+    };
+  }
+
+  function isDirty() {
+    return Boolean(session) && isFormDirty(initialValues, snapshot());
+  }
+
+  function showDiscardPrompt(show) {
+    actionsRow.hidden = show;
+    discardRow.hidden = !show;
+
+    if (show) {
+      keepEditingButton.focus();
+    }
+  }
+
+  /* Every way out of a dirty form comes through here: Cancel, Escape and the backdrop. A clean
+     one closes without a word, because there is nothing to lose and a question with only one
+     sensible answer is noise. */
+  function requestClose() {
+    if (!isDirty()) {
+      close(CANCELLED);
+      return;
+    }
+
+    showDiscardPrompt(true);
+  }
+
+  /* The browser's own question, for the one exit this dialog cannot intercept. It is added
+     when the form opens and removed when it closes, so a tab sitting on the map never asks
+     anything on its way out. */
+  function warnBeforeUnload(event) {
+    if (!isDirty()) {
+      return;
+    }
+
+    event.preventDefault();
+    /* Older engines need the property as well as the default being prevented. */
+    event.returnValue = '';
   }
 
   function showPlaceHint(visible) {
@@ -144,6 +259,14 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     }
 
     form.elements.placeName.value = name;
+
+    /* The baseline moves with it. The app filled this in, nobody typed it, and asking whether
+       they want to discard something they never wrote is how a guard trains people to press
+       Discard without reading. */
+    if (initialValues) {
+      initialValues = { ...initialValues, placeName: name };
+    }
+
     return true;
   }
 
@@ -172,12 +295,24 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
       form.elements.date.value = memory.date;
       form.elements.note.value = memory.note;
       form.elements.placeName.value = memory.placeName;
-      form.elements.tags.value = memory.tags.join(', ');
+      tagInput.setTags(memory.tags);
     } else {
+      tagInput.setTags([]);
       form.elements.date.value = todayLocalDate(now());
     }
 
+    showDiscardPrompt(false);
+
     dialog.showModal();
+
+    /* After showModal, not before: a textarea that is still display:none measures its content
+       as nothing at all and comes back one row tall. */
+    noteHeight.reset();
+
+    /* After everything the app fills in, before anything the reader does. */
+    initialValues = snapshot();
+    window.addEventListener('beforeunload', warnBeforeUnload);
+
     titleInput.focus();
   }
 
@@ -220,11 +355,75 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     });
   });
 
-  cancelButton.addEventListener('click', () => close(CANCELLED));
+  for (const field of fields) {
+    field.input.addEventListener('input', () => clearErrorWhenFixed(field));
+  }
+
+  /* A screenshot or a copied picture goes straight in. Listened for on the dialog rather than
+     on the photo area, because nobody aims at a drop zone before pressing Ctrl+V: they press
+     it wherever they happen to be.
+
+     Only when the clipboard is actually carrying files. A paste of text into the note is
+     ordinary text and must stay that way, which is why the default is left alone unless there
+     is something to add. */
+  dialog.addEventListener('paste', (event) => {
+    const files = event.clipboardData?.files;
+
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    event.preventDefault();
+    photoPicker.addFiles(files).catch((error) => console.error(error));
+  });
+
+  /* Ctrl+Enter and Cmd+Enter save from anywhere in the form, including the note, where plain
+     Enter has to keep meaning a new line. requestSubmit rather than submit(), because submit()
+     skips the submit event and with it everything the handler does. */
+  form.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' || !(event.ctrlKey || event.metaKey)) {
+      return;
+    }
+
+    if (saveButton.disabled) {
+      return;
+    }
+
+    event.preventDefault();
+    form.requestSubmit();
+  });
+
+  cancelButton.addEventListener('click', () => requestClose());
+
+  keepEditingButton.addEventListener('click', () => {
+    showDiscardPrompt(false);
+    /* Back where they were, not to the top of the form. */
+    cancelButton.focus();
+  });
+
+  discardButton.addEventListener('click', () => close(CANCELLED));
 
   dialog.addEventListener('click', (event) => {
     if (isBackdropClick(event, dialog)) {
-      close(CANCELLED);
+      requestClose();
+    }
+  });
+
+  /* Escape reaches the dialog as a cancel event before it closes, which is the one place it
+     can be held. Prevented rather than swallowed: the dialog still closes on the second
+     Escape, through Discard, which is what someone pressing it twice means. */
+  dialog.addEventListener('cancel', (event) => {
+    if (!discardRow.hidden) {
+      /* The question is already on screen. Escape answers it the safe way. */
+      event.preventDefault();
+      showDiscardPrompt(false);
+      cancelButton.focus();
+      return;
+    }
+
+    if (isDirty()) {
+      event.preventDefault();
+      showDiscardPrompt(true);
     }
   });
 
@@ -235,6 +434,12 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
        in one place rather than on each of cancel, Esc, backdrop and save. */
     photoPicker.dispose();
     showPlaceHint(false);
+    showDiscardPrompt(false);
+    tagInput.closeList();
+
+    /* Whatever the form held is gone, so there is nothing left to warn about. */
+    window.removeEventListener('beforeunload', warnBeforeUnload);
+    initialValues = null;
 
     if (closeReason !== SAVED) {
       onCancel({ mode: session.mode, memoryId: session.memoryId });
@@ -251,6 +456,8 @@ export function createMemoryForm({ document: doc = document, onSubmit, onCancel,
     closeAsSaved: () => close(SAVED),
     showFieldErrors,
     showFormError,
+    revalidate,
+    isDirty,
     setBusy,
     showPlaceHint,
     suggestPlaceName,

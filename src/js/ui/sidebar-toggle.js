@@ -7,7 +7,10 @@ export function createSidebarToggle({ toggleButton, sidebar, onResize }) {
 
   function apply() {
     toggleButton.setAttribute('aria-expanded', String(expanded));
-    toggleButton.textContent = expanded ? 'Hide list' : 'Show list';
+    /* The label, not the button: the button also holds an icon, and setting textContent on
+       it would remove the icon along with the old words. */
+    const label = toggleButton.querySelector('.button-label') ?? toggleButton;
+    label.textContent = expanded ? 'Hide list' : 'Show list';
     sidebar.classList.toggle(COLLAPSED_CLASS, !expanded);
 
     /* A zero-width sidebar is still in the tab order without this, so a collapsed list

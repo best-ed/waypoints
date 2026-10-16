@@ -37,10 +37,12 @@ export function createSettingsDialog({
   closeButton,
   toggleElement,
   themeElement,
+  dimMapElement,
   usageElement,
   persistedElement,
   settings,
   onThemeChange = () => {},
+  onDimMapChange = () => {},
   onOpen = () => {}
 }) {
   let returnFocusTo = null;
@@ -73,6 +75,7 @@ export function createSettingsDialog({
     returnFocusTo = openButton;
     toggleElement.checked = settings.get().suggestPlaceNames;
     themeElement.value = settings.get().theme;
+    dimMapElement.checked = settings.get().dimMapInDark;
     onOpen();
     dialog.showModal();
 
@@ -86,6 +89,11 @@ export function createSettingsDialog({
 
   toggleElement.addEventListener('change', () => {
     settings.set({ suggestPlaceNames: toggleElement.checked });
+  });
+
+  dimMapElement.addEventListener('change', () => {
+    settings.set({ dimMapInDark: dimMapElement.checked });
+    onDimMapChange(dimMapElement.checked);
   });
 
   themeElement.addEventListener('change', () => {

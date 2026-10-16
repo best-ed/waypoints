@@ -1,17 +1,6 @@
 /* Narrow-screen layout. 720px is where the sidebar and a usable map stop fitting side by
    side on the same screen. */
 
-.icon-button {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.icon {
-  display: block;
-  flex: 0 0 auto;
-}
-
 /* One label per width. display, not visibility or aria-hidden, so the hidden one leaves the
    accessibility tree too and the button's name is whichever label is showing. */
 .label-narrow {
@@ -96,8 +85,44 @@
     display: flex;
   }
 
+  /* The pane that arrives fades up. The one leaving goes at once, and deliberately: both are
+     flex children of the same row, so holding the outgoing one in the layout for the length of
+     a transition would squeeze the incoming one to half the screen while it faded. An
+     animation rather than a transition, because the pane was display:none a frame ago and a
+     transition cannot run from there. */
+  .app-body[data-view='list'] .sidebar,
+  .app-body:not([data-view='list']) .app-main,
+  body[data-detail] .app-body .sidebar {
+    animation: pane-in var(--duration-base) var(--ease-out);
+  }
+
   .app-body[data-view='list'] .app-main {
     display: none;
+  }
+
+  /* The player stops floating over the map and becomes a bar at the bottom of the pane. A
+     floating card at this width either covers the zoom control and the attribution or is
+     pushed so far up that it covers the map it is describing; a bar takes its own room and
+     covers nothing. Low specificity on purpose, so the two display:none rules above still
+     win when this pane is not the one being shown. */
+  .app-main {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .map {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+  }
+
+  .journey-player {
+    position: static;
+    transform: none;
+    width: auto;
+    border-radius: 0;
+    /* Clear of the home indicator, with the same padding above it either way. */
+    padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
   }
 
   .app-body[data-view='list'] .sidebar {
@@ -130,7 +155,7 @@
 .date-input,
 .place-search-input,
 .field-select {
-  font-size: 1rem;
+  font-size: var(--text-base);
 }
 
 @media (max-width: 720px) {
@@ -149,10 +174,15 @@
 
   .dialog {
     overflow-y: auto;
-    /* Below the notch, and clear of a home indicator. */
+    /* Below the notch, and clear of a home indicator. Written through the dialog's own
+       padding properties so the sticky footer pulls out to these edges rather than the wide
+       layout's, which left it floating a few pixels short of the bottom of the screen. */
+    --dialog-padding: max(var(--space-4), env(safe-area-inset-left));
+    --dialog-padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+
     padding-top: max(var(--space-4), env(safe-area-inset-top));
-    padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
-    padding-left: max(var(--space-4), env(safe-area-inset-left));
+    padding-bottom: var(--dialog-padding-bottom);
+    padding-left: var(--dialog-padding);
     padding-right: max(var(--space-4), env(safe-area-inset-right));
   }
 
@@ -192,12 +222,20 @@
   .view-option,
   .basemap-option,
   .memory-button,
-  .popup-photo-button,
+  .detail-thumb-button,
   .search-clear,
-  .journey-step,
-  .journey-play,
+  .player-step,
+  .player-play,
   .import-pick {
     min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* The size variant beat the rule above on specificity - two classes against one - so every
+     small icon-only button in the app came out 32px wide with a 44px height: Previous and Next
+     in the detail view and in the player, the popup's close, the search clear, and the place
+     search's close. Restated at the same weight, which is the only thing that fixes it. */
+  .button-sm.icon-only {
     min-width: 44px;
   }
 
@@ -206,6 +244,76 @@
   .date-input,
   .field-select {
     min-height: 44px;
+  }
+
+  /* Three controls per photo need room a 5rem thumbnail does not have. At 375 the tiles were
+     84px and the row of Move earlier, Move later and Make cover was 140px, so it hung out of
+     both sides of the tile - and .photo-tile clips its overflow, which left the third control
+     with no centre to tap at all. Two columns gives the row somewhere to be.
+
+     Selectors written to outrank .photo-move in dialog.css, which loads after this file: at
+     equal specificity it won, which is why these were 24px tall under a rule that says 44. */
+  #memory-photos.photo-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Same story, same cause: a size of its own at one class, in a file that loads after this
+     one. Over a 129px tile a 44px square is room it can have. */
+  .photo-tile .photo-remove {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* 44px tall, and sharing the tile's width between them with no dead space in between. They
+     cannot also be 44 wide: three of those is 132px against a 129px tile. That exemption is
+     listed in the sweep with this reason rather than left to be discovered. */
+  .photo-actions .photo-move {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  /* The scrubber is a plain range and was 22px tall: the timeline's handles were given the
+     room and this one, added later, was not. The track keeps its own thickness and centres in
+     the taller box, so what is drawn is unchanged and what can be grabbed is the whole of it.
+     Unlike the timeline there is only one handle here, so the input itself is the target and
+     no pointer-events trick is needed. */
+  .player-scrubber {
+    min-height: 44px;
+  }
+
+  /* Leaflet draws these at 30px, which is its own number from 2011 and not something our
+     stylesheet has any reason to inherit. They are a boxed control with nothing beside them,
+     so they can simply be the size they need to be. */
+  /* .leaflet-touch is on the container as soon as Leaflet sees a touch device, and its own
+     rule for these is two classes and an element. Matched here rather than fought with. */
+  .leaflet-touch .leaflet-control-zoom a,
+  .leaflet-control-zoom a {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+  }
+
+  /* Drawn smaller than 44px on purpose, so the hit area grows instead of the drawing. A switch
+     at 44px square is not a switch, and a map pin that size covers the place it is marking.
+     Both get a transparent box centred on them, the same trick the timeline thumb uses from
+     the other direction. An element box cannot show this, so the test that guards it hit-tests
+     the four corners rather than measuring getBoundingClientRect. */
+  .switch::before,
+  .pin::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+
+  /* The pin is anchored at its point, so a box centred on the element sits half a pin low.
+     Centred on the head instead, which is what a thumb aims at. */
+  .pin::after {
+    top: 40%;
   }
 
   /* The thumb is the target here, not the input: the input carries pointer-events: none so
@@ -249,5 +357,11 @@
      the popup that the same tap just opened, and then will not go away. */
   .leaflet-tooltip {
     display: none !important;
+  }
+}
+
+@keyframes pane-in {
+  from {
+    opacity: 0;
   }
 }

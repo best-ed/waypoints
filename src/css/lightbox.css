@@ -58,11 +58,11 @@
 }
 
 .lightbox-image.slide-next {
-  animation: lightbox-slide-next 180ms ease-out;
+  animation: lightbox-slide-next var(--duration-base) var(--ease-out);
 }
 
 .lightbox-image.slide-prev {
-  animation: lightbox-slide-prev 180ms ease-out;
+  animation: lightbox-slide-prev var(--duration-base) var(--ease-out);
 }
 
 /* Vertical panning stays with the browser; horizontal is ours to read as a swipe. */
@@ -77,8 +77,9 @@
   user-select: none;
 }
 
-/* Guarded twice over: the module checks the query before adding the class, and this stops the
-   animation even if something adds it anyway. */
+/* Guarded three times over, and worth it: the duration tokens go to zero centrally, the
+   module checks the query before adding the class at all, and this stops the animation even if
+   something adds it anyway. */
 @media (prefers-reduced-motion: reduce) {
   .lightbox-image.slide-next,
   .lightbox-image.slide-prev {

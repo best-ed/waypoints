@@ -7,12 +7,13 @@ import { createMemoryStore } from './data/memory-store.js';
 import { createIdFactory } from './data/make-id.js';
 import { createPlacementMode } from './map/placement-mode.js';
 import { createDraftMarker } from './map/draft-marker.js';
+import { createArrivalPulse } from './map/arrival-pulse.js';
 import { createMarkersLayer } from './map/markers-layer.js';
 import { createClusterIcon, enableClusterKeyboard } from './map/cluster-icon.js';
 import { createBasemapControl } from './map/basemap-control.js';
 import { readBasemapId, writeBasemapId } from './map/basemap-preference.js';
 import { createMoveMode } from './map/move-mode.js';
-import { focusMarker, openMarkerPopup } from './map/focus-marker.js';
+import { focusMarker, focusMarkerWhenSettled, openMarkerPopup } from './map/focus-marker.js';
 import { createPlaceSearchControl } from './map/place-search-control.js';
 import { createResultMarker } from './map/result-marker.js';
 import { createRequestScheduler } from './geo/request-scheduler.js';
@@ -22,34 +23,44 @@ import { createSelection } from './ui/selection.js';
 import { createFilterState } from './filters/filter-state.js';
 import { applyFilters } from './filters/apply-filters.js';
 import { serializeFilters, parseFilters } from './filters/filter-url.js';
+import { parseMemoryId, withMemoryId } from './filters/memory-url.js';
 import { createSearchInput } from './ui/search-input.js';
 import { createTagBar } from './ui/tag-bar.js';
 import { createDateRange } from './ui/date-range.js';
 import { createTimelineView } from './ui/timeline-view.js';
 import { createFilterSummary } from './ui/filter-summary.js';
+import { createFiltersPanel } from './ui/filters-panel.js';
+import { createActiveFilters } from './ui/active-filters.js';
 import { tagCounts, allTags } from './filters/tag-counts.js';
 import { timelineBuckets, distinctDateCount } from './filters/timeline.js';
 import { journeyOrder } from './journey/journey-order.js';
-import { journeySummary } from './journey/journey-summary.js';
-import { createPlayback, IDLE } from './journey/playback.js';
+import { formatJourneySummary, journeySummary } from './journey/journey-summary.js';
+import { formatMemoryDate } from './ui/format-date.js';
+import { createPlayback, IDLE, SPEEDS } from './journey/playback.js';
 import { createJourneyPath } from './map/journey-path.js';
 import { createJourneyChevrons } from './map/journey-chevrons.js';
 import { createJourneyPanel } from './ui/journey-panel.js';
-import { createJourneyControls } from './ui/journey-controls.js';
+import { createJourneyPlayer } from './ui/journey-player.js';
 import { createMemoryList } from './ui/memory-list.js';
+import { createThumbnailOwner } from './ui/thumbnail-owner.js';
+import { createDetailView } from './ui/detail-view.js';
+import { findNeighbours } from './ui/neighbours.js';
+import { createEmptyLibrary } from './ui/empty-library.js';
+import { createPlacementHint } from './ui/placement-hint.js';
 import { createSidebarToggle } from './ui/sidebar-toggle.js';
-import { createViewSwitch, LIST_VIEW, MAP_VIEW } from './ui/view-switch.js';
+import { applyIcons, createIcon } from './ui/icons.js';
+import { createViewSwitch, LIST_VIEW } from './ui/view-switch.js';
 import { prefersReducedMotion } from './ui/motion.js';
 import { createMemoryForm } from './ui/memory-form.js';
 import { createSettingsDialog } from './ui/settings-dialog.js';
 import { createSettingsStore } from './data/settings-store.js';
-import { applyTheme, effectiveTheme, watchSystemTheme } from './ui/theme.js';
+import { applyMapDimming, applyTheme, effectiveTheme, watchSystemTheme } from './ui/theme.js';
 import { buildExport, exportFilename } from './io/export-format.js';
 import { downloadText } from './io/download.js';
 import { checkFileSize, readImport, ImportError } from './io/parse-import.js';
 import { writeImportedPhotos } from './photos/import-photos.js';
 import { createImportDialog } from './ui/import-dialog.js';
-import { buildPopupContent, findPhotoStrip } from './ui/popup-content.js';
+import { buildPopupContent, findPopupCover } from './ui/popup-content.js';
 import { createPopupPhotos } from './ui/popup-photos.js';
 import { createOfflineBanner } from './ui/offline-banner.js';
 import { createInstallPrompt } from './ui/install-prompt.js';
@@ -70,6 +81,7 @@ import {
 } from './sw-register.js';
 import { warmTileCache } from './map/warm-tile-cache.js';
 import { buildDevApi, isDevHost } from './dev/dev-api.js';
+import { createMapMovementProbe } from './dev/map-probe.js';
 import { generateSeedMemories } from './dev/seed-memories.js';
 import { writeEnvelope } from './data/storage.js';
 import { processImage } from './photos/process-image.js';
@@ -85,6 +97,10 @@ const MOVE_FAILED_MESSAGE = 'That pin could not be moved.';
 const PHOTO_LOAD_FAILED_MESSAGE = 'The photos for that memory could not be opened.';
 
 function boot() {
+  /* Before anything else renders. The markup says which icon each control wants through a
+     data attribute, and this is the one place that turns that into a node. */
+  applyIcons(document);
+
   /* Decided once, before anything is read, so no code path can see one mode for the
      memories and another for the photos. */
   const sandbox = isSandbox(window.location.search);
@@ -106,6 +122,10 @@ function boot() {
     storage: window.localStorage,
     key: names.settingsKey
   });
+
+  /* Before the map draws, so the tiles are never painted bright and then turned over. The
+     stylesheet decides whether the attribute means anything, which is only in dark. */
+  applyMapDimming(settings.get().dimMapInDark);
 
   /* Declared before the basemap control, which assigns it: a let assigned above its own
      declaration would throw on boot. Replaced once the control exists. */
@@ -141,9 +161,11 @@ function boot() {
 
   const photoPicker = createPhotoPicker({
     gridElement: document.getElementById('memory-photos'),
+    dropElement: document.getElementById('memory-photo-drop'),
     inputElement: document.getElementById('memory-photo-input'),
     countElement: document.getElementById('memory-photos-count'),
     errorElement: document.getElementById('memory-photos-errors'),
+    statusElement: document.getElementById('memory-photos-status'),
     processFiles
   });
 
@@ -172,10 +194,10 @@ function boot() {
   const filters = createFilterState();
   const lightbox = createLightbox({ reducedMotion: prefersReducedMotion });
 
+  /* One record, not the whole set: the popup shows a cover, and the detail view is what
+     reads every photo a memory has. */
   const popupPhotos = createPopupPhotos({
-    loadPhotos: (ids) => loadPhotos(ids),
-    onOpenLightbox: (records, index, memory, trigger) =>
-      lightbox.open(records, index, memory, trigger)
+    loadPhoto: (id) => photos.get(id)
   });
 
   const markers = createMarkersLayer(map, {
@@ -184,15 +206,8 @@ function boot() {
     iconCreateFunction: createClusterIcon,
     renderPopup: (memory) =>
       buildPopupContent(memory, {
-        onEdit: () => {
-          startEdit(memory.id).catch((error) => {
-            toast.show({ message: PHOTO_LOAD_FAILED_MESSAGE });
-            console.error(error);
-          });
-        },
-        onMove: () => startMove(memory.id),
-        onDelete: () => deleteMemory(memory.id),
-        onToggleTag: (tag) => filters.toggleTag(tag)
+        onOpen: () => openDetail(memory.id, { origin: 'map' }),
+        onClose: () => closePopupFor(memory.id)
       }),
     /* The photo strip is filled from onPopupContent, not here: Leaflet rebuilds the content
        on paths that never fire popupopen. */
@@ -204,7 +219,7 @@ function boot() {
         pauseForInteraction();
       }
     },
-    onPopupContent: (id) => fillPopupPhotos(id),
+    onPopupContent: (id) => fillPopupCover(id),
     /* Switching markers closes the old popup after the new id is already selected, so
        only the popup that still owns the selection is allowed to clear it. */
     onPopupClose: (id) => {
@@ -227,16 +242,24 @@ function boot() {
   enableClusterKeyboard(map);
 
   const draftMarker = createDraftMarker(map);
+  const arrivalPulse = createArrivalPulse();
+
+  /* Every object URL the list creates belongs to this, and it is the only thing that
+     revokes one. Bounded in both directions: a capped number held at once, and a capped
+     number of reads in flight, so flinging a long list cannot queue a thousand reads or
+     hold a thousand blobs. */
+  const listThumbnails = createThumbnailOwner({
+    loadThumb: async (photoId) => (await photos.get(photoId))?.thumb ?? null,
+    onError: (error) => console.error(error)
+  });
 
   const list = createMemoryList({
+    thumbnails: listThumbnails,
     listElement: document.getElementById('memory-list'),
     emptyElement: document.getElementById('memory-empty'),
     countElement: document.getElementById('memory-count'),
     onSelect: (id) => selectFromList(id),
-    onClearSearch: () => {
-      search.clear({ focus: false });
-      filters.clear();
-    }
+    onClearSearch: () => clearEveryFilter()
   });
 
   const moveMode = createMoveMode({
@@ -271,6 +294,15 @@ function boot() {
       return;
     }
 
+    /* The detail view is reading a memory the list behind it no longer holds, so Previous and
+       Next have nowhere to go and Back would return to a list without it. Closed for the same
+       reason the selection is cleared. */
+    if (detail.openId() === id) {
+      /* Straight to the close rather than through history: a filter change is not a
+         navigation, and going back here would undo whatever the reader just typed. */
+      finishCloseDetail();
+    }
+
     const marker = markers.getMarker(id);
     if (marker) {
       marker.closePopup();
@@ -278,7 +310,12 @@ function boot() {
     selection.clear();
   }
 
+  let totalMemories = 0;
+
   function renderAll(memories) {
+    totalMemories = memories.length;
+    emptyLibrary.render(memories.length);
+
     /* Pruned before anything reads the filters, so a tag whose last memory just went
        does not keep narrowing the list from a chip that no longer exists. */
     filters.pruneTags(allTags(memories));
@@ -291,10 +328,18 @@ function boot() {
     markers.sync(visible);
     list.render(visible, { total: memories.length, query: current.query, filters: current });
 
+    activeFilters.render(current);
+    filtersPanel.render(current);
     tagBar.render(tagCounts(memories, current), current.tags);
     dateRange.render(current, { visible: memories.length > 0 });
     timeline.render(timelineBuckets(memories, current), current, distinctDateCount(memories));
     summary.render(visible.length, memories.length, current);
+
+    /* The list has just been rebuilt, so the order Previous and Next step through is not the
+       one the view was opened with. */
+    if (detail.isOpen()) {
+      detail.setNeighbours(detailNeighbours(detail.openId()));
+    }
 
     /* After markers.sync, so every stop already has a marker to number and fly to. */
     renderJourney(visible);
@@ -335,12 +380,29 @@ function boot() {
   });
 
   const summary = createFilterSummary({
-    summaryElement: document.getElementById('memory-count'),
-    resetElement: document.getElementById('filter-reset'),
-    onReset: () => {
-      search.clear({ focus: false });
-      filters.clear();
-    }
+    summaryElement: document.getElementById('memory-count')
+  });
+
+  function clearEveryFilter() {
+    search.clear({ focus: false });
+    filters.clear();
+  }
+
+  const filtersPanel = createFiltersPanel({
+    toggleElement: document.getElementById('filters-toggle'),
+    panelElement: document.getElementById('filters-panel'),
+    badgeElement: document.getElementById('filters-badge'),
+    storage: window.localStorage,
+    /* Its own key, and the sandbox gets its own too: remembering a panel is a convenience,
+       but a session on seeded data should not change how the real one opens. */
+    storageKey: names.settingsKey + ':filters-open'
+  });
+
+  const activeFilters = createActiveFilters({
+    listElement: document.getElementById('active-filters'),
+    onRemove: (change) => filters.patch(change),
+    onClearAll: () => clearEveryFilter(),
+    createIcon
   });
 
   const journeyPath = createJourneyPath(map);
@@ -353,31 +415,351 @@ function boot() {
 
   let journeyActive = false;
   let journeyStops = [];
+  /* Cleared around the one transition that must not move the map: see movePlayheadTo. */
+  let flyToStop = true;
+
+  const detail = createDetailView({
+    sectionElement: document.getElementById('memory-detail'),
+    contentElement: document.getElementById('detail-content'),
+    backButton: document.getElementById('detail-back'),
+    previousButton: document.getElementById('detail-previous'),
+    nextButton: document.getElementById('detail-next'),
+    loadPhotos: (ids) => loadPhotos(ids),
+    onOpenLightbox: (records, index, memory, trigger) =>
+      lightbox.open(records, index, memory, trigger),
+    /* Choosing a tag from a memory is a way of asking "what else is like this one", so it
+       takes the filter and goes back to the list it has just narrowed. */
+    onSelectTag: (tag) => {
+      filters.toggleTag(tag);
+      closeDetail();
+    },
+    onBack: () => closeDetail(),
+    onPrevious: () => stepDetail('previous'),
+    onNext: () => stepDetail('next'),
+    onError: (error) => {
+      toast.show({ message: PHOTO_LOAD_FAILED_MESSAGE });
+      console.error(error);
+    },
+    isBlocked: () => placement.isActive() || moveMode.isMoving()
+  });
+
+  /* The list's order, which is the filtered set newest first: stepping out of it would land
+     on a memory the list behind this view does not even show. */
+  function detailNeighbours(id) {
+    return findNeighbours(list.getOrder(), id);
+  }
+
+  /* Where focus goes when the view closes. Held rather than worked out at the time, because
+     by then the only thing that knows where the reader came from is gone: a memory opened
+     from its pin should hand focus back to the pin, and one opened from the list to its card.
+     A card that a delete or a filter has taken away falls back to the list's own heading,
+     which is why that heading carries tabindex="-1". */
+  let detailOrigin = 'list';
+
+  function restoreFocusAfterDetail(id) {
+    if (detailOrigin === 'map') {
+      const element = markerElement(id);
+      if (element) {
+        element.focus();
+        return;
+      }
+    }
+
+    if (!list.focusItem(id)) {
+      document.getElementById('sidebar-heading').focus();
+    }
+  }
+
+  /* Opening a memory during a journey moves the journey to it rather than fighting it, so the
+     player goes on describing what is actually being looked at. Paused, because reading one
+     memory is not watching a journey, and without flying the map: nobody asked to go anywhere,
+     and on a wide screen the map is right there beside the view.
+
+     A memory that is not a stop in this journey - the filters can differ from the order the
+     view was opened from - can only mean playback should stop. */
+  function movePlayheadTo(id) {
+    if (!journeyActive) {
+      return;
+    }
+
+    const index = journeyStops.findIndex((stop) => stop.id === id);
+
+    if (index === -1) {
+      pauseForInteraction();
+      return;
+    }
+
+    flyToStop = false;
+    try {
+      playback.goTo(index, { pause: true });
+    } finally {
+      flyToStop = true;
+    }
+  }
+
+  function openDetail(id, { origin = 'list', push = true } = {}) {
+    const memory = store.get(id);
+    if (!memory) {
+      return;
+    }
+
+    movePlayheadTo(id);
+
+    /* Stepping within an open view replaces rather than pushes: see pushUrl above. */
+    const stepping = detail.isOpen();
+
+    detailOrigin = origin;
+
+    /* The popup is a preview of what this view now shows in full, so it has done its job.
+       Closed before the selection is set, never after: popupclose clears the selection if
+       the closing popup still owns it, which would undo the line below. */
+    map.closePopup();
+
+    /* The marker highlights while the detail is open, through the same selection state the
+       list and the map already share. */
+    selection.select(id);
+    detail.open(memory);
+    detail.setNeighbours(detailNeighbours(id));
+
+    if (push && !stepping) {
+      pushUrl();
+      detailPushed = true;
+      return;
+    }
+
+    writeUrl();
+  }
+
+  /* The close itself. Everything that actually takes the view off screen comes through here,
+     whether the request came from a button, from Escape or from the browser's own Back. */
+  function finishCloseDetail({ restoreFocus = true } = {}) {
+    const closed = detail.close();
+
+    if (closed === null) {
+      return;
+    }
+
+    detailPushed = false;
+    /* The URL is written from the live state rather than trusted from the history entry: a
+       filter changed while the view was open was replaced onto this entry, not the one
+       behind it, so the entry we have just returned to can be out of date. */
+    writeUrl();
+
+    if (restoreFocus) {
+      restoreFocusAfterDetail(closed);
+    }
+  }
+
+  /* A close request. If opening pushed an entry, the honest way out is back through it, so
+     the history does not keep an entry for a view nobody is looking at; popstate then does
+     the closing. If it did not, there is nothing to go back to and the entry is rewritten
+     where it stands. */
+  function closeDetail() {
+    if (!detail.isOpen()) {
+      return;
+    }
+
+    if (detailPushed) {
+      detailPushed = false;
+      window.history.back();
+      return;
+    }
+
+    finishCloseDetail();
+  }
+
+  /* Each action reads the open id rather than closing over one, so a row of four static
+     buttons works for whatever memory the view is showing after Previous and Next have been
+     through it. */
+  function withOpenMemory(run) {
+    const id = detail.openId();
+    if (id && store.get(id)) {
+      run(id);
+    }
+  }
+
+  /* On a narrow screen the detail view is the whole screen, so anything that happens on the
+     map has to give it back first. On a wide one the map is already there beside it and the
+     view stays open.
+
+     Closed here rather than through closeDetail, because that one goes back through history
+     and history is asynchronous: the map pane is display:none until the view is gone, and a
+     Leaflet map with no size prunes every marker and flies nowhere. So the view comes off
+     first and the entry we pushed is dropped afterwards. Focus is left alone on this path -
+     it is about to go to the pin, and sending it to a card in a list that is on its way off
+     screen would only put it on the body. */
+  function leaveDetailForMap() {
+    if (!viewSwitch.isNarrow()) {
+      return false;
+    }
+
+    const pushed = detailPushed;
+
+    finishCloseDetail({ restoreFocus: false });
+
+    if (pushed) {
+      window.history.back();
+    }
+
+    viewSwitch.showMap();
+    return true;
+  }
+
+  function refreshDetail(id) {
+    if (detail.openId() !== id) {
+      return false;
+    }
+
+    const memory = store.get(id);
+    if (!memory) {
+      closeDetail();
+      return true;
+    }
+
+    detail.render(memory);
+    detail.setNeighbours(detailNeighbours(id));
+    return true;
+  }
+
+  document.getElementById('detail-edit').addEventListener('click', () => {
+    withOpenMemory((id) => {
+      /* Back to the button that opened it, not to the marker: the marker is behind the
+         detail view, and on a narrow screen it is not on screen at all. */
+      startEdit(id, { returnFocus: document.getElementById('detail-edit') }).catch((error) => {
+        toast.show({ message: PHOTO_LOAD_FAILED_MESSAGE });
+        console.error(error);
+      });
+    });
+  });
+
+  document.getElementById('detail-show').addEventListener('click', () => {
+    withOpenMemory((id) => {
+      const marker = markers.getMarker(id);
+      if (!marker) {
+        return;
+      }
+
+      const left = leaveDetailForMap();
+
+      /* Only where focus would otherwise be lost. On a narrow screen the button that was
+         pressed has just gone with the view, so focus would fall to the body; on a wide one
+         the button is still there and still the right place to be, and dragging focus onto
+         the map would be taking it from somewhere good.
+
+         Armed before the fly rather than after, because reduced motion makes the move
+         synchronous and moveend has already fired by the time focusMarker returns. */
+      if (left) {
+        focusMarkerWhenSettled(map, marker);
+      }
+
+      selection.select(id);
+      /* The same reveal every other path uses, so a pin inside a cluster or pruned off the
+         edge of the map is still arrived at rather than flown past. */
+      focusMarker(map, marker, {
+        reducedMotion: prefersReducedMotion(),
+        clusterGroup: markers.clusterGroup()
+      });
+    });
+  });
+
+  document.getElementById('detail-move').addEventListener('click', () => {
+    withOpenMemory((id) => {
+      leaveDetailForMap();
+      startMove(id);
+    });
+  });
+
+  document.getElementById('detail-delete').addEventListener('click', () => {
+    withOpenMemory((id) => {
+      /* Closed first, so the list is back on screen before deleteMemory moves focus to
+         whatever slid into the deleted memory's place. */
+      closeDetail();
+      deleteMemory(id);
+    });
+  });
+
+  function stepDetail(direction) {
+    const id = detail.openId();
+    if (!id) {
+      return;
+    }
+
+    const next = detailNeighbours(id)[direction];
+    if (next) {
+      openDetail(next);
+    }
+  }
+
+  const emptyLibrary = createEmptyLibrary({
+    controlsElement: document.getElementById('sidebar-controls'),
+    welcomeElement: document.getElementById('welcome'),
+    addButton: document.getElementById('welcome-add'),
+    importButton: document.getElementById('welcome-import'),
+    onAdd: () => {
+      placement.toggle();
+      syncButton();
+    },
+    onImport: () => openSettingsAtImport()
+  });
 
   const journeyPanel = createJourneyPanel({
+    containerElement: document.querySelector('.journey'),
     toggleElement: document.getElementById('journey-toggle'),
     hintElement: document.getElementById('journey-hint'),
-    summaryElement: document.getElementById('journey-summary'),
     onToggle: () => toggleJourney()
   });
 
-  const journeyControls = createJourneyControls({
-    container: document.getElementById('journey-controls'),
-    playElement: document.getElementById('journey-play'),
-    previousElement: document.getElementById('journey-previous'),
-    nextElement: document.getElementById('journey-next'),
-    progressElement: document.getElementById('journey-progress'),
+  const journeyPlayer = createJourneyPlayer({
+    containerElement: document.getElementById('journey-player'),
+    playElement: document.getElementById('player-play'),
+    previousElement: document.getElementById('player-previous'),
+    nextElement: document.getElementById('player-next'),
+    titleElement: document.getElementById('player-title'),
+    metaElement: document.getElementById('player-meta'),
+    positionElement: document.getElementById('player-position'),
+    scrubberElement: document.getElementById('player-scrubber'),
+    ticksElement: document.getElementById('player-ticks'),
+    announceElement: document.getElementById('player-announce'),
+    speedElement: document.getElementById('player-speed'),
+    endElement: document.getElementById('player-end'),
+    endSummaryElement: document.getElementById('player-end-summary'),
+    replayElement: document.getElementById('player-replay'),
+    exitElement: document.getElementById('player-exit'),
+    formatDate: formatMemoryDate,
     onToggle: () => playback.toggle(),
     onPrevious: () => playback.prev(),
-    onNext: () => playback.next()
+    onNext: () => playback.next(),
+    /* Dragging the scrubber is taking the journey over, so it stops playing rather than
+       continuing from wherever it was let go. */
+    onScrub: (target) => playback.goTo(target, { pause: true }),
+    onSpeed: (speed) => playback.setDwellMs(SPEEDS[speed]),
+    /* play from finished starts over, which is the whole of what Replay means. */
+    onReplay: () => playback.play(),
+    onExit: () => exitJourney()
   });
+
+  /* What the journey was, formatted once per render rather than per playback notification.
+     The end card is the only thing that reads it. */
+  let journeySummaryLine = '';
+
+  function renderPlayer(state) {
+    journeyPlayer.render(state, {
+      isActive: journeyActive,
+      stop: stopAt(state.index),
+      summary: journeySummaryLine
+    });
+  }
 
   function visibleNow() {
     return applyFilters(store.list(), filters.getFilters());
   }
 
+  function stopAt(index) {
+    return journeyStops[index] ?? null;
+  }
+
   function currentStopId() {
-    const stop = journeyStops[playback.getState().index];
+    const stop = stopAt(playback.getState().index);
     return stop ? stop.id : null;
   }
 
@@ -386,7 +768,9 @@ function boot() {
   function highlightProgress({ status, index }) {
     const activeIndex = status === IDLE ? null : index;
     journeyPath.setProgress(activeIndex);
-    journeyChevrons.setProgress(activeIndex);
+    /* The chevrons mark what is still ahead, so they are rebuilt from whatever the split just
+       left ahead rather than restyled in place. */
+    journeyChevrons.render(journeyPath.remainingLines());
   }
 
   function renderJourney(visible) {
@@ -394,14 +778,15 @@ function boot() {
 
     if (journeyActive) {
       journeyPath.render(journeyStops);
-      journeyChevrons.render(journeyStops);
       markers.setJourney(journeyStops.map((memory) => memory.id));
       playback.setCount(journeyStops.length);
       highlightProgress(playback.getState());
     }
 
-    journeyPanel.render({ summary: journeySummary(visible), isActive: journeyActive });
-    journeyControls.render(playback.getState(), { isActive: journeyActive });
+    journeySummaryLine = formatJourneySummary(journeySummary(journeyStops));
+
+    journeyPanel.render({ summary: journeySummary(visible), isActive: journeyActive, total: totalMemories });
+    renderPlayer(playback.getState());
   }
 
   /* One step of playback: select it so the sidebar follows, then focusMarker moves the map
@@ -409,7 +794,7 @@ function boot() {
      clearing the incoming selection. */
   function showStop(index) {
     const stop = journeyStops[index];
-    if (!stop) {
+    if (!stop || !flyToStop) {
       return;
     }
 
@@ -423,10 +808,14 @@ function boot() {
       reducedMotion: prefersReducedMotion(),
       clusterGroup: markers.clusterGroup()
     });
+
+    /* After focusMarker, which is what reveals a marker the cluster plugin had pruned: before
+       it, there may be no element to pulse. */
+    arrivalPulse.pulse(marker.getElement());
   }
 
   playback.subscribe((state) => {
-    journeyControls.render(state, { isActive: journeyActive });
+    renderPlayer(state);
     highlightProgress(state);
 
     /* Idle is a reset rather than a position, so it must not drag the map anywhere. */
@@ -457,6 +846,8 @@ function boot() {
     markers.setJourney(null);
     markers.setClustering(true);
     journeyStops = [];
+    arrivalPulse.stop();
+    journeyPlayer.resetSpeed();
     renderJourney(visibleNow());
     journeyPanel.focus();
   }
@@ -478,57 +869,121 @@ function boot() {
 
   map.on('dragstart', pauseForInteraction);
 
-  /* replaceState, not pushState: filtering is not navigation, and a history entry per
-     keystroke would bury whatever page the user arrived from. */
-  function writeFiltersToUrl(current) {
-    const search = buildSearch(serializeFilters(current).toString(), { sandbox, sw: swFlag });
+  /* The whole of the view, in one string: what is being filtered on, which memory is open,
+     and the bare flags that must survive every rewrite. Built in one place so a filter change
+     cannot drop the open memory and opening a memory cannot drop the filters.
 
-    window.history.replaceState(null, '', window.location.pathname + search);
+     replaceState, not pushState: filtering is not navigation, and a history entry per
+     keystroke would bury whatever page the user arrived from. */
+  function currentSearch() {
+    const params = withMemoryId(serializeFilters(filters.getFilters()), detail.openId());
+
+    return buildSearch(params.toString(), { sandbox, sw: swFlag });
   }
 
-  filters.subscribe((current) => {
-    writeFiltersToUrl(current);
+  function writeUrl() {
+    window.history.replaceState(null, '', window.location.pathname + currentSearch());
+  }
+
+  /* Opening a memory is navigation, which is the one thing in this app that is: Back should
+     mean "back to the list" because that is what it means everywhere else. Filtering is not,
+     and neither is stepping with Previous and Next - thirty presses of Next would otherwise
+     put thirty entries between the reader and the page they arrived from, and Back would
+     walk them all the way out one memory at a time. */
+  function pushUrl() {
+    window.history.pushState(null, '', window.location.pathname + currentSearch());
+  }
+
+  /* Whether the entry the detail view is sitting on is one we pushed. A memory opened from a
+     link is already the entry the page loaded on: calling back() there would leave the app
+     altogether rather than returning to the list. */
+  let detailPushed = false;
+
+  filters.subscribe(() => {
+    writeUrl();
     /* A filter change rebuilds the journey, so the position in the old one means nothing.
        Back to idle rather than resuming at a stop that may not even be in it any more. */
     playback.reset();
     rerender();
   });
 
+  /* Both read before anything is applied. Restoring the filters notifies, and that rewrites
+     the query string from the live state - in which no memory is open yet - so reading the
+     memory id afterwards would read a URL this line has already taken it out of. */
+  const fromUrl = parseFilters(window.location.search);
+  const openFromUrl = parseMemoryId(window.location.search);
+
   /* Restored before the first render, so the map and list never flash the unfiltered
      set on the way to the filtered one. */
-  const fromUrl = parseFilters(window.location.search);
   filters.setQuery(fromUrl.query);
   filters.setTags(fromUrl.tags);
   filters.setDateRange({ from: fromUrl.from, to: fromUrl.to });
   search.setValue(fromUrl.query);
 
-  rerender();
-  store.subscribe(renderAll);
+  /* After the filters are restored and before the first render: a filtered view arriving from
+     a bookmark with the panel shut would show a short list and no reason for it. */
+  filtersPanel.start(filters.getFilters());
 
-  function selectFromList(id) {
-    const marker = markers.getMarker(id);
-    if (!marker) {
+  rerender();
+
+  /* ?memory=<id> opens that memory, after the first render because what can be opened is what
+     the list is showing: the same URL can carry filters, and a memory those filters exclude
+     has no place in the order Previous, Next and Back all read from. An id that is unknown,
+     deleted or filtered out is dropped from the URL rather than reported - a URL is edited,
+     shared and half-remembered, and none of that is an error anyone can act on. */
+  if (openFromUrl && list.getOrder().includes(openFromUrl)) {
+    /* No push: this is the entry the page loaded on. Pushing here would put a second entry
+       with the same URL on top of it, and Back to list would then walk back onto a URL that
+       still names the memory and reopen the view it had just closed. */
+    openDetail(openFromUrl, { push: false });
+  } else if (openFromUrl) {
+    writeUrl();
+  }
+
+  /* The browser's own Back closes the view, and its Forward opens it again. The URL that the
+     navigation landed on is what decides, rather than anything remembered here: it is the one
+     thing both directions agree on. */
+  window.addEventListener('popstate', () => {
+    const wanted = parseMemoryId(window.location.search);
+
+    if (wanted && list.getOrder().includes(wanted)) {
+      if (detail.openId() !== wanted) {
+        /* No push: this entry already exists, which is how we got here. */
+        openDetail(wanted, { push: false });
+        detailPushed = false;
+      }
       return;
     }
 
-    /* Picking something in the list on a narrow screen means wanting to see it on the map, so
-       the view follows. The map is shown before focusMarker runs, because flying to a marker
-       on a map of the wrong size lands in the wrong place. */
-    if (viewSwitch.isNarrow() && viewSwitch.current() === LIST_VIEW) {
-      viewSwitch.showMap();
-    }
-    if (journeyActive && id !== currentStopId()) {
-      pauseForInteraction();
-    }
-    selection.select(id);
-    focusMarker(map, marker, {
-      reducedMotion: prefersReducedMotion(),
-      clusterGroup: markers.clusterGroup()
-    });
+    finishCloseDetail();
+  });
+
+  /* On a phone with nothing saved, the map is empty and the welcome is in the other pane, so
+     the first thing a new person sees is a blank map and no explanation. Only at boot, so it
+     never overrides a choice made during the session. */
+  if (store.list().length === 0 && viewSwitch.isNarrow()) {
+    viewSwitch.setView(LIST_VIEW);
+  }
+  store.subscribe(renderAll);
+
+  /* A card opens the memory. It used to fly the map and open a popup instead, which was the
+     only thing a click could do when the popup was the whole of a memory; now that there is
+     a view holding all of it, flying somewhere is one of the things that view offers rather
+     than the price of looking at anything. The map is left where it is, and Show on map is
+     there for when moving it is what was wanted.
+
+     The pin still highlights, through the selection state openDetail sets, so the map says
+     which memory is open even though it has not moved. */
+  function selectFromList(id) {
+    openDetail(id, { origin: 'list' });
   }
 
   const form = createMemoryForm({
     photoPicker,
+    createIcon,
+    /* Read when the suggestions are built, never held: a tag added to another memory while
+       this dialog is open is offered the next time somebody types in it. */
+    getAllTags: () => allTags(store.list()),
     onSubmit: (values, context) => handleSubmit(values, context),
     onCancel: (context) => handleCancel(context)
   });
@@ -588,13 +1043,25 @@ function boot() {
     onCancel: () => syncButton()
   });
 
+  const placementHint = createPlacementHint({
+    element: document.getElementById('placement-hint')
+  });
+
+  /* Every path in and out of placement goes through here, which is what keeps the hint from
+     outliving the mode: the toggle, a placed pin, Escape, and the add dialog closing. */
   function syncButton() {
-    addButton.setAttribute('aria-pressed', String(placement.isActive()));
+    const active = placement.isActive();
+    addButton.setAttribute('aria-pressed', String(active));
+    placementHint.render(active);
   }
 
   function markerElement(id) {
     const marker = markers.getMarker(id);
     return marker ? marker.getElement() : null;
+  }
+
+  function closePopupFor(id) {
+    markers.getMarker(id)?.closePopup();
   }
 
   function openPopupFor(id) {
@@ -607,7 +1074,7 @@ function boot() {
     }
   }
 
-  function fillPopupPhotos(id) {
+  function fillPopupCover(id) {
     const memory = store.get(id);
     const marker = markers.getMarker(id);
     if (!memory || !marker || memory.photoIds.length === 0) {
@@ -615,14 +1082,14 @@ function boot() {
     }
 
     /* The popup content is a function now, so getContent would hand back the function
-       itself. The rendered element is what has the photo strip in it. */
+       itself. The rendered element is what has the cover in it. */
     const popupElement = marker.getPopup().getElement();
-    const strip = popupElement ? findPhotoStrip(popupElement) : null;
-    if (!strip) {
+    const cover = popupElement ? findPopupCover(popupElement) : null;
+    if (!cover) {
       return;
     }
 
-    popupPhotos.fill(strip, memory).catch((error) => console.error(error));
+    popupPhotos.fill(cover, memory).catch((error) => console.error(error));
   }
 
   async function loadPhotos(photoIds) {
@@ -636,7 +1103,7 @@ function boot() {
     return loaded;
   }
 
-  async function startEdit(id) {
+  async function startEdit(id, { returnFocus = markerElement(id) } = {}) {
     const memory = store.get(id);
     if (!memory) {
       return;
@@ -646,10 +1113,10 @@ function boot() {
 
     /* Closed before the dialog opens so the popup that reopens afterwards is rebuilt
        from the saved record rather than left showing the old values behind the modal. */
-    markers.getMarker(id).closePopup();
+    markers.getMarker(id)?.closePopup();
 
     const existingPhotos = await loadPhotos(memory.photoIds);
-    form.openForEdit(memory, { returnFocus: markerElement(id), photos: existingPhotos });
+    form.openForEdit(memory, { returnFocus, photos: existingPhotos });
   }
 
   /* Journey mode owns the unclustered state while it is on, so a move ending inside it must
@@ -730,8 +1197,11 @@ function boot() {
 
     if (mode === 'edit') {
       /* Edit closed this popup on the way in, so reopening it leaves the screen exactly
-         as the user found it. */
-      openPopupFor(memoryId);
+         as the user found it - unless the edit came from the detail view, which is still
+         open and is where the reader was. */
+      if (detail.openId() !== memoryId) {
+        openPopupFor(memoryId);
+      }
       return;
     }
     draftMarker.clear();
@@ -776,7 +1246,9 @@ function boot() {
       draftMarker.clear();
       resultMarker.clear();
       form.closeAsSaved();
-      if (context.mode === 'edit') {
+      /* The detail view is showing the record that just changed, so it is redrawn from the
+         saved one rather than left displaying what was typed over. */
+      if (context.mode === 'edit' && !refreshDetail(id)) {
         openPopupFor(id);
       }
     } catch (error) {
@@ -827,7 +1299,11 @@ function boot() {
     map,
     onSearch: (query) => runPlaceSearch(query),
     onChoose: (result) => resultMarker.show(result),
-    onClear: () => resultMarker.clear()
+    onClear: () => resultMarker.clear(),
+    /* map/ does not get to ask the DOM about the layout, and ui/icons.js is not its to
+       import. Both are handed over here, which is what main.js is for. */
+    isNarrow: () => viewSwitch.isNarrow(),
+    createIcon
   });
 
   async function runPlaceSearch(query) {
@@ -1039,22 +1515,34 @@ function boot() {
     }
   });
 
-  createSettingsDialog({
+  const settingsDialog = createSettingsDialog({
     dialog: document.getElementById('settings-dialog'),
     openButton: document.getElementById('open-settings'),
     closeButton: document.getElementById('settings-close'),
     toggleElement: document.getElementById('setting-suggest-place-names'),
     usageElement: document.getElementById('storage-usage'),
     themeElement: document.getElementById('setting-theme'),
+    dimMapElement: document.getElementById('setting-dim-map'),
     persistedElement: document.getElementById('storage-persisted'),
     settings,
     onThemeChange: (theme) => changeTheme(theme),
+    onDimMapChange: (enabled) => applyMapDimming(enabled),
     /* A status line from a previous export should not still be sitting there next time. */
     onOpen: () => {
       exportStatus.textContent = '';
       importStatus.textContent = '';
     }
   });
+
+  /* Opens Settings and takes the viewer to the import section, rather than to the top of a
+     panel and a hunt for it. The section is not focusable, so focus goes to the control that
+     does the thing. */
+  function openSettingsAtImport() {
+    settingsDialog.open();
+    const pick = document.querySelector('.import-pick');
+    pick?.scrollIntoView({ block: 'center' });
+    document.getElementById('import-input')?.focus();
+  }
 
   sweepOrphanedPhotos().catch((error) => console.error(error));
 
@@ -1124,6 +1612,23 @@ function boot() {
 
   if (devApi) {
     window.waypoints = devApi;
+  }
+
+  /* The end-to-end suite's one honest answer to "did the map move". Behind the same dev-host
+     guard as the console API above, and null off one, so nothing is attached and no listener
+     is added on a real host.
+
+     Only the two reading functions go on the window: record is ours to call. */
+  const mapProbe = createMapMovementProbe({ devHost: isDevHost(window.location.hostname) });
+
+  if (mapProbe) {
+    map.on('movestart', mapProbe.record);
+    map.on('moveend', mapProbe.recordEnd);
+    window.waypointsMapProbe = {
+      movesStarted: mapProbe.movesStarted,
+      isIdle: mapProbe.isIdle,
+      reset: mapProbe.reset
+    };
   }
 
   /* Last, and deliberately not awaited: registering is housekeeping, and nothing above it

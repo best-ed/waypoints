@@ -1,69 +1,78 @@
 .popup {
+  position: relative;
   min-width: 14rem;
   max-width: 18rem;
 }
 
+/* Where Leaflet's own close control sat, and absolutely positioned for the same reason: the
+   title has to be able to run the full width of the popup without wrapping around it. The
+   padding on the title is what keeps the two apart.
+
+   It carries its own surface rather than the ghost button's transparency, because with a
+   cover above the title it sits on top of a photograph: a bare stroke over an image is
+   legible or invisible depending on what somebody happened to take a picture of. */
+.popup-close {
+  position: absolute;
+  top: calc(var(--space-2) * -1);
+  right: calc(var(--space-2) * -1);
+  background-color: var(--color-surface-overlay);
+  border-radius: var(--radius-full);
+}
+
+.popup-close:hover {
+  background-color: var(--color-surface-raised);
+}
+
 .popup-title {
+  padding-right: var(--space-6);
   margin-bottom: var(--space-1);
-  font-size: var(--text-base);
-  line-height: var(--line-tight);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-display);
+  line-height: var(--line-snug);
   /* User titles can be long single words; break rather than stretch the popup. */
   overflow-wrap: anywhere;
 }
 
-.popup-date,
-.popup-place {
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-}
-
-.popup-place {
-  overflow-wrap: anywhere;
-}
-
-.popup-note {
-  margin-top: var(--space-3);
-  /* Keeps the user's own line breaks without injecting <br> into the document. */
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.popup-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  margin-top: var(--space-3);
-  padding: 0;
-  list-style: none;
-}
-
-.popup-tag {
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-full);
-  background-color: var(--color-bg);
-  border: 1px solid var(--color-border);
+.popup-meta {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   overflow-wrap: anywhere;
-  cursor: pointer;
 }
 
-.popup-tag:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+/* The cover sits above the title and spans the popup, which is what makes this read as a
+   preview of a memory rather than a row from the list. The bed is painted whether or not the
+   picture has arrived, so the popup does not change height underneath the reader when it
+   does - the blob comes out of IndexedDB a moment after Leaflet has already placed the panel. */
+.popup-cover {
+  aspect-ratio: 16 / 10;
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-raised);
+  overflow: hidden;
 }
 
-.popup-actions {
-  display: flex;
-  gap: var(--space-2);
+.popup-cover-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.popup-open {
+  width: 100%;
   margin-top: var(--space-4);
 }
 
-.popup-button {
-  flex: 1;
-  padding: var(--space-1) var(--space-2);
-  font-size: var(--text-sm);
+/* Leaflet's own sheet sets `margin: 1.3em 0` on every paragraph inside popup content, at a
+   specificity the reset in base.css cannot reach. That is where the popup's loose and uneven
+   vertical rhythm came from: the date, the place and the note each carried 21px above and
+   below, collapsed unpredictably against the margins we set. Zeroed here so the spacing below
+   is the spacing that applies. */
+.leaflet-popup-content p {
+  margin: var(--space-0);
 }
+
 
 /* Leaflet sets its own font stack and sizing on popup content. */
 .leaflet-popup-content {
@@ -76,48 +85,19 @@
 
 /* Leaflet paints the wrapper and the tip white from its own stylesheet, and nothing here
    overrode it. In the dark theme that left the theme's near-white body text on a white panel:
-   the title and the note measured 1.18:1 and the date 2.75:1, so a memory's note was
-   effectively invisible. The tags and the action buttons carry their own colours, which is
-   what kept it hidden. The surface has to come from the theme like every other panel. */
+   the title and the note measured 1.18:1 and the date 2.75:1 against the rendered pixels, so
+   a memory's note was effectively invisible. The tags and the action buttons carry their own
+   colours, which is what kept it hidden. Shipped in 1.0.1 against --color-surface; here it
+   takes the overlay surface and the elevation this branch gives every floating panel. */
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-overlay);
   color: var(--color-text);
+  box-shadow: var(--elevation-2);
 }
 
 .leaflet-popup-content-wrapper {
   border-radius: var(--radius-md);
-}
-
-.popup-photos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  margin-top: var(--space-3);
-  padding: 0;
-  list-style: none;
-}
-
-.popup-photo-button {
-  width: 3.5rem;
-  height: 3.5rem;
-  padding: 0;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background: none;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.popup-photo-thumb {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.popup-photo-button:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
 }
 
 .result-popup-title {

@@ -1,7 +1,7 @@
 {
   "name": "waypoints",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Pin memories on an interactive map.",
   "license": "MIT",
   "type": "module",
@@ -10,7 +10,9 @@
     "test": "node --test --test-timeout=10000 \"tests/**/*.test.js\"",
     "precache": "node scripts/build-precache.js",
     "serve:prod": "node scripts/serve.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test --project=chromium --project=webkit",
+    "test:e2e:smoke": "playwright test --project=chromium --project=webkit --project=firefox --grep @smoke",
+    "test:visual": "playwright test --project=visual"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

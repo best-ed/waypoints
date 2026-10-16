@@ -7,9 +7,10 @@
   background-color: var(--color-accent);
   color: var(--color-accent-contrast);
   border: 2px solid var(--color-accent-contrast);
-  box-shadow: var(--shadow-cluster);
+  box-shadow: var(--elevation-1);
   cursor: pointer;
-  transition: transform 120ms ease, background-color 120ms ease;
+  transition: transform var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
 }
 
 .memory-cluster-content {
@@ -21,17 +22,17 @@
 
 .memory-cluster-count {
   font-family: var(--font-sans);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
 .memory-cluster.is-small .memory-cluster-count {
-  font-size: 0.8125rem;
+  font-size: var(--text-sm);
 }
 
 .memory-cluster.is-medium .memory-cluster-count {
-  font-size: 0.875rem;
+  font-size: var(--text-base);
 }
 
 .memory-cluster.is-large .memory-cluster-count {
@@ -55,11 +56,9 @@
   outline-offset: 2px;
 }
 
+/* The duration tokens take the transition to zero centrally. This is here for the scale
+   itself, which is a state change rather than an animation and would otherwise still snap. */
 @media (prefers-reduced-motion: reduce) {
-  .memory-cluster {
-    transition: none;
-  }
-
   .memory-cluster:hover {
     transform: none;
   }

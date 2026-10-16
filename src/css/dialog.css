@@ -1,14 +1,104 @@
 .dialog {
+  /* The padding is a custom property because the sticky footer below has to pull itself out
+     to the same edges, and on a narrow screen both change together to clear the safe areas.
+     Two numbers that must agree, stated once. */
+  --dialog-padding: var(--space-5);
+  --dialog-padding-bottom: var(--space-5);
+
   width: min(32rem, calc(100vw - var(--space-6)));
-  padding: var(--space-5);
+  padding: var(--dialog-padding);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-overlay);
   color: var(--color-text);
+  box-shadow: var(--elevation-2);
 }
 
 .dialog::backdrop {
   background-color: var(--color-backdrop);
+}
+
+/* ---- arriving and leaving ---------------------------------------------------- */
+
+/* A dialog is a surface that arrives and then leaves, and until now it did both instantly.
+
+   Progressive enhancement, and the enhancement is the whole mechanism. A transition cannot run
+   from display:none, so without allow-discrete there is nothing to animate out of or into:
+   @starting-style gives the open frame something to come from, and transitioning display and
+   overlay as discrete properties keeps the element painted until the fade has finished. Where
+   either is unsupported the rules below are simply dropped and the dialog opens and closes the
+   way it does today, which is the behaviour this replaces rather than breaks.
+
+   The rise is small on purpose. A dialog that travels is a dialog you wait for.
+
+   Reduced motion needs nothing here: the durations are the tokens, which are zero, and a zero
+   duration still applies the end state. */
+.dialog,
+.lightbox {
+  --dialog-rise: var(--space-2);
+
+  opacity: 1;
+  transition: opacity var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out),
+    overlay var(--duration-base) allow-discrete,
+    display var(--duration-base) allow-discrete;
+}
+
+/* The closed state, which is also where the open transition starts from and where the close
+   transition ends. */
+.dialog:not([open]),
+.lightbox:not([open]) {
+  opacity: 0;
+  transform: translateY(var(--dialog-rise)) scale(0.98);
+}
+
+@starting-style {
+  .dialog[open],
+  .lightbox[open] {
+    opacity: 0;
+    transform: translateY(var(--dialog-rise)) scale(0.98);
+  }
+}
+
+/* The scrim fades with the panel rather than being switched off underneath it. Without the
+   discrete half of this, closing the import preview dropped its scrim in one frame while the
+   panel was still fading, and Settings behind it flashed to full brightness and back. */
+.dialog::backdrop,
+.lightbox::backdrop {
+  opacity: 1;
+  transition: opacity var(--duration-base) var(--ease-out),
+    overlay var(--duration-base) allow-discrete,
+    display var(--duration-base) allow-discrete;
+}
+
+.dialog:not([open])::backdrop,
+.lightbox:not([open])::backdrop {
+  opacity: 0;
+}
+
+@starting-style {
+  .dialog[open]::backdrop,
+  .lightbox[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/* A dialog that opens over another dialog rather than over the app.
+
+   The import preview was the same width as Settings and sat in the same place, so its backdrop
+   only showed as a thin frame around it and the two panels read as one: a white block punched
+   into the middle of the settings panel rather than something that had arrived on top of it.
+   Both carried --elevation-2 as well, so there was nothing to say which was in front.
+
+   The stronger scrim is the one the lightbox uses, and elevation-3 is the level for a surface
+   that arrives and then leaves. Together they are the difference between "the panel changed"
+   and "something is in front of the panel". */
+.dialog-stacked::backdrop {
+  background-color: var(--color-backdrop-strong);
+}
+
+.dialog-stacked {
+  box-shadow: var(--elevation-3);
 }
 
 .dialog-title {
@@ -36,32 +126,7 @@
   margin-bottom: var(--space-4);
 }
 
-.field-label {
-  display: block;
-  margin-bottom: var(--space-1);
-  font-size: var(--text-sm);
-  font-weight: 600;
-}
-
-.field-input {
-  width: 100%;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-bg);
-}
-
-.field-input:focus-visible {
-  border-color: var(--color-accent);
-}
-
-.field-input[aria-invalid='true'] {
-  border-color: var(--color-accent);
-}
-
-.field-textarea {
-  resize: vertical;
-}
+/* The field primitives live in primitives.css. */
 
 .field-hint,
 .field-error {
@@ -75,20 +140,53 @@
 
 .field-error {
   color: var(--color-accent);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 
+/* Pinned to the bottom of the dialog. With a few photos attached the form is taller than
+   the viewport, and the actions used to scroll away with the content: the primary action of
+   the dialog was below the fold in the ordinary case of a memory with pictures. The negative
+   margins pull it out to the dialog's own edges so the rule and the background span it. */
 .dialog-actions {
+  position: sticky;
+  bottom: calc(-1 * var(--dialog-padding-bottom));
+  margin: var(--space-5) calc(-1 * var(--dialog-padding)) calc(-1 * var(--dialog-padding-bottom));
+  padding: var(--space-3) var(--dialog-padding);
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-surface-overlay);
+}
+
+/* Two rows in the same footer, one at a time: the ordinary actions, and the question asked
+   in their place when leaving would cost something. Swapping rather than stacking keeps the
+   footer the same height, so the form does not jump as the question appears. */
+.dialog-actions-row {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: var(--space-2);
-  margin-top: var(--space-2);
 }
 
-.button-primary {
-  background-color: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-accent-contrast);
+.discard-text {
+  margin-right: auto;
+  font-weight: var(--weight-semibold);
+}
+
+/* The one field in the form that holds the name of a memory, so it gets the face every other
+   memory title has. Declared here rather than left to .field-input, which is the primitive and
+   has no business knowing which field is which. */
+.field-title {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-display);
+}
+
+/* The floor comes from the rows attribute and the height from the content; this is the
+   ceiling, past which the textarea scrolls rather than the dialog growing without end. */
+.field-textarea {
+  max-height: 18rem;
+  overflow-y: auto;
+  /* The height is set in pixels from script, so a drag handle would fight it. */
+  resize: none;
 }
 
 .form-error {
@@ -98,7 +196,7 @@
   border-radius: var(--radius-sm);
   color: var(--color-accent);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 
 .photo-grid {
@@ -124,12 +222,78 @@
   object-fit: cover;
 }
 
+.photo-tile.is-dragging {
+  opacity: 0.4;
+}
+
+/* Where it would land. An edge rather than a shift of the tiles around it: moving the grid
+   under the pointer mid-drag makes the target move as you aim at it. */
+.photo-tile.is-drop-target {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+/* One word, on the one tile it is true of. The cover travels with the memory into the list,
+   the popup and the detail view, and which photo that is was previously something you worked
+   out from position. */
+.photo-cover-badge {
+  position: absolute;
+  top: var(--space-1);
+  left: var(--space-1);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  line-height: var(--line-loose);
+}
+
+/* Out of the way until wanted. Three controls over an 80px thumbnail hide the thing they are
+   about, so they come in on hover and on focus - focus-within, because keyboard users reach
+   them by tabbing into the tile and they have to be visible before they are reached. */
+.photo-actions {
+  position: absolute;
+  left: var(--space-0);
+  right: var(--space-0);
+  bottom: var(--space-0);
+  display: flex;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background-color: var(--color-surface);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+
+.photo-tile:hover .photo-actions,
+.photo-tile:focus-within .photo-actions {
+  opacity: 1;
+}
+
+/* Always there for a pointer that cannot hover, where there is no hover to reveal them. */
+@media (hover: none) {
+  .photo-actions {
+    opacity: 1;
+  }
+}
+
+.photo-move {
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  padding: var(--space-0);
+}
+
+/* A small round button in the corner rather than a full pill across the picture. The pill
+   covered about half of an 80px thumbnail, which left no way to tell which photo you were
+   about to remove by looking at it. */
 .photo-remove {
   position: absolute;
   top: var(--space-1);
   right: var(--space-1);
-  padding: 0 var(--space-2);
-  font-size: var(--text-sm);
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  padding: var(--space-0);
   background-color: var(--color-surface);
 }
 
@@ -146,8 +310,9 @@
   white-space: nowrap;
 }
 
+/* No display of its own: .button is inline-flex, and an inline-block here would win on
+   source order and stack the icon above the label. */
 .photo-add {
-  display: inline-block;
   cursor: pointer;
 }
 
@@ -159,4 +324,118 @@
 .photo-input:focus-visible + .photo-add {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
+}
+
+/* ---- tags ------------------------------------------------------------------- */
+
+/* What the memory has. Shape and colour come from .chip-tag in primitives.css; these are the
+   same labels the detail view shows, with the control that takes one off built in. */
+.tag-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+  padding: var(--space-0);
+  list-style: none;
+}
+
+/* Shape, bed and type come from .chip and .chip-tag in primitives.css: a token is a tag
+   label, the same one the detail view shows, with the control that takes it off built in.
+   Only the gap for that control belongs here. */
+.tag-token {
+  gap: var(--space-1);
+  padding-right: var(--space-1);
+}
+
+.tag-token-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-0);
+  border: none;
+  border-radius: var(--radius-full);
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.tag-token-remove:hover {
+  color: var(--color-accent);
+}
+
+.tag-token-remove:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+/* The popup is positioned against this rather than the field, so it lines up with the input
+   and not with the tokens above it. */
+.tag-combobox {
+  position: relative;
+}
+
+/* --elevation-3 is for something that arrives and then leaves, which is exactly what a
+   suggestion list does. */
+.tag-listbox {
+  position: absolute;
+  z-index: 1;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  right: 0;
+  max-height: 11rem;
+  overflow-y: auto;
+  margin: var(--space-0);
+  padding: var(--space-1);
+  list-style: none;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-overlay);
+  box-shadow: var(--elevation-3);
+}
+
+.tag-option {
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+/* The active option, which is where Enter would land. Not :hover and not focus: focus stays
+   in the input the whole time, which is the point of aria-activedescendant. */
+.tag-option.is-active,
+.tag-option:hover {
+  background-color: var(--color-bg);
+}
+
+/* ---- photos ----------------------------------------------------------------- */
+
+/* The drop target is the grid and the button together. The border is always there rather than
+   appearing on drag, so the zone does not change size under the pointer at the moment somebody
+   is aiming at it. */
+.photo-drop {
+  padding: var(--space-3);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+.photo-drop.is-dragging {
+  border-style: solid;
+  border-color: var(--color-accent);
+  background-color: var(--color-bg);
+}
+
+/* Only where there is a pointer to drag with. On a phone there is nothing to drop and the
+   sentence would be an instruction nobody can follow. */
+.photo-drop-hint {
+  display: none;
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+@media (pointer: fine) {
+  .photo-drop-hint {
+    display: block;
+  }
 }

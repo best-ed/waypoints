@@ -18,6 +18,14 @@ export function applyTheme(theme, element = document.documentElement) {
   element.removeAttribute('data-theme');
 }
 
+/* The map dimming is an attribute rather than a class so it reads the same way as
+   data-theme, and so the stylesheet can require both without JavaScript knowing which theme
+   is in force. The attribute is set whatever the theme: the CSS only acts on it in the dark
+   one, which keeps the rule about when to dim in the stylesheet. */
+export function applyMapDimming(enabled, element = document.documentElement) {
+  element.toggleAttribute('data-dim-map', enabled !== false);
+}
+
 /* What the page is actually showing, which is what the basemap needs to know. */
 export function effectiveTheme(theme) {
   if (theme === 'light' || theme === 'dark') {

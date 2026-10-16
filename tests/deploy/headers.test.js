@@ -158,6 +158,13 @@ test('every external host the app actually uses is allowed', () => {
   }
 });
 
+test('the display face is allowed from our origin and nowhere else', () => {
+  /* Fraunces is self-hosted, so no font service belongs in the policy. Without the directive
+     at all the font would fall back to default-src, which happens to be 'self' - this asserts
+     it is deliberate rather than a coincidence that a later edit could undo. */
+  assert.deepEqual(csp['font-src'], ["'self'"]);
+});
+
 test('photos and the worker can do what they need', () => {
   /* blob: for the object URLs every photo surface uses; worker-src for registering sw.js. */
   assert.ok(csp['img-src'].includes('blob:'));

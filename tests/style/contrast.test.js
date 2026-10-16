@@ -23,6 +23,10 @@ const PAIRINGS = [
   { fg: '--color-text', bg: '--color-surface', ratio: 4.5, what: 'body text on a panel' },
   { fg: '--color-text-muted', bg: '--color-bg', ratio: 4.5, what: 'hints and meta on the page' },
   { fg: '--color-text-muted', bg: '--color-surface', ratio: 4.5, what: 'hints and meta on a panel' },
+  { fg: '--color-text', bg: '--color-surface-raised', ratio: 4.5, what: 'body text on a floating control' },
+  { fg: '--color-text-muted', bg: '--color-surface-raised', ratio: 4.5, what: 'hints on a floating control' },
+  { fg: '--color-text', bg: '--color-surface-overlay', ratio: 4.5, what: 'body text in a dialog or a map popup' },
+  { fg: '--color-text-muted', bg: '--color-surface-overlay', ratio: 4.5, what: 'the date and place line in a map popup' },
 
   // --- text on a filled surface ------------------------------------------------
   { fg: '--color-accent-contrast', bg: '--color-accent', ratio: 4.5, what: 'label on a pressed button or selected chip' },
@@ -31,12 +35,14 @@ const PAIRINGS = [
 
   // --- accent and journey used as text ----------------------------------------
   { fg: '--color-accent', bg: '--color-surface', ratio: 4.5, what: 'accent text on a panel' },
+  { fg: '--color-accent', bg: '--color-surface-overlay', ratio: 4.5, what: 'the selected title in a dialog or popup' },
   { fg: '--color-accent', bg: '--color-bg', ratio: 4.5, what: 'accent text on the page' },
   { fg: '--color-journey', bg: '--color-surface', ratio: 4.5, what: 'the journey summary line' },
 
   // --- user interface components ----------------------------------------------
   { fg: '--color-border-strong', bg: '--color-surface', ratio: 3, what: 'the edge of an input or button on a panel' },
   { fg: '--color-border-strong', bg: '--color-bg', ratio: 3, what: 'the edge of an input or button on the page' },
+  { fg: '--color-border-strong', bg: '--color-surface-overlay', ratio: 3, what: 'the edge of a control inside a dialog' },
   { fg: '--color-journey-muted', bg: '--color-surface', ratio: 3, what: 'the untravelled journey line' },
 
   // --- no requirement ----------------------------------------------------------
@@ -51,6 +57,12 @@ const PAIRINGS = [
     bg: '--color-bg',
     ratio: 1,
     what: 'the same divider against the page'
+  },
+  {
+    fg: '--color-border',
+    bg: '--color-surface-overlay',
+    ratio: 1,
+    what: 'the edge of a dialog against its own surface, which is a seam and not a boundary anyone has to see'
   }
 ];
 

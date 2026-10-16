@@ -31,6 +31,60 @@ function reveal(map, marker, clusterGroup, reducedMotion) {
   return true;
 }
 
+/* How long to wait for the map to settle before giving up on moving focus. A fly that is
+   going to happen has started long before this; the bound is here so a listener armed for a
+   move that never came cannot sit there and grab focus during some later, unrelated one. */
+const SETTLE_TIMEOUT = 4000;
+
+/* Focus follows the reader to the pin, but only once the map has stopped moving.
+
+   Doing it straight away cancels the fly. Leaflet 1.9 pans the map when a marker takes focus
+   (Marker._panOnFocus calls panInside), and that interrupts the animation and leaves the pin
+   pressed against the edge of the map with its popup running off the side. After moveend the
+   pin is where the fly put it, so panInside finds it already inside its own padding and does
+   nothing at all.
+
+   Anything the reader does to the map first wins. A drag or a key means they are looking
+   somewhere else by then, and taking focus back to the pin would be the app arguing with
+   them. */
+export function focusMarkerWhenSettled(map, marker, { timeout = SETTLE_TIMEOUT } = {}) {
+  const container = map.getContainer();
+  let finished = false;
+  let handle = null;
+
+  function cleanUp() {
+    finished = true;
+    map.off('moveend', settle);
+    container.removeEventListener('pointerdown', abandon);
+    container.removeEventListener('keydown', abandon);
+    clearTimeout(handle);
+  }
+
+  function abandon() {
+    if (!finished) {
+      cleanUp();
+    }
+  }
+
+  function settle() {
+    if (finished) {
+      return;
+    }
+
+    cleanUp();
+    /* A pin still folded into a cluster has no element to focus. There is nothing to do about
+       that here: the popup the reveal opens is what carries the reader on. */
+    marker.getElement()?.focus();
+  }
+
+  map.on('moveend', settle);
+  container.addEventListener('pointerdown', abandon);
+  container.addEventListener('keydown', abandon);
+  handle = setTimeout(abandon, timeout);
+
+  return { abandon, isPending: () => !finished };
+}
+
 /* Opens a popup without moving the view, for the paths that have not asked to travel: a move
    that has just finished, or a deletion being undone. */
 export function openMarkerPopup(map, marker, { clusterGroup = null, reducedMotion = false } = {}) {

@@ -62,16 +62,25 @@ export function createIndexedDbBackend({
   /* Asked for once, after the first photo is safely written, so the prompt only ever
      appears for someone who actually stored something. navigator.storage is missing in
      insecure contexts, so its absence is normal rather than an error. */
-  async function requestPersistence() {
+  function requestPersistence() {
     if (persistenceRequested || !storage || typeof storage.persist !== 'function') {
       return;
     }
     persistenceRequested = true;
 
     try {
-      await storage.persist();
+      /* Deliberately not awaited, and not only because nothing reads the answer.
+
+         Firefox answers persist() with a permission prompt, and where nothing can answer that
+         prompt the promise simply never settles. Awaited, it took the save with it: the photo
+         and the memory were both written, and the dialog sat there with Save busy for as long
+         as anybody was willing to wait. Chromium and WebKit resolve it immediately, which is
+         why two engines said this was fine.
+
+         Persistence is an optimisation. It may not fail a write and it may not hold one up. */
+      Promise.resolve(storage.persist()).catch(() => {});
     } catch {
-      /* Persistence is an optimisation. Losing it must not fail the write. */
+      /* A throw rather than a rejection, from an engine that does not have this at all. */
     }
   }
 
@@ -96,7 +105,7 @@ export function createIndexedDbBackend({
     const stored = await serializePhotoRecord(record);
 
     await withStore('readwrite', (store) => promisifyRequest(store.put(stored)));
-    await requestPersistence();
+    requestPersistence();
   }
 
   async function get(id) {

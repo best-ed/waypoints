@@ -1,48 +1,37 @@
 import { createObjectUrlPool } from './object-urls.js';
 
-function thumbnailAlt(index, total, title) {
-  return 'Photo ' + (index + 1) + ' of ' + total + ', ' + title;
-}
+/* One owner for every object URL on the map. Leaflet keeps a single popup open at a time, so
+   opening the next one releases the previous one's URL and closing the last releases it.
+   Nothing else revokes a popup thumbnail.
 
-/* One owner for every thumbnail URL on the map. Leaflet keeps a single popup open at a
-   time, so opening the next one releases the previous one's URLs and closing the last
-   releases them all. Nothing else revokes a popup thumbnail. */
-export function createPopupPhotos({ loadPhotos, onOpenLightbox }) {
+   The popup shows one cover now rather than a strip of every photo, so this reads one record
+   rather than all six: a preview of a memory with six photos used to pull six blobs out of
+   IndexedDB to draw six 56px squares. The full set is read when the detail view opens, which
+   is where the photos are actually looked at. */
+export function createPopupPhotos({ loadPhoto }) {
   const urls = createObjectUrlPool();
 
   function release() {
     urls.revokeAll();
   }
 
-  async function fill(strip, memory) {
-    const records = await loadPhotos(memory.photoIds);
+  async function fill(cover, memory) {
+    const record = await loadPhoto(memory.photoIds[0]);
 
-    /* The popup may already have closed while the blobs were being read. */
-    if (!strip.isConnected) {
+    /* The popup may already have closed, or been rebuilt for another marker, while the blob
+       was being read. */
+    if (!record || !cover.isConnected) {
       return;
     }
 
-    strip.replaceChildren();
+    const image = cover.querySelector('.popup-cover-image');
 
-    records.forEach((record, index) => {
-      const item = document.createElement('li');
-      item.className = 'popup-photo';
+    if (!image) {
+      return;
+    }
 
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'popup-photo-button';
-
-      const image = document.createElement('img');
-      image.src = urls.create(record.thumb);
-      image.alt = thumbnailAlt(index, records.length, memory.title);
-      image.className = 'popup-photo-thumb';
-
-      button.append(image);
-      button.addEventListener('click', () => onOpenLightbox(records, index, memory, button));
-
-      item.append(button);
-      strip.append(item);
-    });
+    image.src = urls.create(record.thumb);
+    image.hidden = false;
   }
 
   return { fill, release };

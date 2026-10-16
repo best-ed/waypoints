@@ -13,6 +13,18 @@
          770ms of render blocking for leaflet.css alone on a throttled phone. -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 
+    <!-- The display face. A font referenced from a stylesheet is not discovered until that
+         sheet has been fetched and parsed, which on a cold connection puts it a long way down
+         the queue; crossorigin is required on a font preload even from our own origin, because
+         fonts are always fetched in CORS mode. -->
+    <link
+      rel="preload"
+      href="src/fonts/fraunces-600-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
     <!-- iOS ignores the manifest icons and takes this one, which is why it is the full-bleed
@@ -27,8 +39,8 @@
       alternative is rewriting these from script on every theme change, which trades a
       cosmetic mismatch for a second source of truth about the theme.
     -->
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1e1e24" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fffcf7" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#231e18" />
 
     <!--
       Before the stylesheets and not deferred, so an explicit dark choice is applied ahead of
@@ -76,6 +88,7 @@
 
     <link rel="stylesheet" href="src/css/tokens.css" />
     <link rel="stylesheet" href="src/css/base.css" />
+    <link rel="stylesheet" href="src/css/primitives.css" />
     <link rel="stylesheet" href="src/css/layout.css" />
     <link rel="stylesheet" href="src/css/map.css" />
     <link rel="stylesheet" href="src/css/popup.css" />
@@ -87,6 +100,7 @@
     <link rel="stylesheet" href="src/css/sandbox.css" />
     <link rel="stylesheet" href="src/css/offline.css" />
     <link rel="stylesheet" href="src/css/settings.css" />
+    <link rel="stylesheet" href="src/css/detail.css" />
     <link rel="stylesheet" href="src/css/mobile.css" />
     <!-- Last, so its system colours win over every component sheet. -->
     <!-- Scoped, because every rule in this file is already inside @media (forced-colors:
@@ -108,12 +122,12 @@
          landmark rather than loose page content. -->
     <header class="app-top">
       <p id="sandbox-banner" class="sandbox-banner" hidden>
-        Sandbox &mdash; this is throwaway data, kept apart from your real memories.
+        Sandbox: this is throwaway data, kept apart from your real memories.
       </p>
 
       <!-- Empty on purpose: the text is written in when the connection drops, because a live
            region announces a change to its contents and not a change to its visibility. -->
-      <div id="offline-banner" class="offline-banner" hidden>
+      <div id="offline-banner" class="offline-banner" data-icon="offline" data-icon-size="18" hidden>
         <span id="offline-banner-text" class="offline-banner-text" role="status"></span>
         <button type="button" id="offline-banner-dismiss" class="offline-banner-dismiss">
           Dismiss
@@ -125,24 +139,25 @@
         id="sidebar-toggle"
         class="button icon-button"
         type="button"
+        data-icon="list"
         aria-expanded="true"
         aria-controls="sidebar"
       >
-        Hide list
+        <span class="button-label">Hide list</span>
       </button>
 
       <h1 class="app-title">waypoints</h1>
 
       <div id="view-switch" class="view-switch" role="group" aria-label="View" hidden>
-        <button id="view-map" class="button view-option" type="button" aria-pressed="true">
-          Map
+        <button id="view-map" class="button view-option" type="button" data-icon="map" aria-pressed="true">
+          <span class="button-label">Map</span>
         </button>
-        <button id="view-list" class="button view-option" type="button" aria-pressed="false">
-          List
+        <button id="view-list" class="button view-option" type="button" data-icon="list" aria-pressed="false">
+          <span class="button-label">List</span>
         </button>
       </div>
 
-      <button id="add-memory" class="button" type="button" aria-pressed="false">
+      <button id="add-memory" class="button button-primary" type="button" data-icon="add" aria-pressed="false">
         <span class="label-wide">Add memory</span>
         <span class="label-narrow">Add</span>
       </button>
@@ -151,22 +166,12 @@
         id="open-settings"
         class="button icon-button"
         type="button"
+        data-icon="settings"
         aria-haspopup="dialog"
         aria-label="Settings"
       >
-        <svg class="icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
-          <path
-            d="M1 4.5h7M12.5 4.5h2.5M1 11.5h2.5M8 11.5h7"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-          />
-          <circle cx="10.25" cy="4.5" r="2" fill="none" stroke="currentColor" stroke-width="1.6" />
-          <circle cx="5.75" cy="11.5" r="2" fill="none" stroke="currentColor" stroke-width="1.6" />
-        </svg>
-          <span class="label-wide">Settings</span>
-        </button>
+        <span class="label-wide">Settings</span>
+      </button>
       </div>
     </header>
 
@@ -177,8 +182,11 @@
     <main class="app-body">
       <aside id="sidebar" class="sidebar" aria-labelledby="sidebar-heading">
         <div class="sidebar-header">
-          <h2 id="sidebar-heading" class="sidebar-heading">Memories</h2>
+          <!-- tabindex="-1" so closing the detail view has somewhere to put focus when the
+               card it was opened from is no longer in the list. -->
+          <h2 id="sidebar-heading" class="sidebar-heading" tabindex="-1">Memories</h2>
 
+          <div id="sidebar-controls" class="sidebar-controls">
           <div class="search">
             <label class="visually-hidden" for="memory-search">Search memories</label>
             <input
@@ -188,14 +196,39 @@
               autocomplete="off"
               placeholder="Search memories"
             />
-            <button id="memory-search-clear" class="search-clear" type="button" hidden>
-              Clear
-            </button>
+            <button
+              id="memory-search-clear"
+              class="button button-sm button-ghost icon-only search-clear"
+              type="button"
+              data-icon="close"
+              data-icon-size="16"
+              aria-label="Clear the search"
+              hidden
+            ></button>
           </div>
 
+          <!-- The chips for what is currently narrowing the list. Above the disclosure on
+               purpose: what is filtering has to be visible whether or not the panel is open,
+               or a collapsed panel would hide the reason the list is short. -->
+          <ul id="active-filters" class="active-filters" aria-label="Active filters" hidden></ul>
+
+          <button
+            id="filters-toggle"
+            class="button button-sm button-ghost filters-toggle"
+            type="button"
+            data-icon="filter"
+            data-icon-size="16"
+            aria-expanded="false"
+            aria-controls="filters-panel"
+          >
+            <span class="button-label">Filters</span>
+            <span id="filters-badge" class="chip-count filters-badge" hidden></span>
+          </button>
+
+          <div id="filters-panel" class="filters-panel" hidden>
           <div id="tag-bar" class="tag-bar" hidden>
             <ul id="tag-list" class="tag-list" aria-label="Filter by tag"></ul>
-            <button id="tag-toggle" class="tag-toggle" type="button" hidden></button>
+            <button id="tag-toggle" class="button button-sm button-ghost tag-toggle" type="button" hidden></button>
           </div>
 
           <div id="date-range" class="date-range" hidden>
@@ -230,12 +263,9 @@
 
             <p id="timeline-range" class="visually-hidden" aria-live="polite"></p>
           </div>
+          </div>
 
           <p id="memory-count" class="sidebar-count"></p>
-
-          <button id="filter-reset" class="filter-reset" type="button" hidden>
-            Reset filters
-          </button>
 
           <div class="journey">
             <button
@@ -243,25 +273,35 @@
               class="button journey-toggle"
               type="button"
               aria-pressed="false"
+              data-icon="route"
               aria-describedby="journey-hint"
             >
-              Journey
+              <span class="button-label">Journey</span>
             </button>
 
             <p id="journey-hint" class="journey-hint" hidden>
               A journey needs at least two memories in view.
             </p>
 
-            <p id="journey-summary" class="journey-summary" hidden></p>
+          </div>
+          </div>
 
-            <div id="journey-controls" class="journey-controls" role="group" aria-label="Journey playback" hidden>
-              <button id="journey-previous" class="button journey-step" type="button">Previous</button>
-              <button id="journey-play" class="button journey-play" type="button" aria-label="Play journey">
-                Play
+          <!-- Shown only when nothing has ever been saved. Everything above is hidden then:
+               a search box, a filter panel and a journey control are all answers to questions
+               nobody with an empty library is asking. -->
+          <div id="welcome" class="welcome" hidden>
+            <h3 class="welcome-heading">Start your map</h3>
+            <p class="welcome-text">
+              Pin a place you want to remember, with a date, a note and a few photos. It all
+              stays on this device.
+            </p>
+            <div class="welcome-actions">
+              <button id="welcome-add" class="button button-primary" type="button" data-icon="pin">
+                <span class="button-label">Add your first memory</span>
               </button>
-              <button id="journey-next" class="button journey-step" type="button">Next</button>
-
-              <p id="journey-progress" class="journey-progress" aria-live="polite"></p>
+              <button id="welcome-import" class="button" type="button" data-icon="import">
+                <span class="button-label">Import a backup</span>
+              </button>
             </div>
           </div>
         </div>
@@ -269,7 +309,99 @@
         <p id="memory-empty" class="sidebar-empty" tabindex="-1" hidden></p>
 
         <!-- tabindex="-1" so the skip link can actually land focus on it. -->
-      <ul id="memory-list" class="memory-list" tabindex="-1"></ul>
+      <div id="memory-list" class="memory-list" tabindex="-1"></div>
+
+        <!--
+          The detail view. It lives in the sidebar region and replaces the list while it is
+          open, so a memory is read where it was found rather than in a dialog over the map.
+          On a narrow screen it takes the place of both panes and the Map/List switch goes
+          with them: there is nothing to switch between while one memory is open.
+        -->
+        <section id="memory-detail" class="detail" aria-labelledby="detail-title" hidden>
+          <div class="detail-header">
+            <button
+              id="detail-back"
+              class="button button-sm button-ghost detail-back"
+              type="button"
+              data-icon="back"
+              data-icon-size="16"
+            >
+              <span class="button-label">Back to list</span>
+            </button>
+
+            <!--
+              Previous and Next step through the filtered list in its own order, newest
+              first. aria-disabled rather than disabled at the ends, for the same reason the
+              journey controls use it: a disabled button leaves the tab order, which would
+              drop focus the moment stepping to the last memory disabled the button just
+              pressed.
+            -->
+            <div class="detail-steps" role="group" aria-label="Step through the memories">
+              <button
+                id="detail-previous"
+                class="button button-sm icon-only"
+                type="button"
+                data-icon="previous"
+                data-icon-size="16"
+                aria-label="Previous memory"
+              ></button>
+              <button
+                id="detail-next"
+                class="button button-sm icon-only"
+                type="button"
+                data-icon="next"
+                data-icon-size="16"
+                aria-label="Next memory"
+              ></button>
+            </div>
+          </div>
+
+          <div id="detail-content" class="detail-content"></div>
+
+          <!--
+            A row at the foot of the view rather than the end of the content. A note can run
+            to five thousand characters, and everything someone might want to do with the
+            memory they are reading should not be a scroll away at the bottom of it.
+          -->
+          <div class="detail-actions">
+            <button
+              id="detail-edit"
+              class="button button-sm"
+              type="button"
+              data-icon="settings"
+              data-icon-size="16"
+            >
+              <span class="button-label">Edit</span>
+            </button>
+            <button
+              id="detail-show"
+              class="button button-sm"
+              type="button"
+              data-icon="map"
+              data-icon-size="16"
+            >
+              <span class="button-label">Show on map</span>
+            </button>
+            <button
+              id="detail-move"
+              class="button button-sm button-ghost"
+              type="button"
+              data-icon="pin"
+              data-icon-size="16"
+            >
+              <span class="button-label">Move</span>
+            </button>
+            <button
+              id="detail-delete"
+              class="button button-sm button-ghost"
+              type="button"
+              data-icon="close"
+              data-icon-size="16"
+            >
+              <span class="button-label">Delete</span>
+            </button>
+          </div>
+        </section>
       </aside>
 
       <div class="app-main">
@@ -280,6 +412,103 @@
           without taking that away.
         -->
         <div id="map" class="map" role="region" aria-label="Map"></div>
+
+        <!-- Written in when placement starts rather than once at boot: a live region
+             announces a change to its contents, not a change to its visibility. -->
+        <p id="placement-hint" class="placement-hint" role="status" hidden></p>
+
+        <!--
+          The player docks to the map pane rather than living in the sidebar, because what it
+          is describing is happening on the map: the stop it names is the pin that just moved
+          under it. In the sidebar the two were a column apart, and on a narrow screen they
+          were not even on the same pane.
+        -->
+        <div id="journey-player" class="journey-player" role="group" aria-label="Journey playback" hidden>
+          <div class="player-row">
+            <div class="player-transport">
+              <button
+                id="player-previous"
+                class="button button-sm icon-only player-step"
+                type="button"
+                data-icon="previous"
+                aria-label="Previous stop"
+              ></button>
+              <button
+                id="player-play"
+                class="button icon-only player-play"
+                type="button"
+                data-icon="play"
+                aria-label="Play journey"
+              ></button>
+              <button
+                id="player-next"
+                class="button button-sm icon-only player-step"
+                type="button"
+                data-icon="next"
+                aria-label="Next stop"
+              ></button>
+            </div>
+
+            <div class="player-readout">
+              <p id="player-title" class="player-title"></p>
+              <p id="player-meta" class="player-meta"></p>
+            </div>
+
+            <p id="player-position" class="player-position"></p>
+          </div>
+
+          <!--
+            A range over stop indices. The ticks come from a datalist, which is what a range
+            input reads a scale from; they are only built at thirty stops or fewer, past which
+            they are a grey smear rather than a scale.
+
+            aria-valuetext is set and is correct, and Firefox honours it. Chromium ignores it
+            on a native range and announces the raw number, which is the same thing the
+            timeline hit, so the text also goes into a live region the input points at.
+          -->
+          <input
+            id="player-scrubber"
+            class="player-scrubber"
+            type="range"
+            min="0"
+            max="0"
+            step="1"
+            value="0"
+            list="player-ticks"
+            aria-label="Journey stop"
+            aria-describedby="player-announce"
+          />
+          <datalist id="player-ticks"></datalist>
+
+          <div id="player-speed" class="player-speed" role="group" aria-label="Playback speed">
+            <button class="button button-sm player-speed-option" type="button" data-speed="slow" aria-pressed="false">
+              Slow
+            </button>
+            <button class="button button-sm player-speed-option" type="button" data-speed="normal" aria-pressed="true">
+              Normal
+            </button>
+            <button class="button button-sm player-speed-option" type="button" data-speed="fast" aria-pressed="false">
+              Fast
+            </button>
+          </div>
+
+          <p id="player-announce" class="visually-hidden" aria-live="polite"></p>
+
+          <!-- Shown when playback reaches the last stop: what the journey was, and the two
+               things anybody wants next. -->
+          <div id="player-end" class="player-end" hidden>
+            <p id="player-end-summary" class="player-end-summary"></p>
+
+            <div class="player-end-actions">
+              <button id="player-replay" class="button button-sm button-primary" type="button" data-icon="play">
+                <span class="button-label">Replay</span>
+              </button>
+              <button id="player-exit" class="button button-sm" type="button" data-icon="close">
+                <span class="button-label">Exit journey</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
 
@@ -296,9 +525,20 @@
           <span id="memory-coordinates" class="coordinates-value"></span>
         </p>
 
+        <!--
+          Title, date, place, note, tags, photos: what the memory is, then when and where it
+          was, then what there is to say about it. The note used to sit above the place, which
+          put the longest field in the form between the date and the thing the date belongs to.
+        -->
         <div class="field">
           <label class="field-label" for="memory-title">Title</label>
-          <input id="memory-title" name="title" class="field-input" type="text" autocomplete="off" />
+          <input
+            id="memory-title"
+            name="title"
+            class="field-input field-title"
+            type="text"
+            autocomplete="off"
+          />
           <p id="memory-title-error" class="field-error" hidden></p>
         </div>
 
@@ -309,12 +549,6 @@
         </div>
 
         <div class="field">
-          <label class="field-label" for="memory-note">Note</label>
-          <textarea id="memory-note" name="note" class="field-input field-textarea" rows="3"></textarea>
-          <p id="memory-note-error" class="field-error" hidden></p>
-        </div>
-
-        <div class="field">
           <label class="field-label" for="memory-place-name">Place name</label>
           <input id="memory-place-name" name="placeName" class="field-input" type="text" autocomplete="off" />
           <p id="memory-place-hint" class="field-hint" hidden>Finding place...</p>
@@ -322,9 +556,51 @@
         </div>
 
         <div class="field">
+          <label class="field-label" for="memory-note">Note</label>
+          <!-- rows is the floor; the height follows the content from there, up to the cap in
+               the stylesheet. See ui/autogrow.js. -->
+          <textarea id="memory-note" name="note" class="field-input field-textarea" rows="3"></textarea>
+          <p id="memory-note-error" class="field-error" hidden></p>
+        </div>
+
+        <div class="field">
           <label class="field-label" for="memory-tags">Tags</label>
-          <input id="memory-tags" name="tags" class="field-input" type="text" autocomplete="off" />
-          <p id="memory-tags-hint" class="field-hint">Separate tags with commas</p>
+
+          <!-- The tags already on this memory. A list, because that is what it is, and each
+               one carries the button that takes it off. -->
+          <ul id="memory-tag-tokens" class="tag-tokens" aria-label="Tags on this memory" hidden></ul>
+
+          <!--
+            The ARIA 1.2 combobox pattern. Focus stays in the input the whole time and
+            aria-activedescendant says which suggestion is current: moving real focus into the
+            listbox would take the keyboard away from the field being typed into.
+
+            No name attribute, deliberately. The tokens above are what the memory has, not
+            whatever happens to be half typed here, so the form reads the list rather than the
+            input and FormData must not see this at all.
+          -->
+          <div class="tag-combobox">
+            <input
+              id="memory-tags"
+              class="field-input tag-input"
+              type="text"
+              role="combobox"
+              aria-expanded="false"
+              aria-controls="memory-tag-listbox"
+              aria-autocomplete="list"
+              aria-describedby="memory-tags-hint"
+              autocomplete="off"
+            />
+            <ul
+              id="memory-tag-listbox"
+              class="tag-listbox"
+              role="listbox"
+              aria-label="Matching tags"
+              hidden
+            ></ul>
+          </div>
+
+          <p id="memory-tags-hint" class="field-hint">Enter, comma or Tab adds a tag</p>
           <p id="memory-tags-error" class="field-error" hidden></p>
         </div>
 
@@ -332,23 +608,58 @@
           <span class="field-label" id="memory-photos-label">Photos</span>
           <p id="memory-photos-count" class="field-hint"></p>
 
-          <ul id="memory-photos" class="photo-grid" aria-labelledby="memory-photos-label"></ul>
+          <!--
+            The drop zone is the grid and the button together, so the target is the whole area
+            a photo obviously belongs in rather than a strip beside it. The hint only appears
+            where there is a pointer to drop with: on a phone there is nothing to drag and the
+            sentence would be an instruction nobody can follow.
+          -->
+          <div id="memory-photo-drop" class="photo-drop">
+            <ul id="memory-photos" class="photo-grid" aria-labelledby="memory-photos-label"></ul>
+
+            <input
+              id="memory-photo-input"
+              class="photo-input"
+              type="file"
+              accept="image/*"
+              multiple
+            />
+            <label class="button photo-add" for="memory-photo-input" data-icon="photo">
+              <span class="button-label">Add photos</span>
+            </label>
+
+            <p class="photo-drop-hint">Drop photos here, or paste one</p>
+          </div>
 
           <div id="memory-photos-errors" class="field-error" hidden></div>
 
-          <input
-            id="memory-photo-input"
-            class="photo-input"
-            type="file"
-            accept="image/*"
-            multiple
-          />
-          <label class="button photo-add" for="memory-photo-input">Add photos</label>
+          <!-- Where a reorder is announced. Polite: a move is a result, not an alert. -->
+          <p id="memory-photos-status" class="visually-hidden" role="status"></p>
         </div>
 
         <div class="dialog-actions">
-          <button id="memory-cancel" class="button" type="button">Cancel</button>
-          <button id="memory-save" class="button button-primary" type="submit">Save memory</button>
+          <div id="memory-actions" class="dialog-actions-row">
+            <button id="memory-cancel" class="button button-ghost" type="button" data-icon="close">
+              <span class="button-label">Cancel</span>
+            </button>
+            <button id="memory-save" class="button button-primary" type="submit">Save memory</button>
+          </div>
+
+          <!--
+            Asked inside the dialog rather than through confirm(), which is a second modal on
+            top of a modal, cannot be styled, cannot be read in the voice of this app, and on
+            some platforms arrives with the browser's own name on it.
+
+            Keep editing is first and takes focus: the question is only ever asked when there
+            is something to lose, so the safe answer is the default one.
+          -->
+          <div id="memory-discard" class="dialog-actions-row discard-prompt" role="alert" hidden>
+            <p class="discard-text">Discard changes?</p>
+            <button id="memory-discard-keep" class="button" type="button">Keep editing</button>
+            <button id="memory-discard-confirm" class="button button-ghost" type="button">
+              Discard
+            </button>
+          </div>
         </div>
       </form>
     </dialog>
@@ -360,9 +671,13 @@
         <h3 class="settings-heading">Place names</h3>
 
         <div class="field-checkbox">
+          <!-- A checkbox underneath, drawn as a switch. role="switch" is what tells a screen
+               reader to say "on" and "off" rather than "ticked", which is what a setting is. -->
           <input
             id="setting-suggest-place-names"
+            class="switch"
             type="checkbox"
+            role="switch"
             aria-describedby="setting-suggest-help"
           />
           <label for="setting-suggest-place-names">Suggest place names for new pins</label>
@@ -384,6 +699,22 @@
             <option value="dark">Dark</option>
           </select>
         </div>
+
+        <div class="field-checkbox">
+          <input
+            id="setting-dim-map"
+            class="switch"
+            type="checkbox"
+            role="switch"
+            aria-describedby="setting-dim-map-help"
+          />
+          <label for="setting-dim-map">Dim the map in dark mode</label>
+        </div>
+
+        <p id="setting-dim-map-help" class="field-hint">
+          Turns the tile colours over so the map sits in the dark interface instead of
+          glaring out of it. Pins, photos and the journey line are left alone.
+        </p>
       </section>
 
       <!--
@@ -406,7 +737,7 @@
         <h3 class="settings-heading">Export</h3>
 
         <div class="field-checkbox">
-          <input id="export-include-photos" type="checkbox" checked />
+          <input id="export-include-photos" class="switch" type="checkbox" role="switch" checked />
           <label for="export-include-photos">Include photos</label>
         </div>
 
@@ -415,7 +746,9 @@
           match them to photos already here.
         </p>
 
-        <button id="export-button" class="button" type="button">Export memories</button>
+        <button id="export-button" class="button" type="button" data-icon="export">
+          <span class="button-label">Export memories</span>
+        </button>
 
         <p id="export-status" class="field-hint" role="status"></p>
       </section>
@@ -433,7 +766,9 @@
           type="file"
           accept="application/json,.json"
         />
-        <label class="button import-pick" for="import-input">Choose a file</label>
+        <label class="button import-pick" for="import-input" data-icon="import">
+          <span class="button-label">Choose a file</span>
+        </label>
 
         <p id="import-status" class="field-hint" role="status"></p>
       </section>
@@ -447,11 +782,18 @@
       <div class="dialog-actions">
         <p id="app-version" class="app-version"></p>
 
-        <button id="settings-close" class="button" type="button">Close</button>
+        <button id="settings-close" class="button" type="button" data-icon="close">
+          <span class="button-label">Close</span>
+        </button>
       </div>
     </dialog>
 
-    <dialog id="import-dialog" class="dialog" aria-labelledby="import-dialog-title">
+    <!--
+      The one dialog that opens over another one: it is always reached from Settings, and
+      nothing else in the app stacks. dialog-stacked is what gives it the separation that
+      needs, since CSS has no way to ask whether something else is already open.
+    -->
+    <dialog id="import-dialog" class="dialog dialog-stacked" aria-labelledby="import-dialog-title">
       <h2 id="import-dialog-title" class="dialog-title">Import preview</h2>
 
       <p id="import-summary" class="import-summary"></p>
@@ -468,8 +810,12 @@
       <p id="import-error" class="form-error" role="alert" hidden></p>
 
       <div class="dialog-actions">
-        <button id="import-cancel" class="button" type="button">Cancel</button>
-        <button id="import-confirm" class="button button-primary" type="button">Import</button>
+        <button id="import-cancel" class="button button-ghost" type="button" data-icon="close">
+          <span class="button-label">Cancel</span>
+        </button>
+        <button id="import-confirm" class="button button-primary" type="button" data-icon="import">
+          <span class="button-label">Import</span>
+        </button>
       </div>
     </dialog>
 
@@ -481,9 +827,15 @@
       <p id="lightbox-position" class="lightbox-position" aria-live="polite"></p>
 
       <div class="lightbox-controls">
-        <button id="lightbox-previous" class="button" type="button">Previous</button>
-        <button id="lightbox-next" class="button" type="button">Next</button>
-        <button id="lightbox-close" class="button" type="button">Close</button>
+        <button id="lightbox-previous" class="button" type="button" data-icon="previous">
+          <span class="button-label">Previous</span>
+        </button>
+        <button id="lightbox-next" class="button" type="button" data-icon="next">
+          <span class="button-label">Next</span>
+        </button>
+        <button id="lightbox-close" class="button" type="button" data-icon="close">
+          <span class="button-label">Close</span>
+        </button>
       </div>
     </dialog>
 

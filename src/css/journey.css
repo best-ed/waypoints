@@ -1,18 +1,19 @@
-/* The polyline's stroke lives here rather than in the Leaflet options so the colours stay
-   with the rest of the tokens. CSS beats the presentation attributes Leaflet writes. */
+/* The stroke lives here rather than in the Leaflet options so the colours stay with the rest
+   of the tokens. CSS beats the presentation attributes Leaflet writes.
+
+   The width is the one exception and is deliberately not stated here: it answers how far out
+   the map is, which this file cannot see, so journey/line-weight.js supplies it. */
 .journey-segment {
   fill: none;
   stroke: var(--color-journey);
-  stroke-width: var(--journey-line-width);
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-/* Ahead of the playback position: thinner, paler and dashed, so the stretch already
-   travelled reads as solid progress. */
+/* Ahead of the playback position: paler and dashed, so the stretch already travelled reads as
+   solid progress. */
 .journey-segment.is-pending {
   stroke: var(--color-journey-muted);
-  stroke-width: var(--journey-line-width-pending);
   stroke-dasharray: 6 5;
 }
 
@@ -48,15 +49,15 @@
 .pin-number {
   fill: var(--color-accent-contrast);
   font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
   /* The glyph is decoration inside an aria-hidden SVG; the step is announced through the
      marker's aria-label instead. */
   user-select: none;
 }
 
 .pin-number.is-wide {
-  font-size: 9px;
+  font-size: var(--text-2xs);
 }
 
 .journey {
@@ -79,42 +80,199 @@
   cursor: not-allowed;
 }
 
-.journey-hint,
-.journey-summary {
+/* The hint is body copy explaining why a control is unavailable, so it stays on the system
+   stack. Only the summary is a title for something. */
+.journey-hint {
   margin: 0;
   font-size: var(--text-sm);
   line-height: var(--line-base);
   color: var(--color-text-muted);
 }
 
-.journey-summary {
-  color: var(--color-journey);
-  font-weight: 600;
+
+/* ---- the player ------------------------------------------------------------- */
+
+/* Docked over the bottom of the map pane rather than placed in the layout: the map keeps its
+   whole height, and the player is something that has arrived over it. Centred on the pane and
+   no wider than it needs, because a bar across the whole width would read as part of the
+   chrome rather than as a thing with its own life. */
+.journey-player {
+  position: absolute;
+  z-index: 500;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: var(--space-4);
+  width: min(32rem, calc(100% - var(--space-6)));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface-raised);
+  /* It has taken over the bottom of the map while it is on, which is elevation 2. */
+  box-shadow: var(--elevation-2);
 }
 
-.journey-controls {
+.player-row {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
+  gap: var(--space-3);
 }
 
-.journey-play {
+.player-transport {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: none;
+}
+
+.player-play {
   background: var(--color-journey);
   border-color: var(--color-journey);
   color: var(--color-journey-contrast);
-  min-width: 4.5rem;
 }
 
-.journey-step.is-disabled,
-.journey-play.is-disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+/* Its own hover and active, because without them the generic secondary hover wins on
+   specificity - a class plus a pseudo-class beats a class - and paints --color-bg under an
+   icon that is still the journey contrast colour. */
+.player-play:hover,
+.player-play:active {
+  background: var(--color-journey);
+  border-color: var(--color-journey);
+  color: var(--color-journey-contrast);
+  box-shadow: inset 0 0 0 100vmax var(--color-overlay-press);
 }
 
-.journey-progress {
-  margin: 0 0 0 auto;
+/* The readout is the only thing here that can be any length, so it is the only thing allowed
+   to shrink. min-width: 0 because a flex item will not go below its content otherwise, and the
+   title would push the position off the end. */
+.player-readout {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* The name of a memory, so it carries the display face like every other memory title. Cut
+   rather than wrapped, so the player is the same height whatever somebody called a place. */
+.player-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: var(--weight-display);
+  line-height: var(--line-snug);
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-meta {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--line-base);
+  color: var(--color-text-muted);
+}
+
+.player-position {
+  flex: none;
+  margin: 0;
   font-variant-numeric: tabular-nums;
   font-size: var(--text-sm);
   color: var(--color-text-muted);
+}
+
+/* The whole journey as one travel: how far through it you are is the one thing the transport
+   buttons cannot say. accent-color keeps the thumb and the filled track on the journey colour
+   without redrawing a native control, which is what the timeline had to do only because it
+   stacks two inputs on one track. */
+.player-scrubber {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--color-journey);
+}
+
+/* The browser draws the datalist marks itself, and sizes them from the input's own box. */
+.player-scrubber::-webkit-slider-runnable-track {
+  height: var(--space-1);
+}
+
+/* Three buttons that look like one control, the same shape as the Map and List switch. The
+   negative margin collapses the two borders between them into one line. */
+.player-speed {
+  display: flex;
+  align-self: center;
+}
+
+.player-speed-option {
+  border-radius: 0;
+}
+
+.player-speed-option + .player-speed-option {
+  margin-inline-start: -1px;
+}
+
+.player-speed-option:first-child {
+  border-start-start-radius: var(--radius-sm);
+  border-end-start-radius: var(--radius-sm);
+}
+
+.player-speed-option:last-child {
+  border-start-end-radius: var(--radius-sm);
+  border-end-end-radius: var(--radius-sm);
+}
+
+/* The pressed one has to sit above its neighbours, or their borders draw over its filled
+   edge and it reads as two thirds of a button. */
+.player-speed-option[aria-pressed='true'] {
+  position: relative;
+  z-index: 1;
+}
+
+/* The end of the journey, under the transport rather than instead of it: Replay is one of two
+   things anybody wants here, and stepping back through the stops is the other. */
+.player-end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.player-end-summary {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-display);
+  line-height: var(--line-snug);
+  color: var(--color-journey);
+}
+
+.player-end-actions {
+  display: flex;
+  flex: none;
+  gap: var(--space-2);
+}
+
+/* The end card arrives under the transport rather than appearing there. Same mechanism as the
+   detail view, and the same fallback: where the discrete transition is unsupported it is
+   simply there. */
+.player-end {
+  opacity: 1;
+  transform: none;
+  transition: opacity var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out),
+    display var(--duration-base) allow-discrete;
+}
+
+.player-end[hidden] {
+  opacity: 0;
+  transform: translateY(var(--space-2));
+}
+
+@starting-style {
+  .player-end:not([hidden]) {
+    opacity: 0;
+    transform: translateY(var(--space-2));
+  }
 }

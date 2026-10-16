@@ -44,6 +44,14 @@
     fill: HighlightText;
   }
 
+  /* A forced palette has nothing to pulse with: an animation that changes only a colour the
+     user agent has already decided is no change at all. The arrival is a thicker edge for as
+     long as the pulse would have lasted. */
+  .pin-arriving .pin-body {
+    stroke: Highlight;
+    stroke-width: 4;
+  }
+
   .pin-draft .pin-body,
   .pin-moving .pin-body {
     fill: GrayText;
@@ -67,6 +75,22 @@
   /* ---- tag chips ----------------------------------------------------------- */
   /* The pressed state is the important one: without this a selected chip and an unselected
      one are the same two colours, and the filter looks like it is doing nothing. */
+  /* ---- the one filled button ------------------------------------------------ */
+  /* Add memory and Save lost their labels entirely: the user agent replaces the author
+     colours on a control that sets both, and what it chose left the text the same colour as
+     the fill under it. Said here in system colours, as every other state that carried meaning
+     through a colour we picked already is. */
+  .button-primary {
+    background-color: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+
+  /* The icon inside it follows the label, and would otherwise be left behind. */
+  .button-primary .icon {
+    stroke: HighlightText;
+  }
+
   .tag-chip {
     background-color: ButtonFace;
     color: ButtonText;
@@ -151,23 +175,34 @@
     border: 1px solid CanvasText;
   }
 
+  /* A forced palette has no scrim to spend and no shadow to raise anything with, so the one
+     dialog that opens over another gets a heavier edge instead. Without it the import preview
+     and the settings panel underneath it are two rectangles with identical borders. */
+  .dialog-stacked {
+    border-width: 3px;
+  }
+
   /* ---- the one override --------------------------------------------------- */
   /* forced-color-adjust: none is needed here and nowhere else. A photo thumbnail is content,
      not interface: the user agent leaves the image itself alone, but it forces the button's
      background behind it, which on some palettes paints a solid block over the gap around a
      non-square thumbnail. Keeping the button transparent is the only way to leave the photo
      looking like the photo. */
-  .popup-photo-button,
+  .popup-cover-image,
+  .detail-hero-button,
+  .detail-thumb-button,
   .lightbox-image {
     forced-color-adjust: none;
     background-color: transparent;
   }
 
-  .popup-photo-button {
+  .popup-cover,
+  .detail-thumb-button {
     border: 1px solid CanvasText;
   }
 
-  .popup-photo-button:focus-visible {
+  .detail-hero-button:focus-visible,
+  .detail-thumb-button:focus-visible {
     outline: 2px solid Highlight;
     outline-offset: 2px;
   }

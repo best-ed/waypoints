@@ -3,21 +3,35 @@ import { DATE_PATTERN } from '../data/schema.js';
 const DISPLAY_LOCALE = 'en-GB';
 const DISPLAY_OPTIONS = { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' };
 
-let formatter = null;
+/* The detail view has the width for the whole thing, and a memory is a date in someone's
+   life rather than a row in a table: the weekday is part of remembering it. */
+const LONG_OPTIONS = {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC'
+};
+
+const formatters = new Map();
 
 /* Built once on first use rather than at import time, since constructing an
    Intl.DateTimeFormat is expensive and modules must not do work when loaded. */
-function displayFormatter() {
+function formatterFor(options) {
+  let formatter = formatters.get(options);
+
   if (!formatter) {
-    formatter = new Intl.DateTimeFormat(DISPLAY_LOCALE, DISPLAY_OPTIONS);
+    formatter = new Intl.DateTimeFormat(DISPLAY_LOCALE, options);
+    formatters.set(options, formatter);
   }
+
   return formatter;
 }
 
 /* The stored value is a calendar day with no time or zone. Parsing "2025-03-04" with the
    Date constructor gives midnight UTC, which formats as 3 March anywhere behind UTC, so
    the parts are placed in UTC and read back in UTC. */
-export function formatMemoryDate(value) {
+function format(value, options) {
   if (typeof value !== 'string' || !DATE_PATTERN.test(value)) {
     return '';
   }
@@ -29,5 +43,13 @@ export function formatMemoryDate(value) {
     return '';
   }
 
-  return displayFormatter().format(utcDate);
+  return formatterFor(options).format(utcDate);
+}
+
+export function formatMemoryDate(value) {
+  return format(value, DISPLAY_OPTIONS);
+}
+
+export function formatLongDate(value) {
+  return format(value, LONG_OPTIONS);
 }

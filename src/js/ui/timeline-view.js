@@ -1,17 +1,19 @@
 import { fromDayNumber, toDayNumber } from '../filters/timeline.js';
+import { barHeights } from './timeline-scale.js';
 import { formatMemoryDate } from './format-date.js';
 
 const MIN_DISTINCT_DATES = 2;
 
-function buildBar(bucket, tallest, isInRange) {
+function buildBar(bucket, height, isInRange) {
   const item = document.createElement('li');
   item.className = 'timeline-bar' + (isInRange ? ' is-in-range' : '');
 
   const fill = document.createElement('span');
   fill.className = 'timeline-bar-fill';
   /* A bucket with nothing in it still gets a sliver, so the gap reads as a gap rather
-     than as the histogram ending. */
-  fill.style.height = bucket.count === 0 ? '2px' : Math.round((bucket.count / tallest) * 100) + '%';
+     than as the histogram ending. The heights come from timeline-scale.js, which is where
+     the case that made the whole chart a solid block is handled. */
+  fill.style.height = height === 0 ? '2px' : height + '%';
   item.append(fill);
 
   /* Title rather than a rendered label: there is no room for one under every bar, and
@@ -131,14 +133,14 @@ export function createTimelineView({
 
     const selectedStart = Number(startElement.value);
     const selectedEnd = Number(endElement.value);
-    const tallest = Math.max(...buckets.map((bucket) => bucket.count), 1);
+    const heights = barHeights(buckets.map((bucket) => bucket.count));
 
     barsElement.replaceChildren(
-      ...buckets.map((bucket) => {
+      ...buckets.map((bucket, index) => {
         const bucketStart = toDayNumber(bucket.start);
         const bucketEnd = toDayNumber(bucket.end);
         const inRange = bucketEnd >= selectedStart && bucketStart <= selectedEnd;
-        return buildBar(bucket, tallest, inRange);
+        return buildBar(bucket, heights[index], inRange);
       })
     );
   }

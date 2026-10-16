@@ -8,7 +8,13 @@ export const DEFAULT_SETTINGS = Object.freeze({
   suggestPlaceNames: true,
 
   /* "system" follows prefers-color-scheme. The other two override it. */
-  theme: 'system'
+  theme: 'system',
+
+  /* On by default. A full brightness map inside a dark interface is the thing people notice
+     first about dark mode here, and it is unpleasant enough at night to be worth turning on
+     for everyone. It is a setting rather than a decision because the filter is an
+     approximation: it is the real map with its colours turned over, not a map drawn dark. */
+  dimMapInDark: true
 });
 
 function asBoolean(value, fallback) {
@@ -26,7 +32,8 @@ export function resolveSettings(raw) {
 
   return {
     suggestPlaceNames: asBoolean(source.suggestPlaceNames, DEFAULT_SETTINGS.suggestPlaceNames),
-    theme: asTheme(source.theme, DEFAULT_SETTINGS.theme)
+    theme: asTheme(source.theme, DEFAULT_SETTINGS.theme),
+    dimMapInDark: asBoolean(source.dimMapInDark, DEFAULT_SETTINGS.dimMapInDark)
   };
 }
 
@@ -95,7 +102,8 @@ export function createSettingsStore({ storage, key = SETTINGS_KEY, onListenerErr
 
     const next = resolveSettings({
       suggestPlaceNames: asBoolean(patch.suggestPlaceNames, current.suggestPlaceNames),
-      theme: asTheme(patch.theme, current.theme)
+      theme: asTheme(patch.theme, current.theme),
+      dimMapInDark: asBoolean(patch.dimMapInDark, current.dimMapInDark)
     });
 
     /* Compared as a whole, so a new setting needs no change here. Both sides come out of

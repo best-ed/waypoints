@@ -3,7 +3,7 @@
   padding: var(--space-2);
   border-radius: var(--radius-md);
   background-color: var(--color-surface);
-  box-shadow: var(--shadow-control);
+  box-shadow: var(--elevation-1);
 }
 
 .place-search-form {
@@ -65,7 +65,7 @@
 
 .place-search-name {
   display: block;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   overflow-wrap: anywhere;
 }
 
@@ -94,4 +94,63 @@
   font-size: var(--text-sm);
   line-height: var(--line-base);
   color: var(--color-text-muted);
+}
+
+/* ---- collapsed on a phone --------------------------------------------------- */
+
+/* Above the breakpoint there is nothing to collapse: the panel is the control, and the two
+   controls that work the collapse are not rendered at all. */
+.place-search-toggle,
+.place-search-close {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  /* The panel spans the pane when it opens, so the Leaflet corner holding it has to span the
+     pane too: .leaflet-left only sets a left edge. Nothing else lives in this corner. */
+  .leaflet-top.leaflet-left {
+    right: 0;
+  }
+
+  /* At rest the control is the icon and nothing else, so the card's own chrome moves onto the
+     panel and this element stops drawing anything. */
+  .place-search {
+    width: auto;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .place-search-toggle {
+    display: inline-flex;
+    background-color: var(--color-surface);
+    box-shadow: var(--elevation-1);
+  }
+
+  .place-search-panel {
+    display: none;
+  }
+
+  .place-search.is-open .place-search-toggle {
+    display: none;
+  }
+
+  .place-search.is-open .place-search-panel {
+    display: block;
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    /* It has taken over the top of the map while it is open, which is elevation 2. */
+    box-shadow: var(--elevation-2);
+  }
+
+  .place-search-close {
+    display: inline-flex;
+  }
+
+  /* A sheet rather than a dropdown: at this width the results are the screen, so they get the
+     room to be read rather than a 16rem window onto them. */
+  .place-search-results {
+    max-height: 50dvh;
+  }
 }

@@ -10,6 +10,11 @@ const CLUSTER_OPTIONS = {
 };
 
 const POPUP_OPTIONS = {
+  /* Leaflet builds its close control as <a href="#close">, and "#close" matches nothing in the
+     document: a control that closes something is a button, not a link to nowhere. axe's
+     skip-link rule says so too, and 1.0.1 had to switch that rule off for the open popup. Our
+     own content carries a real button instead, so the plugin's is turned off here. */
+  closeButton: false,
   /* Leaflet knows nothing about the app header, so an auto-panned popup would happily tuck
      itself underneath it. */
   autoPanPaddingTopLeft: [16, 72],
@@ -20,9 +25,11 @@ const POPUP_OPTIONS = {
 };
 
 /* Everything the popup and tooltip actually show. Compared as a whole so a change to any
-   displayed field refreshes the popup, while an untouched memory keeps its DOM node. */
+   displayed field refreshes the popup, while an untouched memory keeps its DOM node. The
+   popup is a preview now, so the note and the tags are out of it and the cover is in: a
+   different first photo is a different picture, and nothing else here would notice. */
 function displaySignature(memory) {
-  return JSON.stringify([memory.title, memory.date, memory.placeName, memory.note, memory.tags]);
+  return JSON.stringify([memory.title, memory.date, memory.placeName, memory.photoIds[0] ?? null]);
 }
 
 /* The pin shows a bare number in journey mode, so the accessible name has to say what the

@@ -1,0 +1,13 @@
+- group "Journey playback":
+  - button "Previous stop" [disabled]
+  - button "Play journey"
+  - button "Next stop"
+  - paragraph: Karura forest walk
+  - paragraph: /\d+ Mar \d+/
+  - paragraph: 1 of 5
+  - slider "Journey stop": "0"
+  - group "Playback speed":
+    - button "Slow"
+    - button "Normal" [pressed]
+    - button "Fast"
+  - paragraph: "/Stop 1 of 5: Karura forest walk, \\d+ Mar \\d+/"
